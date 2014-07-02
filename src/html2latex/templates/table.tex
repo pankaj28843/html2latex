@@ -1,0 +1,11 @@
+((* if content.text.strip() != '' *))
+\begin{center}
+\begin{longtable}{(((content.cols)))} \hline
+((* for t in content.text.split('\n') *))
+((* if 'longtable' not in t *))
+(((- t -)))
+((* endif *))
+((* endfor *))
+\end{longtable}
+\end{center}
+((* endif -*)) (((content.tail)))

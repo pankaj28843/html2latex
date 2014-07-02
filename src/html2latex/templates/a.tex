@@ -1,0 +1,4 @@
+((* if content.text.strip() == '' *)) 
+\url{(((content.url)))}(((content.tail)))
+((*- else *)) \href{(((content.url)))}{(((content.text.strip())))} 
+((* endif *)) (((content.tail)))
