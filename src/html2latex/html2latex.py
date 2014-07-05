@@ -290,21 +290,25 @@ class IMG(HTMLElement):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+    def get_image_link(self):
+        HTMLElement.__init__(self, element)
         # get the link to the image and download it.
-        src = element.attrib['src']
-        style = element.attrib.get('style', "")
+        self.src = element.attrib['src']
+        self.style = element.attrib.get('style', "")
+
+    def image_size(self):
         img_width = None
         img_height = None
 
         try:
             img_width = int(
-                float(re.findall(r"width:(\d+)px", style)[0]) * 0.75)
+                float(re.findall(r"width:(\d+)px", self.style)[0]) * 0.75)
         except IndexError:
             pass
 
         try:
             img_height = int(
-                float(re.findall(r"height:(\d+)px", style)[0]) * 0.75)
+                float(re.findall(r"height:(\d+)px", self.style)[0]) * 0.75)
         except IndexError:
             pass
 
@@ -314,7 +318,7 @@ class IMG(HTMLElement):
                 img_width = 3. / 4 * width
                 img_height = 3. / 4 * height
             if not self.is_table:
-                image = Image.open(src)
+                image = Image.open(self.src)
                 # new_image = image.convert("LA")
                 # if image.size == new_image.size:
                 #     image = new_image
@@ -323,12 +327,12 @@ class IMG(HTMLElement):
                 # enhancer = ImageEnhance.Contrast(image)
                 # enhancer.enhance(1.1)
                 src = src + "grayscaled.png"
-                image.save(src, quality=100)
+                image.save(self.src, quality=100)
         except IOError as e:
             raise e
             # width, height = (-1, -1)
 
-        self.content['imagename'] = src
+        self.content['imagename'] = self.src
         self.content['imagewidth'], self.content[
             'imageheight'] = img_width, img_height
 
