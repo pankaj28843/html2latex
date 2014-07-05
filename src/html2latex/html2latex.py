@@ -102,31 +102,11 @@ class HTMLElement(object):
         self.content = {}
         self.content[
             'text'] = self.element.text if self.element.text is not None else ''
-
-        if CAPFIRST_ENABLED:
-            CAPFIRST_TAGS = ('li', 'p', 'td', 'th',)
-            if self.element.tag in CAPFIRST_TAGS:
-                self.content['text'] = capfirst(self.content['text'])
-
-        tail = self.element.tail if self.element.tail is not None else ''
-        if (len(tail) > 0) and (tail[0] in [' \t\r\n']):
-            tail = ' ' + tail
-        if (len(tail) > 0) and (tail[-1] in [' \t\r\n']):
-            tail = tail + ' '
-        self.content['tail'] = tail
-
-        # Do spell check and highlight invalid words using enchant
-        if self.do_spellcheck:
-            self.content['text'] = check_spelling(self.content['text'])
-            self.content['tail'] = check_spelling(self.content['tail'])
-
+        self.content[
+            'tail'] = self.element.tail if self.element.tail is not None else ''
         self.content['tag'] = escape_latex(self.element.tag)
 
-        try:
-            self.content['class'] = self.element.attrib['class']
-        except KeyError:
-            self.content['class'] = ''
-
+    def fetch_template(self):
         try:
             self.template = texenv.get_template(self.element.tag + '.tex')
         except TemplateNotFound:
@@ -136,32 +116,70 @@ class HTMLElement(object):
                 "Error in element: " + repr(element), terminate=False)
             self.template = texenv.get_template('error.tex')
 
+    def get_element_attributes(self):
+        try:
+            self.content['class'] = self.element.attrib['class']
+        except KeyError:
+            self.content['class'] = ''
         for a in self.element.attrib:
             self.content[a] = self.element.attrib[a]
 
-        # escape latex characters
+    def cap_first(self):
+        """Capitalize first alphabet of the element
+        """
+        CAPFIRST_TAGS = ('li', 'p', 'td', 'th',)
+        if self.element.tag in CAPFIRST_TAGS:
+            self.content['text'] = capfirst(self.content['text'])
 
-        self.content['text'] = clean(self.content['text'])
-        self.content['text'] = escape_latex(self.content['text'])
-        self.content['tail'] = escape_latex(self.content['tail'])
+    def fix_tail(self):
+        """Fix tail of the element to include spaces accordingly
+        """
+        tail = self.content['tail']
+        if (len(tail) > 0) and (tail[0] in [' \t\r\n']):
+            tail = ' ' + tail
+        if (len(tail) > 0) and (tail[-1] in [' \t\r\n']):
+            tail = tail + ' '
+        self.content['tail'] = tail
 
-        self.content['text'] = clean(self.content['text'])
-        self.content['text'] = fix_text(self.content['text'])
-        self.content['text'] = self.content['text'].replace("\r", "\n")
+    def spell_check(self):
+        """Do spell check and highlight invalid words using enchant
+        """
+        if self.do_spellcheck:
+            self.content['text'] = check_spelling(self.content['text'])
+            self.content['tail'] = check_spelling(self.content['tail'])
+        else:
+            pass
 
-        def fix_spaces(match):
-            group = match.groups()[0] or ""
-            group = group.replace(" ", "\\,")
-            return " " + group + " "
+    def escape_latex_characters(self):
+        """escape latex characters from text
+        """
+        text = self.content['text']
+        text = clean(text)
+        text = escape_latex(text)
+        text = fix_text(text)
+        self.content['text'] = text.replace("\r", "\n")
 
-        # self.content['text'] = self.content['text'].replace(" ", "\\,")
-        # self.content['text'] = re.sub(
-        #     r' ( )* ?', fix_spaces, self.content['text'])
-        # self.content['tail'] = self.content['tail'].replace(" ", "\\,")
-        self.content['text'] = re.sub(
-            r'( )+?', ' ', self.content['text']).rstrip()
+        """escape latex characters from tail
+        """
+        tail = self.content['tail']
+        tail = clean(tail)
+        tail = escape_latex(tail)
+        tail = fix_text(tail)
+        self.content['tail'] = tail.replace("\r", "\n")
 
-        self.render_children()
+    def fix_spaces(self, match):
+        group = match.groups()[0] or ""
+        group = group.replace(" ", "\\,")
+        return " " + group + " "
+
+    # self.content['text'] = self.content['text'].replace(" ", "\\,")
+    # self.content['text'] = re.sub(
+    #     r' ( )* ?', fix_spaces, self.content['text'])
+    # self.content['tail'] = self.content['tail'].replace(" ", "\\,")
+    self.content['text'] = re.sub(
+        r'( )+?', ' ', self.content['text']).rstrip()
+
+    self.render_children()
 
     def render(self):
         # return an empty string if the content is empty
