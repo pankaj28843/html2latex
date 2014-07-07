@@ -106,7 +106,31 @@ class HTMLElement(object):
             'tail'] = self.element.tail if self.element.tail is not None else ''
         self.content['tag'] = escape_latex(self.element.tag)
 
-    def fetch_template(self):
+        """ Get attributes of the elements"""
+            try:
+                self.content['class'] = self.element.attrib['class']
+        except KeyError:
+            self.content['class'] = ''
+        for a in self.element.attrib:
+            self.content[a] = self.element.attrib[a]
+
+        self.get_template()
+        self.cap_first()
+        self.fix_tail()
+        self.spell_check()
+        self.escape_latex_characters()
+
+        def fix_spaces(self, match):
+            group = match.groups()[0] or ""
+            group = group.replace(" ", "\\,")
+            return " " + group + " "
+
+        self.content['text'] = re.sub(
+            r'( )+?', ' ', self.content['text']).rstrip()
+
+        self.render_children()
+
+    def get_template(self):
         try:
             self.template = texenv.get_template(self.element.tag + '.tex')
         except TemplateNotFound:
@@ -115,14 +139,6 @@ class HTMLElement(object):
             error_message(
                 "Error in element: " + repr(element), terminate=False)
             self.template = texenv.get_template('error.tex')
-
-    def get_element_attributes(self):
-        try:
-            self.content['class'] = self.element.attrib['class']
-        except KeyError:
-            self.content['class'] = ''
-        for a in self.element.attrib:
-            self.content[a] = self.element.attrib[a]
 
     def cap_first(self):
         """Capitalize first alphabet of the element
@@ -167,20 +183,10 @@ class HTMLElement(object):
         tail = fix_text(tail)
         self.content['tail'] = tail.replace("\r", "\n")
 
-    def fix_spaces(self, match):
-        group = match.groups()[0] or ""
-        group = group.replace(" ", "\\,")
-        return " " + group + " "
-
     # self.content['text'] = self.content['text'].replace(" ", "\\,")
     # self.content['text'] = re.sub(
     #     r' ( )* ?', fix_spaces, self.content['text'])
     # self.content['tail'] = self.content['tail'].replace(" ", "\\,")
-    self.content['text'] = re.sub(
-        r'( )+?', ' ', self.content['text']).rstrip()
-
-    self.render_children()
-
     def render(self):
         # return an empty string if the content is empty
         # if self.content['text'].strip() == '' and self.content['tail'].strip() == '':
@@ -289,14 +295,16 @@ class IMG(HTMLElement):
         HTMLElement.__init__(self, element)
         for key, value in kwargs.items():
             setattr(self, key, value)
+        self.get_image_link()
+        self.image_size()
 
     def get_image_link(self):
-        HTMLElement.__init__(self, element)
-        # get the link to the image and download it.
-        self.src = element.attrib['src']
-        self.style = element.attrib.get('style', "")
+        """get the link to the image and download it."""
+        self.src = self.element.attrib['src']
+        self.style = self.element.attrib.get('style', "")
 
     def image_size(self):
+        """ Adjust image size according to requirements"""
         img_width = None
         img_height = None
 
@@ -314,7 +322,7 @@ class IMG(HTMLElement):
 
         try:
             if img_width is None or img_height is None:
-                width, height = get_image_size(src)
+                width, height = get_image_size(self.src)
                 img_width = 3. / 4 * width
                 img_height = 3. / 4 * height
             if not self.is_table:
