@@ -28,6 +28,9 @@ CAPFIRST_ENABLED = True
 
 
 def delegate(element, do_spellcheck=False):
+    """
+    Takes html element in form of etree and converts it into string.
+    """
     '''>>> from lxml import etree
        >>> root = etree.HTML('<h1>Title</h1>')
        >>> print delegate(root[0][0])
@@ -197,6 +200,11 @@ class HTMLElement(object):
 
 class A(HTMLElement):
 
+    """
+    a href tag
+    Gets the url stored in a href   
+    """
+
     def __init__(self, element):
         HTMLElement.__init__(self, element)
         # make it a url if the 'href' attribute is set
@@ -257,12 +265,20 @@ class Table(HTMLElement):
 
 class TR(HTMLElement):
 
+    """
+    Rows in html table
+    """
+
     def __init__(self, element):
         HTMLElement.__init__(self, element)
         self.template = texenv.get_template('tr.tex')
 
 
 class TD(HTMLElement):
+
+    """
+    Columns in Html table
+    """
 
     def __init__(self, element):
         HTMLElement.__init__(self, element)
@@ -328,6 +344,9 @@ class IMG(HTMLElement):
 
 
 def html2latex(html, do_spellcheck=False):
+    """
+    Converts Html Element into LaTeX
+    """
     # If html string has no text then don't need to do anything
     if not check_if_html_has_text(html):
         return ""
