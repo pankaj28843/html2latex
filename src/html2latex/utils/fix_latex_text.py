@@ -85,7 +85,7 @@ def escape_tex(value):
 """
 
 
-def REGEXunescape(text):
+def unescape(text):
     text = text.replace("&nbsp;", "\\hspace{1pt}")
 
     def fixup(m):
