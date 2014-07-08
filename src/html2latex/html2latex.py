@@ -28,6 +28,9 @@ CAPFIRST_ENABLED = True
 
 
 def delegate(element, do_spellcheck=False):
+    """
+    Takes html element in form of etree and converts it into string.
+    """
     '''>>> from lxml import etree
        >>> root = etree.HTML('<h1>Title</h1>')
        >>> print delegate(root[0][0])
@@ -48,11 +51,16 @@ def delegate(element, do_spellcheck=False):
     #     my_element = Table(element, do_spellcheck)
     elif element.tag == 'table':
         table_inner_html = u''.join([etree.tostring(e) for e in element])
-        table_inner_html = table_inner_html.replace("&#13;", "")
-        table_inner_html = table_inner_html.replace("&uuml;", "&#10003;")
-        table_inner_html = table_inner_html.replace("&#252;", "&#10003;")
-        table_inner_html = table_inner_html.replace("\\checkmark", "&#10003;")
-        table_inner_html = table_inner_html.replace(u"ü", "&#10003;")
+        items = (
+                ("&#13;", ""),
+                ("&uuml;", "&#10003;"),
+                ("&#252;", "&#10003;"),
+                ("\\checkmark", "&#10003;"),
+                (u"ü", "&#10003;"),
+
+        )
+        for oldvalue, newvalue in items:
+            table_inner_html = table_inner_html.replace(oldvalue, newvalue)
 
         image_file = get_image_for_html_table(
             table_inner_html, do_spellcheck=do_spellcheck)
@@ -216,6 +224,11 @@ class HTMLElement(object):
 
 class A(HTMLElement):
 
+    """
+    a href tag
+    Gets the url stored in a href   
+    """
+
     def __init__(self, element):
         HTMLElement.__init__(self, element)
         # make it a url if the 'href' attribute is set
@@ -276,12 +289,20 @@ class Table(HTMLElement):
 
 class TR(HTMLElement):
 
+    """
+    Rows in html table
+    """
+
     def __init__(self, element):
         HTMLElement.__init__(self, element)
         self.template = texenv.get_template('tr.tex')
 
 
 class TD(HTMLElement):
+
+    """
+    Columns in Html table
+    """
 
     def __init__(self, element):
         HTMLElement.__init__(self, element)
@@ -353,6 +374,9 @@ class IMG(HTMLElement):
 
 
 def html2latex(html, do_spellcheck=False):
+    """
+    Converts Html Element into LaTeX
+    """
     # If html string has no text then don't need to do anything
     if not check_if_html_has_text(html):
         return ""
@@ -386,16 +410,19 @@ def html2latex(html, do_spellcheck=False):
         r"\\begin{math}\1_{\2}\\end{math}", output)
 
     output = output.decode("utf-8")
-    output = output.replace(u'\u2713', " \checkmark ")
-    output = output.replace(u'\u009f', "")
-    output = output.replace(u'\u2715', u"\u00d7")
-    output = output.replace(u'\u2613', u"\u00d7")
-    output = output.replace(u'\u20b9', u"\\rupee")
-    output = output.replace(u'\u0086', u"¶")
-    output = output.replace(u'\u2012', u"-")
-    output = output.replace(u'\u25b3', u"∆")
-    output = output.replace(u'||', u'\\begin{math}\\parallel\\end{math}')
-
+    items = (
+        (u'\u2713', " \checkmark "),
+        (u'\u009f', ""),
+        (u'\u2715', u"\u00d7"),
+        (u'\u2613', u"\u00d7"),
+        (u'\u20b9', u"\\rupee"),
+        (u'\u0086', u"¶"),
+        (u'\u2012', u"-"),
+        (u'\u25b3', u"∆"),
+        (u'||', u'\\begin{math}\\parallel\\end{math}')
+    )
+    for oldvalue, newvalue in items:
+        output = output.replace(oldvalue, newvalue)
     # output = re.sub(r"\\par\s*\\noindent", r"\\par\\noindent", output)
     # output = re.sub(r"(\\par\\noindent)+", r"\\par\\noindent", output)
 
