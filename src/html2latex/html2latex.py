@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Convert html generated from CKEditor to LaTeX environment.
+Convert HTML generated from CKEditor to LaTeX environment.
 """
 import os
 import re
@@ -115,8 +115,8 @@ class HTMLElement(object):
         self.content['tag'] = escape_latex(self.element.tag)
 
         """ Get attributes of the elements"""
-            try:
-                self.content['class'] = self.element.attrib['class']
+        try:
+            self.content['class'] = self.element.attrib['class']
         except KeyError:
             self.content['class'] = ''
         for a in self.element.attrib:
@@ -145,7 +145,7 @@ class HTMLElement(object):
             self.template = texenv.get_template('not_implemented.tex')
         except TypeError:
             error_message(
-                "Error in element: " + repr(element), terminate=False)
+                "Error in element: " + repr(self.element), terminate=False)
             self.template = texenv.get_template('error.tex')
 
     def cap_first(self):
@@ -355,8 +355,8 @@ class IMG(HTMLElement):
                 # enhancer.enhance(1.1)
                 # enhancer = ImageEnhance.Contrast(image)
                 # enhancer.enhance(1.1)
-                src = src + "grayscaled.png"
-                image.save(self.src, quality=100)
+                src = self.src + "grayscaled.png"
+                image.save(src, quality=100)
         except IOError as e:
             raise e
             # width, height = (-1, -1)
