@@ -102,31 +102,35 @@ class HTMLElement(object):
         self.content = {}
         self.content[
             'text'] = self.element.text if self.element.text is not None else ''
-
-        if CAPFIRST_ENABLED:
-            CAPFIRST_TAGS = ('li', 'p', 'td', 'th',)
-            if self.element.tag in CAPFIRST_TAGS:
-                self.content['text'] = capfirst(self.content['text'])
-
-        tail = self.element.tail if self.element.tail is not None else ''
-        if (len(tail) > 0) and (tail[0] in [' \t\r\n']):
-            tail = ' ' + tail
-        if (len(tail) > 0) and (tail[-1] in [' \t\r\n']):
-            tail = tail + ' '
-        self.content['tail'] = tail
-
-        # Do spell check and highlight invalid words using enchant
-        if self.do_spellcheck:
-            self.content['text'] = check_spelling(self.content['text'])
-            self.content['tail'] = check_spelling(self.content['tail'])
-
+        self.content[
+            'tail'] = self.element.tail if self.element.tail is not None else ''
         self.content['tag'] = escape_latex(self.element.tag)
 
-        try:
-            self.content['class'] = self.element.attrib['class']
+        """ Get attributes of the elements"""
+            try:
+                self.content['class'] = self.element.attrib['class']
         except KeyError:
             self.content['class'] = ''
+        for a in self.element.attrib:
+            self.content[a] = self.element.attrib[a]
 
+        self.get_template()
+        self.cap_first()
+        self.fix_tail()
+        self.spell_check()
+        self.escape_latex_characters()
+
+        def fix_spaces(self, match):
+            group = match.groups()[0] or ""
+            group = group.replace(" ", "\\,")
+            return " " + group + " "
+
+        self.content['text'] = re.sub(
+            r'( )+?', ' ', self.content['text']).rstrip()
+
+        self.render_children()
+
+    def get_template(self):
         try:
             self.template = texenv.get_template(self.element.tag + '.tex')
         except TemplateNotFound:
@@ -136,33 +140,53 @@ class HTMLElement(object):
                 "Error in element: " + repr(element), terminate=False)
             self.template = texenv.get_template('error.tex')
 
-        for a in self.element.attrib:
-            self.content[a] = self.element.attrib[a]
+    def cap_first(self):
+        """Capitalize first alphabet of the element
+        """
+        CAPFIRST_TAGS = ('li', 'p', 'td', 'th',)
+        if self.element.tag in CAPFIRST_TAGS:
+            self.content['text'] = capfirst(self.content['text'])
 
-        # escape latex characters
+    def fix_tail(self):
+        """Fix tail of the element to include spaces accordingly
+        """
+        tail = self.content['tail']
+        if (len(tail) > 0) and (tail[0] in [' \t\r\n']):
+            tail = ' ' + tail
+        if (len(tail) > 0) and (tail[-1] in [' \t\r\n']):
+            tail = tail + ' '
+        self.content['tail'] = tail
 
-        self.content['text'] = clean(self.content['text'])
-        self.content['text'] = escape_latex(self.content['text'])
-        self.content['tail'] = escape_latex(self.content['tail'])
+    def spell_check(self):
+        """Do spell check and highlight invalid words using enchant
+        """
+        if self.do_spellcheck:
+            self.content['text'] = check_spelling(self.content['text'])
+            self.content['tail'] = check_spelling(self.content['tail'])
+        else:
+            pass
 
-        self.content['text'] = clean(self.content['text'])
-        self.content['text'] = fix_text(self.content['text'])
-        self.content['text'] = self.content['text'].replace("\r", "\n")
+    def escape_latex_characters(self):
+        """escape latex characters from text
+        """
+        text = self.content['text']
+        text = clean(text)
+        text = escape_latex(text)
+        text = fix_text(text)
+        self.content['text'] = text.replace("\r", "\n")
 
-        def fix_spaces(match):
-            group = match.groups()[0] or ""
-            group = group.replace(" ", "\\,")
-            return " " + group + " "
+        """escape latex characters from tail
+        """
+        tail = self.content['tail']
+        tail = clean(tail)
+        tail = escape_latex(tail)
+        tail = fix_text(tail)
+        self.content['tail'] = tail.replace("\r", "\n")
 
-        # self.content['text'] = self.content['text'].replace(" ", "\\,")
-        # self.content['text'] = re.sub(
-        #     r' ( )* ?', fix_spaces, self.content['text'])
-        # self.content['tail'] = self.content['tail'].replace(" ", "\\,")
-        self.content['text'] = re.sub(
-            r'( )+?', ' ', self.content['text']).rstrip()
-
-        self.render_children()
-
+    # self.content['text'] = self.content['text'].replace(" ", "\\,")
+    # self.content['text'] = re.sub(
+    #     r' ( )* ?', fix_spaces, self.content['text'])
+    # self.content['tail'] = self.content['tail'].replace(" ", "\\,")
     def render(self):
         # return an empty string if the content is empty
         # if self.content['text'].strip() == '' and self.content['tail'].strip() == '':
@@ -271,32 +295,38 @@ class IMG(HTMLElement):
         HTMLElement.__init__(self, element)
         for key, value in kwargs.items():
             setattr(self, key, value)
+        self.get_image_link()
+        self.image_size()
 
-        # get the link to the image and download it.
-        src = element.attrib['src']
-        style = element.attrib.get('style', "")
+    def get_image_link(self):
+        """get the link to the image and download it."""
+        self.src = self.element.attrib['src']
+        self.style = self.element.attrib.get('style', "")
+
+    def image_size(self):
+        """ Adjust image size according to requirements"""
         img_width = None
         img_height = None
 
         try:
             img_width = int(
-                float(re.findall(r"width:(\d+)px", style)[0]) * 0.75)
+                float(re.findall(r"width:(\d+)px", self.style)[0]) * 0.75)
         except IndexError:
             pass
 
         try:
             img_height = int(
-                float(re.findall(r"height:(\d+)px", style)[0]) * 0.75)
+                float(re.findall(r"height:(\d+)px", self.style)[0]) * 0.75)
         except IndexError:
             pass
 
         try:
             if img_width is None or img_height is None:
-                width, height = get_image_size(src)
+                width, height = get_image_size(self.src)
                 img_width = 3. / 4 * width
                 img_height = 3. / 4 * height
             if not self.is_table:
-                image = Image.open(src)
+                image = Image.open(self.src)
                 # new_image = image.convert("LA")
                 # if image.size == new_image.size:
                 #     image = new_image
@@ -305,12 +335,12 @@ class IMG(HTMLElement):
                 # enhancer = ImageEnhance.Contrast(image)
                 # enhancer.enhance(1.1)
                 src = src + "grayscaled.png"
-                image.save(src, quality=100)
+                image.save(self.src, quality=100)
         except IOError as e:
             raise e
             # width, height = (-1, -1)
 
-        self.content['imagename'] = src
+        self.content['imagename'] = self.src
         self.content['imagewidth'], self.content[
             'imageheight'] = img_width, img_height
 
