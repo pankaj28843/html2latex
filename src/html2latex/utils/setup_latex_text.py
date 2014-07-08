@@ -1,17 +1,49 @@
 # -*- coding: utf-8 -*-
+
 import hashlib
 import os
 import re
-
-
+import redis
 import htmlentitydefs
 import jinja2
-import redis
 
 
 from .webkit2png import webkit2png
 
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+REGEX_LATEX_SUBS = (
+    (re.compile(r'\\'), r'\\textbackslash '),
+    (re.compile(r'([{}_#%&$])'), r'\\\1'),
+    (re.compile(r'~'), r'\~{}'),
+    # (re.compile(r'-'), r'\\textendash '),
+    (re.compile(r'\^'), r'\^{}'),
+    (re.compile(r'"'), r"''"),
+    (re.compile(r'\.\.\.+'), r'\\ldots '),
+    (re.compile(r'>'), r'\\textgreater '),
+    (re.compile(r'&gt;'), r'\\textgreater '),
+    (re.compile(r'<'), r'\\textless '),
+    (re.compile(r'&lt;'), r'\\textless '),
+    (re.compile(r'&degree;'), r'\\degree '),
+    # (re.compile(r''), r''),
+    # (re.compile(r''), r''),
+    # (re.compile(r''), r''),
+)
+
+REGEX_UNESCAPE_LATEX_SUBS = (
+    (re.compile(r'\\textbackslash '), r'\\'),
+    (re.compile(r'\\([\[{}_#%&$\]])'), r'(\1)'),
+    (re.compile(r'\~{}'), r'~'),
+    # (re.compile(r'\\textendash '), r'-'),
+    (re.compile(r'\^{}'), r'\^'),
+    (re.compile(r'"'), r"''"),
+    (re.compile(r'\\ldots '), r'\.\.\.+'),
+    (re.compile(r'\\textgreater '), r'>'),
+    (re.compile(r'\\textgreater '), r'&gt;'),
+    (re.compile(r'\\textless '), r'<'),
+    (re.compile(r'\\textless '), r'&lt;'),
+    (re.compile(r'\\degree '), r'&degree;'),
+)
 
 
 def latex_for_html(html):
@@ -37,28 +69,10 @@ def setup_texenv(loader):
    http://flask.pocoo.org/snippets/55/
 """
 
-LATEX_SUBS = (
-    (re.compile(r'\\'), r'\\textbackslash '),
-    (re.compile(r'([{}_#%&$])'), r'\\\1'),
-    (re.compile(r'~'), r'\~{}'),
-    # (re.compile(r'-'), r'\\textendash '),
-    (re.compile(r'\^'), r'\^{}'),
-    (re.compile(r'"'), r"''"),
-    (re.compile(r'\.\.\.+'), r'\\ldots '),
-    (re.compile(r'>'), r'\\textgreater '),
-    (re.compile(r'&gt;'), r'\\textgreater '),
-    (re.compile(r'<'), r'\\textless '),
-    (re.compile(r'&lt;'), r'\\textless '),
-    (re.compile(r'&degree;'), r'\\degree '),
-    # (re.compile(r''), r''),
-    # (re.compile(r''), r''),
-    # (re.compile(r''), r''),
-)
-
 
 def escape_tex(value):
     newval = value
-    for pattern, replacement in LATEX_SUBS:
+    for pattern, replacement in REGEX_LATEX_SUBS:
         newval = pattern.sub(replacement, newval)
     return newval
 
@@ -71,7 +85,7 @@ def escape_tex(value):
 """
 
 
-def unescape(text):
+def REGEXunescape(text):
     text = text.replace("&nbsp;", "\\hspace{1pt}")
 
     def fixup(m):
@@ -97,56 +111,57 @@ def unescape(text):
 
 def escape_latex(text):
     '''Escape some latex special characters'''
-    text = text.replace(r'&', r'\&')
-    text = text.replace(r'#', r'\#')
-    text = text.replace(r'_', r'\underline{\thickspace}')
-    text = text.replace(r'%', r'\%')
-    text = text.replace(r'\\%', r'\%')
-    text = text.replace(r'\\%', r'\%')
-    # fix some stuff
-    text = text.replace(r'\rm', r'\mathrm')
+    items = (
+        (r'&', r'\&'),
+        (r'#', r'\#'),
+        (r'_', r'\underline{\thickspace}'),
+        (r'%', r'\%'),
+        (r'\\%', r'\%'),
+        (r'\rm', r'\mathrm'),
+
+    )
+    for oldvalue, newvalue in items:
+        ext = text.replace(oldvalue, newvalue)
     return text
 
 
-UNESCAPE_LATEX_SUBS = (
-    (re.compile(r'\\textbackslash '), r'\\'),
-    (re.compile(r'\\([\[{}_#%&$\]])'), r'(\1)'),
-    (re.compile(r'\~{}'), r'~'),
-    # (re.compile(r'\\textendash '), r'-'),
-    (re.compile(r'\^{}'), r'\^'),
-    (re.compile(r'"'), r"''"),
-    (re.compile(r'\\ldots '), r'\.\.\.+'),
-    (re.compile(r'\\textgreater '), r'>'),
-    (re.compile(r'\\textgreater '), r'&gt;'),
-    (re.compile(r'\\textless '), r'<'),
-    (re.compile(r'\\textless '), r'&lt;'),
-    (re.compile(r'\\degree '), r'&degree;'),
-)
-
-
 def unescape_latex(text):
-    text = text.replace(r'\%', r'%')
-    text = text.replace(r'\underline{\thickspace}', r'_')
-    text = text.replace(r'\_', r'_')
-    text = text.replace(r'\#', r'#')
-    text = text.replace(r'\&', r'&')
+    """
+    Return the string obtained by replacing the leftmost non-overlapping occurrences of pattern in string.
+    """
+    items = (
+        (r'\%', r'%'),
+        (r'\underline{\thickspace}', r'_'),
+        (r'\_', r'_'),
+        (r'\#', r'#'),
+        (r'\&', r'&'),
+    )
+    for oldvalue, newvalue in items:
+        text = text.replace(oldvalue, newvalue)
 
-    for pattern, replacement in UNESCAPE_LATEX_SUBS:
+    for pattern, replacement in REGEX_UNESCAPE_LATEX_SUBS:
         text = pattern.sub(replacement, text)
 
     return text
 
 
 def clean(text):
-    text = text.replace(u'Â', ' ')
-    text = text.replace(u'â', '')
-    text = text.replace(u'â', '')
-    text = text.replace(u'''
-    ''', '\n')
-    text = text.replace(u'â', '\'')
-    text = text.replace(u'â', '')
-    text = text.replace(u'â', '``')
-    text = text.replace(u'â ', '\'\'')
-    text = text.replace(u'\u00a0', ' ')
-    text = text.replace(u'\u00c2', ' ')
+    """
+    Replaces non-supported charcters into LaTeX characters.
+    """
+    items = (
+        (u'Â', ' '),
+        (u'â', ''),
+        (u'â', ''),
+        (u'''''', '\n'),
+        (u'â', '\''),
+        (u'â', ''),
+        (u'â', '``'),
+        (u'â ', '\'\''),
+        (u'\u00a0', ' '),
+        (u'\u00c2', ' '),
+    )
+    for oldvalue, newvalue in items:
+        text = text.replace(oldvalue, newvalue)
+
     return text
