@@ -36,7 +36,7 @@ setup(
     license = "BSD",
     keywords = "html, latex",
     url = "http://packages.python.org/pypi/html2latex",
-    long_description=read('README'),
+    long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
@@ -44,7 +44,7 @@ setup(
     ],
     packages=find_packages('src'),
     package_dir={'': 'src'},
-    namespace_packages=['xamcheck'],
+    namespace_packages=['html2latex'],
     extras_require=dict(
         test=TESTS_REQUIRE,
     ),
