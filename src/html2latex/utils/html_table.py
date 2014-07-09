@@ -2,14 +2,10 @@ import hashlib
 import os
 import re
 import subprocess
-import sys
 import uuid
 
-from .webkit2png import webkit2png
-from PIL import Image
-from django.conf import settings
-from django.template.loader import render_to_string
-import enchant
+from ..webkit2png import webkit2png
+import jinja2
 from lxml import etree
 import redis
 import spellchecker
@@ -19,12 +15,6 @@ from splinter import Browser
 browser = Browser('phantomjs')
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 REGEX_SN = re.compile(r'(?i)\s*(s\s*\.*\s*no\.*|s\s*\.*\s*n\.*)\s*')
-
-
-def get_image_size(path):
-    """ Given the path of the image it gives the size of the image"""
-    img = Image.open(path)
-    return img.size
 
 
 def get_image_for_html_table(html, do_spellcheck=False):
@@ -54,12 +44,16 @@ def get_image_for_html_table(html, do_spellcheck=False):
 
     context = {
         "table_inner_html": html,
-        "STATIC_ROOT": settings.STATIC_ROOT,
-        "MATHAJAX_ROOT": settings.MATHAJAX_ROOT,
+        # "STATIC_ROOT": settings.STATIC_ROOT,
+        # "MATHAJAX_ROOT": settings.MATHAJAX_ROOT,
     }
 
-    html = render_to_string(
-        'web2png-table.html', context)
+    loader = jinja2.FileSystemLoader(
+        os.path.dirname(os.path.realpath(__file__)) + '../templates')
+    jinja2_env = jinja2.Environment(loader=loader)
+    template = jinja2_env.get_template('web2png-table.html')
+    html = template.render(**context)
+
     unique_id = str(uuid.uuid4())
     html_file = u"/var/tmp/{0}.html".format(unique_id)
     with open(html_file, "wb") as f:
@@ -68,8 +62,8 @@ def get_image_for_html_table(html, do_spellcheck=False):
     image_file = u"/var/tmp/{0}.png".format(unique_id)
     url = u"file://{0}".format(html_file)
 
-        if wait_time > 0:
-            webkit2png(url, image_file, browser=browser, wait_time=wait_time)
+    if wait_time > 0:
+        webkit2png(url, image_file, browser=browser, wait_time=wait_time)
     else:
         p = subprocess.Popen(
             ["webkit2png.py", "-o", image_file, html_file])

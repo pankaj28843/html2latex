@@ -4,20 +4,21 @@ Convert HTML generated from CKEditor to LaTeX environment.
 """
 import os
 import re
-import sys
 
+from .setup_texenv import setup_texenv
+from .utils import (check_spelling, clean, clean_paragraph_ending,
+                    escape_latex, fix_formatting, fix_text,
+                    get_image_for_html_table, get_image_size,
+                    unescape,
+                    )
+from PIL import Image
 import jinja2
-from django.template.defaultfilters import capfirst
-from imax.utils.html import check_if_html_has_text
 from jinja2.exceptions import TemplateNotFound
 from lxml import etree
-from PIL import Image
+from xamcheck.utils.html import check_if_html_has_text
 
-from .utils import (check_spelling, clean, clean_paragraph_ending,
-                    error_message, escape_latex, fix_formatting, fix_text,
-                    get_image_for_html_table, get_image_size,
-                    information_message, setup_texenv, unescape,
-                    warning_message)
+
+capfirst = lambda x: x and x[0].upper() + x[1:]
 
 loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
@@ -41,8 +42,7 @@ def delegate(element, do_spellcheck=False):
     try:
         element.tag
     except AttributeError:
-        warning_message(
-            "Could not determine tag of element: %s" % (repr(element)))
+        pass
 
     if element.tag == 'div':
         my_element = HTMLElement(element, do_spellcheck)
@@ -89,8 +89,8 @@ def delegate(element, do_spellcheck=False):
     try:
         my_element
     except NameError:
-        error_message(u"Error with element!! %s\n\n" %
-                      etree.tostring(element), terminate=False)
+        # error_message(u"Error with element!! %s\n\n" %
+        #               etree.tostring(element), terminate=False)
         return ''
 
     if my_element is None:
@@ -144,8 +144,8 @@ class HTMLElement(object):
         except TemplateNotFound:
             self.template = texenv.get_template('not_implemented.tex')
         except TypeError:
-            error_message(
-                "Error in element: " + repr(self.element), terminate=False)
+            # error_message(
+            #     "Error in element: " + repr(self.element), terminate=False)
             self.template = texenv.get_template('error.tex')
 
     def cap_first(self):
@@ -439,25 +439,3 @@ def html2latex(html, do_spellcheck=False):
         output)
 
     return output.encode("utf-8")
-
-
-if __name__ == "__main__":
-    extension = sys.argv[1].rpartition('.')[-1]
-    filename = sys.argv[1].rpartition('.')[-3]
-    information_message(extension + ' ' + filename)
-    if extension == 'html':
-        input_html = open(sys.argv[1], 'r').read().decode('utf-8')
-        if input_html.strip() == '':
-            fout = open(sys.argv[1].replace('.html', '.tex'), 'w')
-            fout.write('''%empty input file''')
-            fout.close()
-            sys.exit()
-
-        information_message("Converting %s.%s" % (filename, extension))
-        output = html2latex(input_html)
-        open('%s.tex' % filename, 'w').write(output)
-        information_message(
-            "Output written to %s.%s.tex" % (filename, extension))
-
-    else:
-        error_message('Unknown extension on input file type!')

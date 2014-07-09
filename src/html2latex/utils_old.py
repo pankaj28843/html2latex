@@ -11,8 +11,6 @@ import htmlentitydefs
 import jinja2
 from lxml import etree
 import redis
-from django.conf import settings
-from django.template.loader import render_to_string
 from html2text import html2text
 from PIL import Image
 from splinter import Browser
