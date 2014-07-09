@@ -1,0 +1,42 @@
+[1mdiff --git a/src/html2latex/__init__.py b/src/html2latex/__init__.py[m
+[1mindex fe40c57..715ecf4 100644[m
+[1m--- a/src/html2latex/__init__.py[m
+[1m+++ b/src/html2latex/__init__.py[m
+[36m@@ -1,3 +1,10 @@[m
+ from .html2latex import html2latex[m
+ [m
+ html2latex[m
+[32m+[m
+[32m+[m[32mtry:[m
+[32m+[m[32m    import pkg_resources[m
+[32m+[m[32m    pkg_resources.declare_namespace(__name__)[m
+[32m+[m[32mexcept ImportError:[m
+[32m+[m[32m    import pkgutil[m
+[32m+[m[32m    __path__ = pkgutil.extend_path(__path__, __name__)[m
+[1mdiff --git a/src/html2latex/utils/latex_text_formatting.py b/src/html2latex/utils/latex_text_formatting.py[m
+[1mdeleted file mode 100644[m
+[1mindex e69de29..0000000[m
+[1mdiff --git a/src/html2latex/utils/spellchecker.py b/src/html2latex/utils/spellchecker.py[m
+[1mindex bf39b8b..f19ae2d 100644[m
+[1m--- a/src/html2latex/utils/spellchecker.py[m
+[1m+++ b/src/html2latex/utils/spellchecker.py[m
+[36m@@ -20,7 +20,8 @@[m [mdef get_word_checker(language=DEFAULT_LANGUAGE):[m
+ [m
+ def find_incorrect_words(text, spell_checker):[m
+     """[m
+[31m-    Finds all english words in the text and returns incorrect words.[m
+[32m+[m[32m    Finds all english words in the text and returns incorrect words[m
+[32m+[m[32m    as they would appear in a english dictionary.[m
+     """[m
+     words = set(REGEX_FIND_ENGLISH_WORDS.findall(text))[m
+     return filter(spell_checker, words)[m
+[36m@@ -50,6 +51,7 @@[m [mdef check_spelling_in_html(html, language=DEFAULT_LANGUAGE):[m
+     incorrect_words = find_incorrect_words(text, spell_checker)[m
+ [m
+     for word in incorrect_words:[m
+[31m-        html = html.replace([m
+[31m-            word, r'<strong style="color: red; font-size: 14px;">' + word + '</strong>')[m
+[32m+[m[32m        replacement = r'<strong style="color: red; font-size: 14px;">' + \[m
+[32m+[m[32m            word + '</strong>'[m
+[32m+[m[32m        html = re.sub(r"\s+{0}\s+".format(word), replacement, html)[m
+     return html[m
