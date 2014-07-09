@@ -20,7 +20,8 @@ def get_word_checker(language=DEFAULT_LANGUAGE):
 
 def find_incorrect_words(text, spell_checker):
     """
-    Finds all english words in the text and returns incorrect words.
+    Finds all english words in the text and returns incorrect words
+    as they would appear in a english dictionary.
     """
     words = set(REGEX_FIND_ENGLISH_WORDS.findall(text))
     return filter(spell_checker, words)
@@ -50,6 +51,7 @@ def check_spelling_in_html(html, language=DEFAULT_LANGUAGE):
     incorrect_words = find_incorrect_words(text, spell_checker)
 
     for word in incorrect_words:
-        html = html.replace(
-            word, r'<strong style="color: red; font-size: 14px;">' + word + '</strong>')
+        replacement = r'<strong style="color: red; font-size: 14px;">' + \
+            word + '</strong>'
+        html = re.sub(r"\s+{0}\s+".format(word), replacement, html)
     return html
