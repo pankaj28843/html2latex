@@ -182,18 +182,31 @@ REGEX_COMPLEX_FORMATTING_REPLACEMENTS = (
         r'\s*‘\s*([^’]*)\s*([.?]{0,1})\s*’\s*([.?]{0,1})\s*'), r" `{0}'{1}{2} "),
 )
 
+REGEX_CLEAN_PRARAGRAPH_ENDING = r'|'.join((
+    r"(?:&nbsp;\s*)+</p>",
+    r"(?:<br\s*/>\s*)+</p>",
+    r"(?:<br\s*>\s*)+</p>",
+    r"\s+</p>",))
+
 REGEX_PRARAGRAPH_ENDING_CLEANERS = (
-    (re.compile(r"(?:&nbsp;\s*)+</p>"), "</p>"),
-    (re.compile(r"(?:<br\s*/>\s*)+</p>"), "</p>"),
-    (re.compile(r"(?:<br\s*>\s*)+</p>"), "</p>"),
-    (re.compile(r"\s*</p>"), "</p>"),
+    # Following patterns are commented out because we don't want to do anything
+    # with intended empty p tags. Empty p tags can be created by pressing Enter
+    # key in CKEditor
+
+    # Next 4 patterns are to remove empty paragraphs
+    # (re.compile(r"<p>\s*(?:\s*&nbsp;\s*)+\s*</p>"), ""),
+    # (re.compile(r"<p>\s*(?:\s*<br\s*/>\s*)+\s*</p>"), ""),
+    # (re.compile(r"<p>\s*(?:\s*<br\s*>\s*)+\s*</p>"), ""),
     # (re.compile(r"<p>\s*</p>"), ""),
+
+    # Remove empty tags from the last paragraph
+    (re.compile(REGEX_CLEAN_PRARAGRAPH_ENDING), "</p>"),
 )
 
 
 def ignore_decimals_numbers(match):
     """
-    Returns number removing the decimal part 
+    Returns number removing the decimal part
     """
     groups = list(match.groups())
     groups[0] = groups[0].rstrip()
@@ -274,11 +287,24 @@ def clean_paragraph_ending(html):
     """
     Fixes paragraph to exclude extra spaces and extra lines
     """
-    for pattern, replacement in REGEX_PRARAGRAPH_ENDING_CLEANERS:
-        html = pattern.sub(replacement, html)
 
     html = re.sub(r"\s*/>", "/>", html.rstrip())
     root = etree.HTML(html)
+    body = root.find(".//body")
+
+    if (list(root.iterdescendants())[0].tag == "p" or
+            body.getchildren()[0].tag != "p"):
+        """
+        Don't clean if outermost tag is not a paragraph tag or if p is not the
+        last descendant.
+        """
+        return html
+
+    for pattern, replacement in REGEX_PRARAGRAPH_ENDING_CLEANERS:
+        # Clean in a loop till a pattern is matched!
+        while pattern.search(html):
+            html = pattern.sub(replacement, html)
+
     for element in root.iterdescendants():
         if element.tag == "u":
             _html = etree.tostring(element)
