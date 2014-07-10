@@ -209,8 +209,8 @@ def ignore_decimals_numbers(match):
     Returns number removing the decimal part
     """
     groups = list(match.groups())
-    groups[0] = groups[0].rstrip()
-    groups[3] = groups[3].lstrip()
+    groups[0] = groups[0]
+    groups[3] = groups[3]
 
     if groups[0] and not groups[3]:
         return u"{0}. ".format(groups[0])
@@ -251,8 +251,8 @@ REGEX_TEXT_REPLACEMENTS = (
 
 def fix_text(text):
     for pattern, replacement in REGEX_TEXT_REPLACEMENTS:
-        fixed_text = pattern.sub(replacement, text)
-    return fixed_text
+        text = pattern.sub(replacement, text)
+    return text
 
 
 def fix_formatting(s):
