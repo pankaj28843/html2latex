@@ -1,6 +1,7 @@
 from .html2latex import html2latex
 
 html2latex
+
 try:
     import pkg_resources
     pkg_resources.declare_namespace(__name__)
