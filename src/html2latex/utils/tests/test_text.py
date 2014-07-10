@@ -16,3 +16,16 @@ class TestUtilsText(TestCase):
         )
         for value, output in items:
             self.assertEqual(function(value), output)
+
+    def test_clean_paragraph_ending(self):
+        function = text.clean_paragraph_ending
+
+        items = (
+            ("""<p>he scored a goal  &nbsp; </p>""",
+             '<p>he scored a goal</p>'),
+            ("""<p>What a Goal!!<br></p>""", '<p>What a Goal!!</p>'),
+            ("""<p>Goal!!! &nbsp;</p><br>""", '<p>Goal!!!</p><br>'),
+
+        )
+        for value, output in items:
+            self.assertEqual(function(value), output)
