@@ -15,10 +15,10 @@ class TestUtilsText(TestCase):
             (u"sad\u00c2", u'sad '),
             (u'sadas\u00c2', u'sadas '),
             (u"Â Goal!!", u'  Goal!!'),
-            (u'â', ''),
-            (u'â', '\''),
-            (u'â', ''),
-            (u'â', ''),
+            (u'â Goal!!', ' Goal!!'),
+            (u'â Goal!', '\' Goal!'),
+            (u'â Super', ' Super'),
+            (u'â Super!', ' Super!'),
 
         )
         for value, output in items:
