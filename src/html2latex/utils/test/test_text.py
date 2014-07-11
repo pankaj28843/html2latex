@@ -45,7 +45,8 @@ class TestText(TestCase):
                 ('Jack & Jill', 'Jack \& Jill'),
                 ('some numbers #1 #2 #3', 'some numbers \#1 \#2 \#3'),
                 ('python_methods', 'python\\underline{\\thickspace}methods'),
-                ('10/20=50%', '10/20=50\\%'),
+                ('10/20=50\\%', '10/20=50\\%'),
+                ('15/20=75%', '15/20=75\\%'),
                 ('foo \\rm', 'foo \\mathrm'),
         )
         for value, output in items:

@@ -21,10 +21,6 @@ class TestSpellChecker(TestCase):
         self.assertEqual(True, checker('lol'))
         self.assertEqual(False, checker('word'))
 
-        german_checker = spellchecker.get_word_checker('de_DE')
-        self.assertEqual(True, german_checker('lol'))
-        self.assertEqual(False, german_checker("Guten"))
-
     def test_find_incorrect_words(self):
         wrong_text = "sume increct txt"
         checker = spellchecker.get_word_checker()

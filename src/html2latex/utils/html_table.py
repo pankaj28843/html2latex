@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import hashlib
 import os
 import re
@@ -5,10 +6,12 @@ import subprocess
 import uuid
 
 from ..webkit2png import webkit2png
+
+
 import jinja2
 from lxml import etree
 import redis
-import spellchecker
+from .spellchecker import check_spelling_in_html
 from splinter import Browser
 
 
@@ -21,7 +24,7 @@ def get_image_for_html_table(html, do_spellcheck=False):
     """ Convert HTML table to image to put in latex"""
     html = html.strip()
     if do_spellcheck:
-        html = spellchecker.check_spelling_in_html(html)
+        html = check_spelling_in_html(html)
 
     wait_time = 0
     root = etree.HTML(html)
