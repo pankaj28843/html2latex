@@ -12,36 +12,50 @@ redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 REGEX_LATEX_SUBS = (
     (re.compile(r'\\'), r'\\textbackslash '),
-    (re.compile(r'([{}_#%&$])'), r'\\\1'),
-    (re.compile(r'~'), r'\~{}'),
-    # (re.compile(r'-'), r'\\textendash '),
-    (re.compile(r'\^'), r'\^{}'),
-    (re.compile(r'"'), r"''"),
-    (re.compile(r'\.\.\.+'), r'\\ldots '),
-    (re.compile(r'>'), r'\\textgreater '),
-    (re.compile(r'&gt;'), r'\\textgreater '),
+    (re.compile(r'>'), r"\\textgreater "),
+    (re.compile(r'&gt;'), r"\\textgreater "),
     (re.compile(r'<'), r'\\textless '),
     (re.compile(r'&lt;'), r'\\textless '),
     (re.compile(r'&degree;'), r'\\degree '),
-    # (re.compile(r''), r''),
-    # (re.compile(r''), r''),
-    # (re.compile(r''), r''),
+    (re.compile(r'([{}_#%&$])'), r'\\\1'),
+    (re.compile(r'~'), r'\~'),
+    # (re.compile(r'-'), r'\\textendash '),
+    (re.compile(r'\^'), r'\^'),
+    (re.compile(r'"'), r"''"),
+    (re.compile(r'\.\.\.+'), r'\\ldots '),
 )
 
 REGEX_UNESCAPE_LATEX_SUBS = (
-    (re.compile(r'\\textbackslash '), r'\\'),
-    (re.compile(r'\\([\[{}_#%&$\]])'), r'(\1)'),
-    (re.compile(r'\~{}'), r'~'),
+    # (re.compile(r'\\textbackslash '), r'\\'),
+    # (re.compile(r'\\textgreater '), r'>'),
+    # (re.compile(r'\\textgreater '), r'&gt;'),
+    # (re.compile(r'\\textgreater '), r'>'),
+    # (re.compile(r'\\textless '), r'&lt;'),
+    # (re.compile(r'\\degree '), r'&degree;'),
+
+
+    # (re.compile(r'\\([\[{}_#%&$\]])'), r'(\1)'),
+    # (re.compile(r'\~{}'), r'~'),
     # (re.compile(r'\\textendash '), r'-'),
-    (re.compile(r'\^{}'), r'\^'),
-    (re.compile(r'"'), r"''"),
-    (re.compile(r'\\ldots '), r'\.\.\.+'),
-    (re.compile(r'\\textgreater '), r'>'),
-    (re.compile(r'\\textgreater '), r'&gt;'),
-    (re.compile(r'\\textless '), r'<'),
-    (re.compile(r'\\textless '), r'&lt;'),
+    # (re.compile(r'\^{}'), r'\^'),
+    # (re.compile(r'"'), r"''"),
+    (re.compile(r'\\ldots '), r'....'),
+    (re.compile(r"''"), r'"'),
+    (re.compile(r'\^'), r'^'),
+    (re.compile(r'\\~'), r'~'),
+    (re.compile(r'\\([\[{}_#%&$\]])'), r'\1'),
     (re.compile(r'\\degree '), r'&degree;'),
+    #(re.compile(r'\\textless '), r'&lt;'),
+    (re.compile(r'\\textgreater '), r'>'),
+    #(re.compile(r'\\textgreater '), r'&gt;'),
+    (re.compile(r'\\textless '), r'<'),
+    (re.compile(r'\\textbackslash '), r'\\'),
 )
+#     (re.compile(r'\\textgreater '), r'>'),
+#     (re.compile(r'\\textgreater '), r'&gt;'),
+#     (re.compile(r'\\textless '), r'<'),
+#     (re.compile(r'\\textless '), r'&lt;'),
+#     (re.compile(r'\\degree '), r'&degree;'),
 
 
 def latex_for_html(html):
@@ -251,8 +265,8 @@ REGEX_TEXT_REPLACEMENTS = (
 
 def fix_text(text):
     for pattern, replacement in REGEX_TEXT_REPLACEMENTS:
-        fixed_text = pattern.sub(replacement, text)
-    return fixed_text
+        text = pattern.sub(replacement, text)
+    return text
 
 
 def fix_formatting(s):
