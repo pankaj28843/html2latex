@@ -223,8 +223,8 @@ def ignore_decimals_numbers(match):
     Returns number removing the decimal part
     """
     groups = list(match.groups())
-    groups[0] = groups[0].rstrip()
-    groups[3] = groups[3].lstrip()
+    groups[0] = groups[0]
+    groups[3] = groups[3]
 
     if groups[0] and not groups[3]:
         return u"{0}. ".format(groups[0])
