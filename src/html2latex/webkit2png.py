@@ -1,14 +1,14 @@
 import splinter
 import time
 
-import PIL
+from PIL import Image
 
 
 def is_transparent(image):
     """
     Check to see if an image is transparent.
     """
-    if not isinstance(image, PIL.Image.Image):
+    if not isinstance(image, Image.Image):
         # Can only deal with PIL images, fall back to the assumption that that
         # it's not transparent.
         return False
@@ -30,7 +30,7 @@ def webkit2png(url, image_file_path, browser=None, wait_time=0):
             image = Image.open(image_file_path)
             image.load()
             if is_transparent(image) and False:
-                no_alpha = PIL.Image.new('L', image.size, (255))
+                no_alpha = Image.new('L', image.size, (255))
                 no_alpha.paste(image, mask=image.split()[-1])
             else:
                 no_alpha = image.convert('L')
@@ -38,8 +38,8 @@ def webkit2png(url, image_file_path, browser=None, wait_time=0):
             bw = no_alpha.convert('L')
             # bw = bw.filter(ImageFilter.MedianFilter)
             # White background.
-            bg = PIL.Image.new('L', image.size, 255)
-            bbox = PIL.ImageChops.difference(bw, bg).getbbox()
+            bg = Image.new('L', image.size, 255)
+            bbox = ImageChops.difference(bw, bg).getbbox()
             if bbox:
                 image = image.crop(bbox)
             image.save(image_file_path)

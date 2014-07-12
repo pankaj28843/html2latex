@@ -3,13 +3,13 @@ from __future__ import unicode_literals
 
 from unittest import TestCase
 
-import html2latex.utils as util
+from html2latex.utils import text
 
 
 class TestUtilsText(TestCase):
 
     def test_clean(self):
-        function = util.text.clean
+        function = text.clean
 
         items = (
             (u"sad\u00c2", u'sad '),
@@ -25,7 +25,7 @@ class TestUtilsText(TestCase):
             self.assertEqual(function(value), output)
 
     def test_clean_paragraph_ending(self):
-        function = util.text.clean_paragraph_ending
+        function = text.clean_paragraph_ending
 
         items = (
             ("""<p>he scored a goal  &nbsp; </p>""",
@@ -40,7 +40,7 @@ class TestUtilsText(TestCase):
             self.assertEqual(function(value), output)
 
     def test_fix_text(self):
-        function = util.text.fix_text
+        function = text.fix_text
 
         items = (
             ("Working Function,Create new function.",
@@ -56,7 +56,7 @@ class TestUtilsText(TestCase):
             self.assertEqual(function(value), output)
 
     def test_fix_formatting(self):
-        function = util.text.fix_formatting
+        function = text.fix_formatting
 
         items = (
             ("Working   : Function", 'Working: Function'),

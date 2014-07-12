@@ -1,25 +1,28 @@
 # -*- coding: utf-8 -*-
 """
 Convert HTML generated from CKEditor to LaTeX environment.
-Improved structure as per the guidelines given in the  below link.  
-http://docs.python-guide.org/en/latest/writing/structure/
 """
 import os
 import re
 
-import setup_texenv
-import utils
-import PIL
+from .setup_texenv import setup_texenv
+from .utils import (check_spelling, clean, clean_paragraph_ending,
+                    escape_latex, fix_formatting, fix_text,
+                    get_image_for_html_table, get_image_size,
+                    unescape,
+                    )
+from PIL import Image
 import jinja2
-import lxml
-import xamcheck
+from jinja2.exceptions import TemplateNotFound
+from lxml import etree
+from xamcheck.utils.html import check_if_html_has_text
 
 
 capfirst = lambda x: x and x[0].upper() + x[1:]
 
 loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
-texenv = setup_texenv.setup_texenv(loader)
+texenv = setup_texenv(loader)
 
 CAPFIRST_ENABLED = True
 # Templates for each class here.
@@ -47,7 +50,7 @@ def delegate(element, do_spellcheck=False):
     # elif element.tag == 'table':
     #     my_element = Table(element, do_spellcheck)
     elif element.tag == 'table':
-        table_inner_html = u''.join([lxml.etree.tostring(e) for e in element])
+        table_inner_html = u''.join([etree.tostring(e) for e in element])
         items = (
                 ("&#13;", ""),
                 ("&uuml;", "&#10003;"),
@@ -59,11 +62,11 @@ def delegate(element, do_spellcheck=False):
         for oldvalue, newvalue in items:
             table_inner_html = table_inner_html.replace(oldvalue, newvalue)
 
-        image_file = utils.get_image_for_html_table(
+        image_file = get_image_for_html_table(
             table_inner_html, do_spellcheck=do_spellcheck)
 
         new_html = u"<img src='{0}'/>".format(image_file)
-        new_element = lxml.etree.HTML(new_html).find(".//img")
+        new_element = etree.HTML(new_html).find(".//img")
         my_element = IMG(new_element, is_table=True)
         my_element.content["is_table"] = True
     elif element.tag == 'tr':
@@ -77,7 +80,7 @@ def delegate(element, do_spellcheck=False):
             return ''
     elif element.tag == 'a':
         my_element = A(element, do_spellcheck)
-    elif isinstance(element, lxml.etree._Comment):
+    elif isinstance(element, etree._Comment):
         my_element = None  # skip XML comments
     else:
         # no special handling required
@@ -87,7 +90,7 @@ def delegate(element, do_spellcheck=False):
         my_element
     except NameError:
         # error_message(u"Error with element!! %s\n\n" %
-        #               lxml.etree.tostring(element), terminate=False)
+        #               etree.tostring(element), terminate=False)
         return ''
 
     if my_element is None:
@@ -109,7 +112,7 @@ class HTMLElement(object):
             'text'] = self.element.text if self.element.text is not None else ''
         self.content[
             'tail'] = self.element.tail if self.element.tail is not None else ''
-        self.content['tag'] = utils.escape_latex(self.element.tag)
+        self.content['tag'] = escape_latex(self.element.tag)
 
         """ Get attributes of the elements"""
         try:
@@ -166,8 +169,8 @@ class HTMLElement(object):
         """Do spell check and highlight invalid words using enchant
         """
         if self.do_spellcheck:
-            self.content['text'] = utils.check_spelling(self.content['text'])
-            self.content['tail'] = utils.check_spelling(self.content['tail'])
+            self.content['text'] = check_spelling(self.content['text'])
+            self.content['tail'] = check_spelling(self.content['tail'])
         else:
             pass
 
@@ -175,17 +178,17 @@ class HTMLElement(object):
         """escape latex characters from text
         """
         text = self.content['text']
-        text = utils.clean(text)
-        text = utils.escape_latex(text)
-        text = utils.fix_text(text)
+        text = clean(text)
+        text = escape_latex(text)
+        text = fix_text(text)
         self.content['text'] = text.replace("\r", "\n")
 
         """escape latex characters from tail
         """
         tail = self.content['tail']
-        tail = utils.clean(tail)
-        tail = utils.escape_latex(tail)
-        tail = utils.fix_text(tail)
+        tail = clean(tail)
+        tail = escape_latex(tail)
+        tail = fix_text(tail)
         self.content['tail'] = tail.replace("\r", "\n")
 
     # self.content['text'] = self.content['text'].replace(" ", "\\,")
@@ -340,11 +343,11 @@ class IMG(HTMLElement):
 
         try:
             if img_width is None or img_height is None:
-                width, height = utils.get_image_size(self.src)
+                width, height = get_image_size(self.src)
                 img_width = 3. / 4 * width
                 img_height = 3. / 4 * height
             if not self.is_table:
-                image = PIL.Image.open(self.src)
+                image = Image.open(self.src)
                 # new_image = image.convert("LA")
                 # if image.size == new_image.size:
                 #     image = new_image
@@ -375,29 +378,29 @@ def html2latex(html, do_spellcheck=False):
     Converts Html Element into LaTeX
     """
     # If html string has no text then don't need to do anything
-    if not xamcheck.utils.html.check_if_html_has_text(html):
+    if not check_if_html_has_text(html):
         return ""
 
-    html = utils.clean_paragraph_ending(html)
+    html = clean_paragraph_ending(html)
     html = html.replace("&uuml;", "\\checkmark")
     html = html.replace("&#252;", "\\checkmark")
     html = html.replace(u"ü", "\\checkmark")
 
-    root = lxml.etree.HTML(html)
+    root = etree.HTML(html)
     body = root.find('.//body')
 
     content = u''.join([delegate(element, do_spellcheck=do_spellcheck)
                        for element in body])
     main_template = texenv.get_template('doc.tex')
-    output = unicode(utils.unescape(main_template.render(content=content))).encode(
+    output = unicode(unescape(main_template.render(content=content))).encode(
         'utf-8').replace(r'& \\ \hline', r'\\ \hline')
-    output = utils.fix_formatting(output)
+    output = fix_formatting(output)
 
     output = re.sub(r"(?i)e\. g\.", "e.g.", output)
     output = re.sub(r"(?i)i\. e\.", "i.e.", output)
 
     for underscore in re.findall(r"s+_+|\s*_{2,}", output):
-        output = output.replace(underscore, utils.escape_latex(underscore), 1)
+        output = output.replace(underscore, escape_latex(underscore), 1)
 
     output = re.sub(
         r"([a-zA-Z0-9]+)\\begin\{textsupscript\}\s*(\w+)\s*\\end\{textsupscript\}",

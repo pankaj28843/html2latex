@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 from unittest import TestCase
-import html2latex.utils as util
+from html2latex.utils import text
 
 
 class TestText(TestCase):
@@ -22,7 +22,7 @@ class TestText(TestCase):
                 (u'2 &degree; 3', r"2 \degree  3"),
         )
         for value, output in items:
-            self.assertEqual(util.text.escape_tex(value), output)
+            self.assertEqual(text.escape_tex(value), output)
 
     def test_unescape_latex(self):
         items = (
@@ -39,7 +39,7 @@ class TestText(TestCase):
         )
         for value, output in items:
             self.assertEqual(
-                util.text.unescape_latex(output), value)
+                text.unescape_latex(output), value)
 
     def test_escape_latex(self):
         items = (
@@ -51,4 +51,4 @@ class TestText(TestCase):
                 ('foo \\rm', 'foo \\mathrm'),
         )
         for value, output in items:
-            self.assertEqual(util.text.escape_latex(value), output)
+            self.assertEqual(text.escape_latex(value), output)

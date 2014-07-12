@@ -1,6 +1,6 @@
 import jinja2
 
-import utils
+from utils import escape_tex
 
 
 def setup_texenv(loader):
@@ -11,6 +11,6 @@ def setup_texenv(loader):
     texenv.variable_end_string = ')))'
     texenv.comment_start_string = '((='
     texenv.comment_end_string = '=))'
-    texenv.filters['escape_tex'] = utils.escape_tex
+    texenv.filters['escape_tex'] = escape_tex
 
     return texenv

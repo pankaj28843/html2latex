@@ -6,13 +6,13 @@ import subprocess
 import uuid
 from ..webkit2png import webkit2png
 import jinja2
-import lxml
+from lxml import etree
 import redis
 from .spellchecker import check_spelling_in_html
-import splinter
+from splinter import Browser
 
 
-browser = splinter.Browser('phantomjs')
+browser = Browser('phantomjs')
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 REGEX_SN = re.compile(r'(?i)\s*(s\s*\.*\s*no\.*|s\s*\.*\s*n\.*)\s*')
 
@@ -24,14 +24,14 @@ def get_image_for_html_table(html, do_spellcheck=False):
         html = check_spelling_in_html(html)
 
     wait_time = 0
-    root = lxml.etree.HTML(html)
+    root = etree.HTML(html)
     if root.find('.//span[@class="math-tex"]') is not None:
         # mathjax equations present
         wait_time = 5
 
     td = root.find(".//td")
     if td is not None and td.find('.//span[@class="math-tex"]') is None:
-        td_html = lxml.etree.tostring(td)
+        td_html = etree.tostring(td)
         html = html.replace(td_html, REGEX_SN.sub(" SN ", td_html, 1), 1)
 
     hashed_html = u"webkit2png-{0}".format(
