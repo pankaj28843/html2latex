@@ -9,9 +9,8 @@ import setup_texenv
 import utils
 import PIL
 import jinja2
-import jinja2.exceptions
 import lxml
-import xamcheck.utils.html
+import xamcheck
 
 
 capfirst = lambda x: x and x[0].upper() + x[1:]
