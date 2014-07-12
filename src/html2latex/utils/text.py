@@ -4,7 +4,7 @@ import hashlib
 import re
 
 import htmlentitydefs
-from lxml import etree
+import lxml
 import redis
 
 
@@ -303,7 +303,7 @@ def clean_paragraph_ending(html):
     """
 
     html = re.sub(r"\s*/>", "/>", html.rstrip())
-    root = etree.HTML(html)
+    root = lxml.etree.HTML(html)
     body = root.find(".//body")
 
     if (list(root.iterdescendants())[0].tag == "p" or
@@ -321,6 +321,6 @@ def clean_paragraph_ending(html):
 
     for element in root.iterdescendants():
         if element.tag == "u":
-            _html = etree.tostring(element)
+            _html = lxml.etree.tostring(element)
             html = html.replace(_html, re.sub(r"<br\s*/>", " ", _html))
     return html

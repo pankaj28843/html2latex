@@ -4,18 +4,15 @@ import os
 import re
 import subprocess
 import uuid
-
 from ..webkit2png import webkit2png
-
-
 import jinja2
-from lxml import etree
+import lxml
 import redis
 from .spellchecker import check_spelling_in_html
-from splinter import Browser
+import splinter
 
 
-browser = Browser('phantomjs')
+browser = splinter.Browser('phantomjs')
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 REGEX_SN = re.compile(r'(?i)\s*(s\s*\.*\s*no\.*|s\s*\.*\s*n\.*)\s*')
 
@@ -27,17 +24,18 @@ def get_image_for_html_table(html, do_spellcheck=False):
         html = check_spelling_in_html(html)
 
     wait_time = 0
-    root = etree.HTML(html)
+    root = lxml.etree.HTML(html)
     if root.find('.//span[@class="math-tex"]') is not None:
         # mathjax equations present
         wait_time = 5
 
     td = root.find(".//td")
     if td is not None and td.find('.//span[@class="math-tex"]') is None:
-        td_html = etree.tostring(td)
+        td_html = lxml.etree.tostring(td)
         html = html.replace(td_html, REGEX_SN.sub(" SN ", td_html, 1), 1)
 
-    hashed_html = u"webkit2png-{0}".format(hashlib.sha512(html).hexdigest())
+    hashed_html = u"webkit2png-{0}".format(
+        hashlib.sha512(html).hexdigest())
 
     existing_image_file = redis_client.get(hashed_html)
 
@@ -66,7 +64,8 @@ def get_image_for_html_table(html, do_spellcheck=False):
     url = u"file://{0}".format(html_file)
 
     if wait_time > 0:
-        webkit2png(url, image_file, browser=browser, wait_time=wait_time)
+        webkit2png(
+            url, image_file, browser=browser, wait_time=wait_time)
     else:
         p = subprocess.Popen(
             ["webkit2png.py", "-o", image_file, html_file])
