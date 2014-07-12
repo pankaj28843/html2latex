@@ -38,7 +38,8 @@ class TestText(TestCase):
                 (u'2 &degree; 3', r"2 \degree  3"),
         )
         for value, output in items:
-            self.assertEqual(text.unescape_latex(output), value)
+            self.assertEqual(
+                text.unescape_latex(output), value)
 
     def test_escape_latex(self):
         items = (

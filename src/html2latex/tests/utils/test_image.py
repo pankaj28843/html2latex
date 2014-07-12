@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 from unittest import TestCase
@@ -12,4 +13,5 @@ image_file_path = normpath(join(IMAGE_FILE_ROOT, "india_map.jpg"))
 class TestUtilsText(TestCase):
 
     def test_get_image_size(self):
-        self.assertEqual((501, 557), get_image_size(image_file_path))
+        self.assertEqual(
+            (501, 557), get_image_size(image_file_path))

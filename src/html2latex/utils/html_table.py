@@ -4,10 +4,7 @@ import os
 import re
 import subprocess
 import uuid
-
 from ..webkit2png import webkit2png
-
-
 import jinja2
 from lxml import etree
 import redis
@@ -37,7 +34,8 @@ def get_image_for_html_table(html, do_spellcheck=False):
         td_html = etree.tostring(td)
         html = html.replace(td_html, REGEX_SN.sub(" SN ", td_html, 1), 1)
 
-    hashed_html = u"webkit2png-{0}".format(hashlib.sha512(html).hexdigest())
+    hashed_html = u"webkit2png-{0}".format(
+        hashlib.sha512(html).hexdigest())
 
     existing_image_file = redis_client.get(hashed_html)
 
@@ -66,7 +64,8 @@ def get_image_for_html_table(html, do_spellcheck=False):
     url = u"file://{0}".format(html_file)
 
     if wait_time > 0:
-        webkit2png(url, image_file, browser=browser, wait_time=wait_time)
+        webkit2png(
+            url, image_file, browser=browser, wait_time=wait_time)
     else:
         p = subprocess.Popen(
             ["webkit2png.py", "-o", image_file, html_file])

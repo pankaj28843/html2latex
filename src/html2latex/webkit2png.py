@@ -1,7 +1,7 @@
-from splinter import Browser
+import splinter
 import time
 
-from PIL import Image, ImageChops
+from PIL import Image
 
 
 def is_transparent(image):
@@ -20,7 +20,7 @@ def webkit2png(url, image_file_path, browser=None, wait_time=0):
     new_browser = False
     try:
         if not browser:
-            browser = Browser('phantomjs')
+            browser = splinter.Browser('phantomjs')
             new_browser = True
         browser.visit(url)
         if browser.status_code.is_success():
