@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Convert HTML generated from CKEditor to LaTeX environment.
+Improved structure as per the guidelines given in the  below link.  
+http://docs.python-guide.org/en/latest/writing/structure/
 """
 import os
 import re
