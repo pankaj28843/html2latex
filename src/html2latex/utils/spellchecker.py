@@ -2,7 +2,7 @@
 import re
 
 import enchant
-from html2text import html2text
+import html2text
 
 DEFAULT_LANGUAGE = "en_UK"
 REGEX_FIND_ENGLISH_WORDS = re.compile(r"[a-zA-Z]+")
@@ -47,7 +47,7 @@ def check_spelling_in_html(html, language=DEFAULT_LANGUAGE):
     '''
     spell_checker = get_word_checker(language)
 
-    text = html2text(html)
+    text = html2text.html2text(html)
     incorrect_words = find_incorrect_words(text, spell_checker)
 
     for word in incorrect_words:

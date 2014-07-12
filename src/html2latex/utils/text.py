@@ -4,7 +4,7 @@ import hashlib
 import re
 
 import htmlentitydefs
-from lxml import etree
+import lxml
 import redis
 
 
@@ -220,7 +220,7 @@ REGEX_PRARAGRAPH_ENDING_CLEANERS = (
 
 def ignore_decimals_numbers(match):
     """
-    Returns number removing the decimal part
+    Returns string with space after dot  
     """
     groups = list(match.groups())
     groups[0] = groups[0]
@@ -238,7 +238,7 @@ def ignore_decimals_numbers(match):
 
 def ignore_comma_separated_numbers(match):
     """
-    Returns number removing comma between the numbers
+    Returns string with space after comma
     """
     groups = list(match.groups())
     groups[0] = groups[0]
@@ -303,7 +303,7 @@ def clean_paragraph_ending(html):
     """
 
     html = re.sub(r"\s*/>", "/>", html.rstrip())
-    root = etree.HTML(html)
+    root = lxml.etree.HTML(html)
     body = root.find(".//body")
 
     if (list(root.iterdescendants())[0].tag == "p" or
@@ -321,6 +321,6 @@ def clean_paragraph_ending(html):
 
     for element in root.iterdescendants():
         if element.tag == "u":
-            _html = etree.tostring(element)
+            _html = lxml.etree.tostring(element)
             html = html.replace(_html, re.sub(r"<br\s*/>", " ", _html))
     return html
