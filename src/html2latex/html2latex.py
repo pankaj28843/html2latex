@@ -6,14 +6,15 @@ import os
 import re
 
 from .setup_texenv import setup_texenv
-from .utils import (check_spelling, clean, clean_paragraph_ending,
-                    escape_latex, fix_formatting, fix_text,
-                    get_image_for_html_table, get_image_size,
-                    unescape,
-                    )
+from .utils.html_table import get_image_for_html_table
+from .utils.image import get_image_size
+from .utils.spellchecker import check_spelling
+from .utils.text import (clean, clean_paragraph_ending,
+                         escape_latex, fix_formatting, fix_text,
+                         unescape,
+                         )
 from PIL import Image
 import jinja2
-from jinja2.exceptions import TemplateNotFound
 from lxml import etree
 from xamcheck.utils.html import check_if_html_has_text
 

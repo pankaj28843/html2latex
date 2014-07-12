@@ -1,6 +1,6 @@
 import jinja2
 
-from utils import escape_tex
+from .utils.text import escape_tex
 
 
 def setup_texenv(loader):
