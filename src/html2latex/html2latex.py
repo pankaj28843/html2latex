@@ -16,7 +16,7 @@ from .utils.text import (clean, clean_paragraph_ending,
 from PIL import Image
 import jinja2
 from lxml import etree
-from xamcheck.utils.html import check_if_html_has_text
+from xamcheck_utils.html import check_if_html_has_text
 
 
 capfirst = lambda x: x and x[0].upper() + x[1:]

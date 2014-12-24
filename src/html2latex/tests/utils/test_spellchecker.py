@@ -17,9 +17,9 @@ html = """
 class TestSpellChecker(TestCase):
 
     def test_get_word_checker(self):
-        checker = spellchecker.get_word_checker()
-        self.assertEqual(True, checker('lol'))
-        self.assertEqual(False, checker('word'))
+        checker = spellchecker.get_word_checker('en_US')
+        self.assertEqual(True, checker('wr000nggg'))
+        self.assertEqual(False, checker('correct'))
 
     def test_find_incorrect_words(self):
         wrong_text = "sume increct txt"
@@ -37,5 +37,4 @@ class TestSpellChecker(TestCase):
     def test_check_spelling_in_html(self):
         output = u'\n<html>\n<body>\n\n<h1>This is<strong style="color: red; font-size: 14px;">headin</strong>1</h1>\n\n\n</body>\n</html>\n'
 
-        self.assertEqual(
-            spellchecker.check_spelling_in_html(html), output)
+        self.assertEqual(spellchecker.check_spelling_in_html(html), output)

@@ -1,7 +1,8 @@
-Django==1.6.5
+Django==1.6.8
 Jinja2==2.7.3
 MarkupSafe==0.23
 Pillow==2.5.0
+argparse==1.2.1
 blessings==1.5.1
 coverage==3.7.1
 html2text==2014.4.5
@@ -16,4 +17,5 @@ redis==2.10.1
 rednose==0.4.1
 selenium==2.42.1
 splinter==0.6.0
-xamcheck.utils==0.0.1
+wsgiref==0.1.2
+xamcheck-utils==0.0.8

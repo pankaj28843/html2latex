@@ -49,7 +49,6 @@ setup(
         test=TESTS_REQUIRE,
     ),
     install_requires=[
-        'Django',
         'lxml',
         'setuptools',
     ],
