@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
+# Standard Library
 import hashlib
+import htmlentitydefs
 import os
 import re
-import sys
 import subprocess
+import sys
 import uuid
 
+# Third Party Stuff
 import enchant
-import htmlentitydefs
 import jinja2
-from lxml import etree
 import redis
 from html2text import html2text
+from lxml import etree
 from PIL import Image
 from splinter import Browser
 

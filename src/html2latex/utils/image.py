@@ -1,3 +1,4 @@
+# Third Party Stuff
 from PIL import Image
 
 

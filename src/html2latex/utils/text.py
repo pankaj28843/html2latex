@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
+# Standard Library
 import hashlib
+import htmlentitydefs
 import re
 
-import htmlentitydefs
-from lxml import etree
+# Third Party Stuff
 import redis
-
+from lxml import etree
 
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 

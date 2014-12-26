@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+# Standard Library
 import re
 
+# Third Party Stuff
 import enchant
 import html2text
 

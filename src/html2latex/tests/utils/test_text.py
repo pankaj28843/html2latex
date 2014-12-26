@@ -1,5 +1,9 @@
 from __future__ import unicode_literals
+
+# Standard Library
 from unittest import TestCase
+
+# HTML2LaTeX Stuff
 from html2latex.utils import text
 
 

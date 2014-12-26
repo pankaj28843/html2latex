@@ -1,7 +1,19 @@
+# Standard Library
 import os
 
+# Third Party Stuff
 from setuptools import find_packages, setup
 from setuptools.command.test import test as TestCommand
+from pip.req import parse_requirements
+
+
+# parse_requirements() returns generator of pip.req.InstallRequirement objects
+install_reqs = parse_requirements(os.path.join(
+    os.path.dirname(__file__),
+    'requirements.txt',
+))
+
+REQUIREMENTS = [str(ir.req) for ir in install_reqs]
 
 
 def read(fname):
@@ -21,15 +33,9 @@ class NoseTestCommand(TestCommand):
         import nose
         nose.run_exit(argv=['nosetests'])
 
-TESTS_REQUIRE = [
-    'coverage',
-    'nose',
-]
-
-
 setup(
     name="html2latex",
-    version="0.0.1",
+    version="0.0.2",
     author="Pankaj Singh",
     author_email="pankaj@policyinnovations.in",
     description=("Convert HTML to latex."),
@@ -45,15 +51,8 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     namespace_packages=['html2latex'],
-    extras_require=dict(
-        test=TESTS_REQUIRE,
-    ),
-    install_requires=[
-        'lxml',
-        'setuptools',
-    ],
+    install_requires=REQUIREMENTS,
     cmdclass={'test': NoseTestCommand},
-    tests_require=TESTS_REQUIRE,
     test_suite = "nose.collector",
     include_package_data=True,
     zip_safe=False,

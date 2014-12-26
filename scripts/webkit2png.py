@@ -27,19 +27,20 @@
 #    can handle multiple requests at the same time.
 
 
-import sys
-import signal
-import os
-import urlparse
-import time
-
+# Standard Library
 import logging
+import os
+import signal
+import sys
+import time
+import urlparse
 from optparse import OptionParser
 
+# Third Party Stuff
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from PyQt4.QtWebKit import *
 from PyQt4.QtNetwork import *
+from PyQt4.QtWebKit import *
 
 
 # Class for Website-Rendering. Uses QWebPage, which

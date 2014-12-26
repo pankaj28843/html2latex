@@ -2,22 +2,28 @@
 """
 Convert HTML generated from CKEditor to LaTeX environment.
 """
+# Standard Library
 import os
 import re
+
+# Third Party Stuff
+import jinja2
+from lxml import etree
+from PIL import Image
+from xamcheck_utils.html import check_if_html_has_text
 
 from .setup_texenv import setup_texenv
 from .utils.html_table import get_image_for_html_table
 from .utils.image import get_image_size
 from .utils.spellchecker import check_spelling
-from .utils.text import (clean, clean_paragraph_ending,
-                         escape_latex, fix_formatting, fix_text,
-                         unescape,
-                         )
-from PIL import Image
-import jinja2
-from lxml import etree
-from xamcheck_utils.html import check_if_html_has_text
-
+from .utils.text import (
+    clean,
+    clean_paragraph_ending,
+    escape_latex,
+    fix_formatting,
+    fix_text,
+    unescape
+)
 
 capfirst = lambda x: x and x[0].upper() + x[1:]
 
@@ -227,7 +233,7 @@ class A(HTMLElement):
 
     """
     a href tag
-    Gets the url stored in a href   
+    Gets the url stored in a href
     """
 
     def __init__(self, element):

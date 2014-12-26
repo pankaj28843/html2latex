@@ -1,6 +1,8 @@
-import splinter
+# Standard Library
 import time
 
+# Third Party Stuff
+import splinter
 from PIL import Image
 
 

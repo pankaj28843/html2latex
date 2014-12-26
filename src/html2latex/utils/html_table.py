@@ -1,16 +1,20 @@
 from __future__ import absolute_import
+
+# Standard Library
 import hashlib
 import os
 import re
 import subprocess
 import uuid
-from ..webkit2png import webkit2png
+
+# Third Party Stuff
 import jinja2
-from lxml import etree
 import redis
-from .spellchecker import check_spelling_in_html
+from lxml import etree
 from splinter import Browser
 
+from ..webkit2png import webkit2png
+from .spellchecker import check_spelling_in_html
 
 browser = Browser('phantomjs')
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
