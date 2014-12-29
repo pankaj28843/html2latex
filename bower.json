@@ -1,0 +1,21 @@
+{
+  "name": "html2latex",
+  "version": "0.0.0",
+  "homepage": "https://github.com/psjinx/html2latex",
+  "authors": [
+    "Pankaj Singh <psjinx@gmail.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "static/bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "MathJax": "~2.4.0",
+    "sass-bootstrap": "~3.0.2"
+  }
+}

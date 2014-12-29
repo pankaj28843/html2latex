@@ -47,14 +47,21 @@ def get_image_for_html_table(html, do_spellcheck=False):
         if os.path.isfile(existing_image_file):
             return existing_image_file
 
+    STATIC_ROOT = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        '../static',
+    )
     context = {
         "table_inner_html": html,
-        # "STATIC_ROOT": settings.STATIC_ROOT,
-        # "MATHAJAX_ROOT": settings.MATHAJAX_ROOT,
+        "STATIC_ROOT": STATIC_ROOT,
     }
 
     loader = jinja2.FileSystemLoader(
-        os.path.dirname(os.path.realpath(__file__)) + '../templates')
+        os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            '../templates',
+        )
+    )
     jinja2_env = jinja2.Environment(loader=loader)
     template = jinja2_env.get_template('web2png-table.html')
     html = template.render(**context)
@@ -72,7 +79,7 @@ def get_image_for_html_table(html, do_spellcheck=False):
             url, image_file, browser=browser, wait_time=wait_time)
     else:
         p = subprocess.Popen(
-            ["webkit2png.py", "-o", image_file, html_file])
+            ["html2latex_webkit2png.py", "-o", image_file, html_file])
         p.wait()
 
     redis_client.set(hashed_html, image_file)
