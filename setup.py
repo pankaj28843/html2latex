@@ -1,20 +1,20 @@
 # Standard Library
 import os
+import subprocess
 
 # Third Party Stuff
-from setuptools import find_packages, setup
-from setuptools.command.test import test as TestCommand
 from pip.req import parse_requirements
-
+from setuptools import find_packages, setup
+from setuptools.command.install import install as InstallCommand
+from setuptools.command.test import test as TestCommand
 
 # parse_requirements() returns generator of pip.req.InstallRequirement objects
-install_reqs = parse_requirements(os.path.join(
-    os.path.dirname(__file__),
-    'requirements.txt',
-))
+install_reqs = parse_requirements(
+    os.path.join(os.path.dirname(__file__), 'requirements.txt',),
+    session=0,
+)
 
-REQUIREMENTS = [str(ir.req) for ir in install_reqs]
-
+install_requires = [str(ir.req) for ir in install_reqs]
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -33,9 +33,26 @@ class NoseTestCommand(TestCommand):
         import nose
         nose.run_exit(argv=['nosetests'])
 
+
+class CustomInstallCommand(InstallCommand):
+    def run(self, *args, **kwargs):
+        # Copy html2latex_webkit2png.py script
+        p = subprocess.Popen(["sudo", "cp", "scripts/html2latex_webkit2png.py", "/usr/local/bin/html2latex_webkit2png.py"])
+        p.wait()
+
+        p = subprocess.Popen(["sudo", "chmod", "+x", "/usr/local/bin/html2latex_webkit2png.py"])
+        p.wait()
+
+        # Run `bower install`
+        p = subprocess.Popen(["bower", "install"])
+        p.wait()
+
+        return InstallCommand.run(self, *args, **kwargs)
+
+
 setup(
     name="html2latex",
-    version="0.0.2",
+    version="0.0.3",
     author="Pankaj Singh",
     author_email="pankaj@policyinnovations.in",
     description=("Convert HTML to latex."),
@@ -49,10 +66,15 @@ setup(
         "License :: OSI Approved :: BSD License",
     ],
     packages=find_packages('src'),
-    package_dir={'': 'src'},
+    package_dir={
+        '': 'src',
+    },
     namespace_packages=['html2latex'],
-    install_requires=REQUIREMENTS,
-    cmdclass={'test': NoseTestCommand},
+    install_requires=install_requires,
+    cmdclass={
+        'install': CustomInstallCommand,
+        'test': NoseTestCommand,
+    },
     test_suite = "nose.collector",
     include_package_data=True,
     zip_safe=False,
