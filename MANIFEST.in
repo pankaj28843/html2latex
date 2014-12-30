@@ -3,4 +3,7 @@ include INSTALL.md
 include LICENSE
 include README.md
 include requirements.txt
+include bower.json
+include scripts/*.py
 recursive-include src *.tex *.html
+recursive-include requirements *.txt

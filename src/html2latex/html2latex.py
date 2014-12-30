@@ -5,6 +5,7 @@ Convert HTML generated from CKEditor to LaTeX environment.
 # Standard Library
 import os
 import re
+import subprocess
 
 # Third Party Stuff
 import jinja2
@@ -329,6 +330,26 @@ class IMG(HTMLElement):
     def get_image_link(self):
         """get the link to the image and download it."""
         self.src = self.element.attrib['src']
+
+        # A Directory to store remote images.
+        REMOTE_IMAGE_ROOT = '/var/tmp/html2latex-remote-images'
+        # Make sure that directory exists.
+        os.makedirs(REMOTE_IMAGE_ROOT)
+
+        # get the link to the image and download it.
+        if self.src.startswith("http"):
+            output_filename = re.sub(r"[^A-Za-z0-9\.]", "-", self.src)
+            output_filepath = os.path.normpath(os.path.join(REMOTE_IMAGE_ROOT, output_filename))
+
+            if not os.path.isfile(output_filepath):
+                p = subprocess.Popen(
+                    ["wget", "-c", "-O", output_filepath, self.src], cwd=REMOTE_IMAGE_ROOT)
+                p.wait()
+                if not os.path.isfile(output_filepath):
+                    raise Exception("Count not download the image file: {}.".format(self.src))
+
+            self.src = self.element.attrib['src'] = output_filepath
+
         self.style = self.element.attrib.get('style', "")
 
     def image_size(self):
