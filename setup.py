@@ -8,16 +8,18 @@ from setuptools import find_packages, setup
 from setuptools.command.install import install as InstallCommand
 from setuptools.command.test import test as TestCommand
 
+here = os.path.dirname(__file__)
+
 # parse_requirements() returns generator of pip.req.InstallRequirement objects
 install_reqs = parse_requirements(
-    os.path.join(os.path.dirname(__file__), 'requirements.txt',),
+    os.path.join(here, 'requirements.txt',),
     session=0,
 )
 
 install_requires = [str(ir.req) for ir in install_reqs]
 
 def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    return open(os.path.join(here, fname)).read()
 
 
 class NoseTestCommand(TestCommand):
@@ -37,7 +39,7 @@ class NoseTestCommand(TestCommand):
 class CustomInstallCommand(InstallCommand):
     def run(self, *args, **kwargs):
         # Copy html2latex_webkit2png.py script
-        p = subprocess.Popen(["sudo", "cp", "scripts/html2latex_webkit2png.py", "/usr/local/bin/html2latex_webkit2png.py"])
+        p = subprocess.Popen(["sudo", "cp", os.path.join(here, "scripts/html2latex_webkit2png.py"), "/usr/local/bin/html2latex_webkit2png.py"])
         p.wait()
 
         p = subprocess.Popen(["sudo", "chmod", "+x", "/usr/local/bin/html2latex_webkit2png.py"])
@@ -52,7 +54,7 @@ class CustomInstallCommand(InstallCommand):
 
 setup(
     name="html2latex",
-    version="0.0.3",
+    version="0.0.8",
     author="Pankaj Singh",
     author_email="pankaj@policyinnovations.in",
     description=("Convert HTML to latex."),
