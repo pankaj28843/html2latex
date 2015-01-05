@@ -3,7 +3,7 @@ import time
 
 # Third Party Stuff
 import splinter
-from PIL import Image
+from PIL import Image, ImageChops
 
 
 def is_transparent(image):

@@ -32,7 +32,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-CAPFIRST_ENABLED = True
+CAPFIRST_ENABLED = False
 # Templates for each class here.
 
 
@@ -333,8 +333,10 @@ class IMG(HTMLElement):
 
         # A Directory to store remote images.
         REMOTE_IMAGE_ROOT = '/var/tmp/html2latex-remote-images'
+
         # Make sure that directory exists.
-        os.makedirs(REMOTE_IMAGE_ROOT)
+        if not os.path.isdir(REMOTE_IMAGE_ROOT):
+            os.makedirs(REMOTE_IMAGE_ROOT)
 
         # get the link to the image and download it.
         if self.src.startswith("http"):
