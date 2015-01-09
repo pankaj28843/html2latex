@@ -3,14 +3,19 @@
 Convert HTML generated from CKEditor to LaTeX environment.
 """
 # Standard Library
+import hashlib
+import hmac
 import os
 import re
 import subprocess
 
 # Third Party Stuff
 import jinja2
+import mmh3
+import redis
 from lxml import etree
 from PIL import Image
+from repoze.lru import lru_cache
 from xamcheck_utils.html import check_if_html_has_text
 
 from .setup_texenv import setup_texenv
@@ -32,6 +37,8 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
+VERSION = "0.0.13"
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
 
@@ -403,7 +410,38 @@ class IMG(HTMLElement):
         return output
 
 
-def html2latex(html, do_spellcheck=False):
+@lru_cache(512)
+def hash_string(s):
+    return "html2latex_{version}_{mmh3_hash}_{hmac_of_sha512_hash}".format(
+        version=VERSION,
+        mmh3_hash=mmh3.hash128(s),
+        hmac_of_sha512_hash=hmac.new(hashlib.sha512(s).hexdigest()).hexdigest(),
+    )
+
+
+
+def html2latex(html, **kwargs):
+    html = html.strip()
+    if not html:
+        return ''
+
+    html_to_be_hashed = "{html}__{kwargs}".format(
+        html=html,
+        kwargs=kwargs,
+    )
+
+    hashed_html = hash_string(html_to_be_hashed)
+
+    latex_code = redis_client.get(hashed_html)
+
+    if not latex_code:
+        latex_code = _html2latex(html, **kwargs)
+        redis_client.set(hashed_html, latex_code)
+
+    return latex_code
+
+
+def _html2latex(html, do_spellcheck=False):
     """
     Converts Html Element into LaTeX
     """
