@@ -37,7 +37,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.13"
+VERSION = "0.0.16"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -340,15 +340,25 @@ class IMG(HTMLElement):
 
         # A Directory to store remote images.
         REMOTE_IMAGE_ROOT = '/var/tmp/html2latex-remote-images'
+        GRAYSCALED_IMAGES = '/var/tmp/html2latex-grayscaled-images'
 
         # Make sure that directory exists.
         if not os.path.isdir(REMOTE_IMAGE_ROOT):
             os.makedirs(REMOTE_IMAGE_ROOT)
 
+        # Make sure that directory exists.
+        if not os.path.isdir(GRAYSCALED_IMAGES):
+            os.makedirs(GRAYSCALED_IMAGES)
+
         # get the link to the image and download it.
         if self.src.startswith("http"):
             output_filename = re.sub(r"[^A-Za-z0-9\.]", "-", self.src)
+            if len(output_filename) > 128:
+                output_filename = hashlib.sha512(output_filename).hexdigest()
             output_filepath = os.path.normpath(os.path.join(REMOTE_IMAGE_ROOT, output_filename))
+
+            if not os.path.splitext(output_filepath):
+                output_filepath = output_filepath + ".png"
 
             if not os.path.isfile(output_filepath):
                 p = subprocess.Popen(
@@ -359,6 +369,19 @@ class IMG(HTMLElement):
 
             self.src = self.element.attrib['src'] = output_filepath
 
+        jpg_filename = ''.join(os.path.splitext(self.src)[:-1])
+        jpg_filepath = os.path.normpath(os.path.join(
+            GRAYSCALED_IMAGES,
+            hashlib.sha512(jpg_filename).hexdigest() + '_grayscaled.jpg',
+        ))
+
+        if not os.path.isfile(jpg_filepath):
+            p = subprocess.Popen(
+                ["convert", self.src, '-type', 'Grayscale', jpg_filepath]
+            )
+            p.wait()
+
+        self.src = self.element.attrib['src'] = jpg_filepath
         self.style = self.element.attrib.get('style', "")
 
     def image_size(self):
@@ -417,7 +440,6 @@ def hash_string(s):
         mmh3_hash=mmh3.hash128(s),
         hmac_of_sha512_hash=hmac.new(hashlib.sha512(s).hexdigest()).hexdigest(),
     )
-
 
 
 def html2latex(html, **kwargs):
@@ -487,7 +509,8 @@ def _html2latex(html, do_spellcheck=False):
         (u'\u0086', u"¶"),
         (u'\u2012', u"-"),
         (u'\u25b3', u"∆"),
-        (u'||', u'\\begin{math}\\parallel\\end{math}')
+        (u'||', u'\\begin{math}\\parallel\\end{math}'),
+        (u'\u03f5', u'\\epsilon '),
     )
     for oldvalue, newvalue in items:
         output = output.replace(oldvalue, newvalue)
