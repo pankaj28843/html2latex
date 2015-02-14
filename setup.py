@@ -61,7 +61,7 @@ setup(
     description=("Convert HTML to latex."),
     license = "BSD",
     keywords = "html, latex",
-    url = "http://packages.python.org/pypi/html2latex",
+    url="https://github.com/psjinx/html2latex",
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
