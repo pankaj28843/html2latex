@@ -3,6 +3,7 @@
 Convert HTML generated from CKEditor to LaTeX environment.
 """
 # Standard Library
+import copy
 import hashlib
 import hmac
 import os
@@ -26,6 +27,7 @@ from .utils.text import (
     clean,
     clean_paragraph_ending,
     escape_latex,
+    escape_tex,
     fix_formatting,
     fix_text,
     unescape
@@ -37,13 +39,13 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.16"
+VERSION = "0.0.19"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
 
 
-def delegate(element, do_spellcheck=False):
+def delegate(element, do_spellcheck=False, **kwargs):
     """
     Takes html element in form of etree and converts it into string.
     """
@@ -60,11 +62,12 @@ def delegate(element, do_spellcheck=False):
         pass
 
     if element.tag == 'div':
-        my_element = HTMLElement(element, do_spellcheck)
+        my_element = HTMLElement(element, do_spellcheck, **kwargs)
 
     # elif element.tag == 'table':
-    #     my_element = Table(element, do_spellcheck)
+    #     my_element = Table(element, do_spellcheck, **kwargs)
     elif element.tag == 'table':
+        # my_element = Table(element, do_spellcheck, **kwargs)
         table_inner_html = u''.join([etree.tostring(e) for e in element])
         items = (
                 ("&#13;", ""),
@@ -82,24 +85,25 @@ def delegate(element, do_spellcheck=False):
 
         new_html = u"<img src='{0}'/>".format(image_file)
         new_element = etree.HTML(new_html).find(".//img")
-        my_element = IMG(new_element, is_table=True)
+        my_element = IMG(new_element, is_table=True, **kwargs)
         my_element.content["is_table"] = True
     elif element.tag == 'tr':
-        my_element = TR(element, do_spellcheck)
+        my_element = TR(element, do_spellcheck, **kwargs)
     elif element.tag == 'tdr':
-        my_element = TD(element, do_spellcheck)
+        my_element = TD(element, do_spellcheck, **kwargs)
     elif element.tag == 'img':
         try:
-            my_element = IMG(element, do_spellcheck)
+            # import ipdb; ipdb.set_trace()
+            my_element = IMG(element, do_spellcheck, **kwargs)
         except IOError:
             return ''
     elif element.tag == 'a':
-        my_element = A(element, do_spellcheck)
+        my_element = A(element, do_spellcheck, **kwargs)
     elif isinstance(element, etree._Comment):
         my_element = None  # skip XML comments
     else:
         # no special handling required
-        my_element = HTMLElement(element, do_spellcheck)
+        my_element = HTMLElement(element, do_spellcheck, **kwargs)
 
     try:
         my_element
@@ -116,9 +120,13 @@ def delegate(element, do_spellcheck=False):
 
 class HTMLElement(object):
 
-    def __init__(self, element, do_spellcheck=False):
+    def __init__(self, element, do_spellcheck=False, **kwargs):
         self.element = element
         self.do_spellcheck = do_spellcheck
+
+        self._init_kwargs = copy.deepcopy(kwargs)
+        for key, value in kwargs.iteritems():
+            setattr(self, key, value)
 
         # we make a general dict to store the contents we send to the Jinja
         # templates.
@@ -166,6 +174,7 @@ class HTMLElement(object):
     def cap_first(self):
         """Capitalize first alphabet of the element
         """
+        return
         CAPFIRST_TAGS = ('li', 'p', 'td', 'th',)
         if self.element.tag in CAPFIRST_TAGS:
             self.content['text'] = capfirst(self.content['text'])
@@ -226,11 +235,11 @@ class HTMLElement(object):
                         self.content['text'] += child.tail
                 else:
                     self.content['text'] += delegate(
-                        child, do_spellcheck=self.do_spellcheck)
+                        child, do_spellcheck=self.do_spellcheck, **self._init_kwargs)
         else:
             for child in self.element:
                 self.content['text'] += delegate(
-                    child, do_spellcheck=self.do_spellcheck)
+                    child, do_spellcheck=self.do_spellcheck, **self._init_kwargs)
 
     def remove_empty(self):
         '''Must remove empty tags'''
@@ -244,8 +253,8 @@ class A(HTMLElement):
     Gets the url stored in a href
     """
 
-    def __init__(self, element):
-        HTMLElement.__init__(self, element)
+    def __init__(self, element, *args, **kwargs):
+        HTMLElement.__init__(self, element, *args, **kwargs)
         # make it a url if the 'href' attribute is set
         if 'href' in element.attrib.keys():
             self.content['url'] = element.attrib['href']
@@ -255,8 +264,8 @@ class A(HTMLElement):
 
 class Table(HTMLElement):
 
-    def __init__(self, element):
-        HTMLElement.__init__(self, element)
+    def __init__(self, element, *args, **kwargs):
+        HTMLElement.__init__(self, element, *args, **kwargs)
         # check whether its html or cnxml table
         # html table
         # must get number of columns. # find maximum number of td elements
@@ -308,8 +317,8 @@ class TR(HTMLElement):
     Rows in html table
     """
 
-    def __init__(self, element):
-        HTMLElement.__init__(self, element)
+    def __init__(self, element, *args, **kwargs):
+        HTMLElement.__init__(self, element, *args, **kwargs)
         self.template = texenv.get_template('tr.tex')
 
 
@@ -319,16 +328,29 @@ class TD(HTMLElement):
     Columns in Html table
     """
 
-    def __init__(self, element):
-        HTMLElement.__init__(self, element)
+    def __init__(self, element, *args, **kwargs):
+        HTMLElement.__init__(self, element, *args, **kwargs)
         self.template = texenv.get_template('td.tex')
+
+
+class TH(HTMLElement):
+
+    """
+    Columns in Html table
+    """
+
+    def __init__(self, element, *args, **kwargs):
+        HTMLElement.__init__(self, element, *args, **kwargs)
+        self.template = texenv.get_template('th.tex')
 
 
 class IMG(HTMLElement):
     is_table = False
 
     def __init__(self, element, *args, **kwargs):
-        HTMLElement.__init__(self, element)
+        # import ipdb; ipdb.set_trace()
+
+        HTMLElement.__init__(self, element, *args, **kwargs)
         for key, value in kwargs.items():
             setattr(self, key, value)
         self.get_image_link()
@@ -428,7 +450,18 @@ class IMG(HTMLElement):
         self.template = texenv.get_template('img.tex')
 
     def render(self):
-        output = self.template.render(content=self.content)
+        try:
+            ALIGN_IMAGE_IN_CENTER = self.ALIGN_IMAGE_IN_CENTER
+        except AttributeError:
+            ALIGN_IMAGE_IN_CENTER = False
+
+        # import ipdb; ipdb.set_trace()
+        context = {
+            "content": self.content,
+            "ALIGN_IMAGE_IN_CENTER": ALIGN_IMAGE_IN_CENTER,
+        }
+        output = self.template.render(**context)
+        # import ipdb; ipdb.set_trace()
         # output = "\\begin{center}" + output + "\end{center}"
         return output
 
@@ -463,15 +496,20 @@ def html2latex(html, **kwargs):
     return latex_code
 
 
-def _html2latex(html, do_spellcheck=False):
+def _html2latex(html, do_spellcheck=False, **kwargs):
     """
     Converts Html Element into LaTeX
     """
+
+    # if "The nature of the roots of the quadratic equation" in html:
+    #     import ipdb; ipdb.set_trace()
+
     # If html string has no text then don't need to do anything
     if not check_if_html_has_text(html):
         return ""
 
-    html = clean_paragraph_ending(html)
+    # html = clean_paragraph_ending(html)
+
     html = html.replace("&uuml;", "\\checkmark")
     html = html.replace("&#252;", "\\checkmark")
     html = html.replace(u"ü", "\\checkmark")
@@ -479,8 +517,9 @@ def _html2latex(html, do_spellcheck=False):
     root = etree.HTML(html)
     body = root.find('.//body')
 
-    content = u''.join([delegate(element, do_spellcheck=do_spellcheck)
+    content = u''.join([delegate(element, do_spellcheck=do_spellcheck, **kwargs)
                        for element in body])
+
     main_template = texenv.get_template('doc.tex')
     output = unicode(unescape(main_template.render(content=content))).encode(
         'utf-8').replace(r'& \\ \hline', r'\\ \hline')
@@ -493,10 +532,10 @@ def _html2latex(html, do_spellcheck=False):
         output = output.replace(underscore, escape_latex(underscore), 1)
 
     output = re.sub(
-        r"([a-zA-Z0-9]+)\\begin\{textsupscript\}\s*(\w+)\s*\\end\{textsupscript\}",
+        r"([a-zA-Z0-9]+)\s*\\begin\{textsupscript\}\s*(\w+)\s*\\end\{textsupscript\}",
         r"\\begin{math}\1^{\2}\\end{math}", output)
     output = re.sub(
-        r"([a-zA-Z0-9]+)\\begin\{textsubscript\}\s*(\w+)\s*\\end\{textsubscript\}",
+        r"([a-zA-Z0-9]+)\s*\\begin\{textsubscript\}\s*(\w+)\s*\\end\{textsubscript\}",
         r"\\begin{math}\1_{\2}\\end{math}", output)
 
     output = output.decode("utf-8")
@@ -528,5 +567,58 @@ def _html2latex(html, do_spellcheck=False):
         r"\\noindent\s*\\par",
         r"\\vspace{11pt}",
         output)
+
+    output = output.replace(
+        r'\end{math}\\textendash',
+        r'\end{math}\textendash'
+    )
+
+    output = output.replace(
+        r'\end{math}\\\textendash',
+        r'\end{math}\textendash'
+    )
+
+    output = output.replace(
+        r'\end{math}\\\\textendash',
+        r'\end{math}\textendash'
+    )
+
+    output = output.replace(
+        r'\end{math}\+',
+        r'+ \end{math}'
+    )
+
+    output = output.replace(
+        r'\end{math}\\+',
+        r'+ \end{math}'
+    )
+
+    output = output.replace(
+        r'\end{math}\\\+',
+        r'+ \end{math}'
+    )
+
+    output = output.replace(
+        r'\end{math}\\\\+',
+        r'+ \end{math}'
+    )
+
+    output = output.replace(
+        r'\end{math}\\-',
+        r'- \end{math}'
+    )
+
+    output = output.replace(
+        r'\end{math}\\\-',
+        r'- \end{math}'
+    )
+
+    output = output.replace(
+        r'\end{math}\\\\-',
+        r'- \end{math}'
+    )
+
+    if r'\end{math}\\' in output:
+        raise Exception
 
     return output.encode("utf-8")

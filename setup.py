@@ -18,6 +18,7 @@ install_reqs = parse_requirements(
 
 install_requires = [str(ir.req) for ir in install_reqs]
 
+
 def read(fname):
     return open(os.path.join(here, fname)).read()
 
@@ -54,7 +55,7 @@ class CustomInstallCommand(InstallCommand):
 
 setup(
     name="html2latex",
-    version="0.0.16",
+    version="0.0.19",
     author="Pankaj Singh",
     author_email="pankaj@policyinnovations.in",
     description=("Convert HTML to latex."),

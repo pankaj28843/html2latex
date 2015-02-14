@@ -20,7 +20,7 @@ REGEX_LATEX_SUBS = (
     (re.compile(r'&degree;'), r'\\degree '),
     (re.compile(r'([{}_#%&$])'), r'\\\1'),
     (re.compile(r'~'), r'\~'),
-    # (re.compile(r'-'), r'\\textendash '),
+    (re.compile(r'-'), r'\\textendash '),
     (re.compile(r'\^'), r'\^'),
     (re.compile(r'"'), r"''"),
     (re.compile(r'\.\.\.+'), r'\\ldots '),
@@ -110,18 +110,32 @@ def unescape(text):
 
 
 def escape_latex(text):
+    # if "The nature of the roots of the quadratic equation" in text:
+    #     import ipdb; ipdb.set_trace()
+
     '''Escape some latex special characters'''
+    text = re.sub(
+        r'([{}\[\]$])',
+        r'\\\1',
+        re.sub(
+            r'\\([{}\[\]$])',
+            r'\1',
+            text
+        )
+    )
+
     items = (
         (r'&', r'\&'),
         (r'#', r'\#'),
         (r'_', r'\underline{\thickspace}'),
+        (r'-', r'\textendash\,'),
         (r'%', r'\%'),
         (r'\\%', r'\%'),
         (r'\rm', r'\mathrm'),
-
     )
     for oldvalue, newvalue in items:
         text = text.replace(oldvalue, newvalue)
+
     return text
 
 
@@ -221,7 +235,7 @@ REGEX_PRARAGRAPH_ENDING_CLEANERS = (
 
 def ignore_decimals_numbers(match):
     """
-    Returns string with space after dot  
+    Returns string with space after dot
     """
     groups = list(match.groups())
     groups[0] = groups[0]
@@ -308,7 +322,7 @@ def clean_paragraph_ending(html):
     body = root.find(".//body")
 
     if (list(root.iterdescendants())[0].tag == "p" or
-            body.getchildren()[0].tag != "p"):
+            body.getchildren()[-1].tag != "p"):
         """
         Don't clean if outermost tag is not a paragraph tag or if p is not the
         last descendant.
