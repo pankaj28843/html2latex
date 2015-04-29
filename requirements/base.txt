@@ -10,4 +10,4 @@ redis==2.9.1
 repoze.lru==0.6
 selenium==2.44.0
 splinter==0.7.0
-xamcheck-utils==0.0.9
+xamcheck-utils==0.0.11

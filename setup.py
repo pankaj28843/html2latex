@@ -55,7 +55,7 @@ class CustomInstallCommand(InstallCommand):
 
 setup(
     name="html2latex",
-    version="0.0.19",
+    version="0.0.23",
     author="Pankaj Singh",
     author_email="pankaj@policyinnovations.in",
     description=("Convert HTML to latex."),
