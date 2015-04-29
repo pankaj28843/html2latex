@@ -12,12 +12,14 @@ import subprocess
 
 # Third Party Stuff
 import jinja2
+import lxml
 import mmh3
 import redis
 from lxml import etree
 from PIL import Image
 from repoze.lru import lru_cache
 from xamcheck_utils.html import check_if_html_has_text
+from xamcheck_utils.text import unicodify
 
 from .setup_texenv import setup_texenv
 from .utils.html_table import get_image_for_html_table
@@ -39,7 +41,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.19"
+VERSION = "0.0.23"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -475,14 +477,26 @@ def hash_string(s):
     )
 
 
+def fix_encoding_of_html_using_lxml(html_str):
+    if html_str.startswith("<p>"):
+        escaped_str = etree.tostring(lxml.html.document_fromstring(html_str)[0][0])
+        return escaped_str
+    else:
+        html_str = u'<p>' + html_str + u'</p>'
+        escaped_str = etree.tostring(lxml.html.document_fromstring(html_str)[0][0])
+        return re.sub(r'^<p>|</p>$', '', escaped_str)
+
+
 def html2latex(html, **kwargs):
     html = html.strip()
     if not html:
         return ''
 
-    html_to_be_hashed = "{html}__{kwargs}".format(
+    html = fix_encoding_of_html_using_lxml(html)
+
+    html_to_be_hashed = u"{html}__{kwargs}".format(
         html=html,
-        kwargs=kwargs,
+        kwargs=kwargs
     )
 
     hashed_html = hash_string(html_to_be_hashed)
