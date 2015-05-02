@@ -41,7 +41,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.23"
+VERSION = "0.0.24"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -477,14 +477,21 @@ def hash_string(s):
     )
 
 
-def fix_encoding_of_html_using_lxml(html_str):
-    if html_str.startswith("<p>"):
-        escaped_str = etree.tostring(lxml.html.document_fromstring(html_str)[0][0])
-        return escaped_str
+def fix_encoding_of_html_using_lxml(html):
+    fixed_html = re.sub(
+        r'^<body>|</body>$',
+        "",
+        etree.tostring(lxml.html.document_fromstring(html)[0])
+    ).strip()
+
+    if re.search(r'^<p>|</p>$', html) is None:
+        return re.sub(
+            r'^<p>|</p>$',
+            "",
+            fixed_html
+        )
     else:
-        html_str = u'<p>' + html_str + u'</p>'
-        escaped_str = etree.tostring(lxml.html.document_fromstring(html_str)[0][0])
-        return re.sub(r'^<p>|</p>$', '', escaped_str)
+        return fixed_html
 
 
 def html2latex(html, **kwargs):
