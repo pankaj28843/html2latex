@@ -44,7 +44,9 @@ REGEX_UNESCAPE_LATEX_SUBS = (
     (re.compile(r"''"), r'"'),
     (re.compile(r'\^'), r'^'),
     (re.compile(r'\\~'), r'~'),
-    (re.compile(r'\\([\[{}_#%&$\]])'), r'\1'),
+    (re.compile(r'\['), '\lbrack '),
+    (re.compile(r'\]'), '\\rbrack '),
+    (re.compile(r'\\([{}_#%&$])'), r'\1'),
     (re.compile(r'\\degree '), r'&degree;'),
     #(re.compile(r'\\textless '), r'&lt;'),
     (re.compile(r'\\textgreater '), r'>'),
@@ -114,11 +116,14 @@ def escape_latex(text):
     #     import ipdb; ipdb.set_trace()
 
     '''Escape some latex special characters'''
+    text = text.replace('[', '\lbrack ')
+    text = text.replace(']', '\\rbrack ')
+
     text = re.sub(
-        r'([{}\[\]$])',
+        r'([{}$])',
         r'\\\1',
         re.sub(
-            r'\\([{}\[\]$])',
+            r'\\([{}$])',
             r'\1',
             text
         )
