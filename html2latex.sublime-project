@@ -1,0 +1,30 @@
+{
+	"build_systems":
+	[
+		{
+			"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+			"name": "Anaconda Python Builder",
+			"selector": "source.python",
+			"shell_cmd": "python -u \"$file\""
+		}
+	],
+	"folders":
+	[
+		{
+			"folder_exclude_patterns":
+			[
+				"*.egg*",
+				".idea",
+				"build",
+				"dist",
+				"src/html2latex/static/bower_components"
+			],
+			"file_exclude_patterns":
+			[
+				"*.log",
+				"*.sublime-workspace",
+			],
+			"path": "."
+		}
+	]
+}
