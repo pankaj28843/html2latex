@@ -41,7 +41,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.26"
+VERSION = "0.0.27"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -206,7 +206,7 @@ class HTMLElement(object):
         text = self.content['text']
         text = clean(text)
         text = escape_latex(text)
-        text = fix_text(text)
+        # text = fix_text(text)
         self.content['text'] = text.replace("\r", "\n")
 
         """escape latex characters from tail
@@ -214,7 +214,7 @@ class HTMLElement(object):
         tail = self.content['tail']
         tail = clean(tail)
         tail = escape_latex(tail)
-        tail = fix_text(tail)
+        # tail = fix_text(tail)
         self.content['tail'] = tail.replace("\r", "\n")
 
     # self.content['text'] = self.content['text'].replace(" ", "\\,")
@@ -393,19 +393,21 @@ class IMG(HTMLElement):
 
             self.src = self.element.attrib['src'] = output_filepath
 
-        jpg_filename = ''.join(os.path.splitext(self.src)[:-1])
-        jpg_filepath = os.path.normpath(os.path.join(
-            GRAYSCALED_IMAGES,
-            hashlib.sha512(jpg_filename).hexdigest() + '_grayscaled.jpg',
-        ))
+        # Don't convert images to grayscale
+        # jpg_filename = ''.join(os.path.splitext(self.src)[:-1])
+        # jpg_filepath = os.path.normpath(os.path.join(
+        #     GRAYSCALED_IMAGES,
+        #     hashlib.sha512(jpg_filename).hexdigest() + '_grayscaled.jpg',
+        # ))
 
-        if not os.path.isfile(jpg_filepath):
-            p = subprocess.Popen(
-                ["convert", self.src, '-type', 'Grayscale', jpg_filepath]
-            )
-            p.wait()
+        # if not os.path.isfile(jpg_filepath):
+        #     p = subprocess.Popen(
+        #         ["convert", self.src, '-type', 'Grayscale', jpg_filepath]
+        #     )
+        #     p.wait()
 
-        self.src = self.element.attrib['src'] = jpg_filepath
+        # self.src = self.element.attrib['src'] = jpg_filepath
+
         self.style = self.element.attrib.get('style', "")
 
     def image_size(self):
