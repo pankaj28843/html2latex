@@ -31,7 +31,7 @@ def get_image_for_html_table(html, do_spellcheck=False):
     root = etree.HTML(html)
     if root.find('.//span[@class="math-tex"]') is not None:
         # mathjax equations present
-        wait_time = 10
+        wait_time = 15
 
     td = root.find(".//td")
     if td is not None and td.find('.//span[@class="math-tex"]') is None:
