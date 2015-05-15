@@ -19,6 +19,48 @@ redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 REGEX_SN = re.compile(r'(?i)\s*(s\s*\.*\s*no\.*|s\s*\.*\s*n\.*)\s*')
 
 
+def render_html(html):
+    static_root = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        '../static',
+    )
+    context = {
+        "html": html,
+        "STATIC_ROOT": static_root,
+    }
+
+    loader = jinja2.FileSystemLoader(
+        os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            '../templates',
+        )
+    )
+    jinja2_env = jinja2.Environment(loader=loader)
+    template = jinja2_env.get_template('web2png.html')
+    return template.render(**context)
+
+
+def render_table_html(html):
+    static_root = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        '../static',
+    )
+    context = {
+        "table_inner_html": html,
+        "STATIC_ROOT": static_root,
+    }
+
+    loader = jinja2.FileSystemLoader(
+        os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            '../templates',
+        )
+    )
+    jinja2_env = jinja2.Environment(loader=loader)
+    template = jinja2_env.get_template('web2png-table.html')
+    return template.render(**context)
+
+
 def get_image_for_html_table(html, do_spellcheck=False):
     """ Convert HTML table to image to put in latex"""
     html = html.strip()
@@ -46,24 +88,7 @@ def get_image_for_html_table(html, do_spellcheck=False):
         if os.path.isfile(existing_image_file):
             return existing_image_file
 
-    STATIC_ROOT = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        '../static',
-    )
-    context = {
-        "table_inner_html": html,
-        "STATIC_ROOT": STATIC_ROOT,
-    }
-
-    loader = jinja2.FileSystemLoader(
-        os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            '../templates',
-        )
-    )
-    jinja2_env = jinja2.Environment(loader=loader)
-    template = jinja2_env.get_template('web2png-table.html')
-    html = template.render(**context)
+    html = render_table_html(html)
 
     unique_id = str(uuid.uuid4())
     html_file = u"/var/tmp/{0}.html".format(unique_id)

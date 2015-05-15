@@ -9,12 +9,14 @@ import hmac
 import os
 import re
 import subprocess
+import uuid
 
 # Third Party Stuff
 import jinja2
 import lxml
 import mmh3
 import redis
+import splinter
 from lxml import etree
 from PIL import Image
 from repoze.lru import lru_cache
@@ -22,7 +24,7 @@ from xamcheck_utils.html import check_if_html_has_text
 from xamcheck_utils.text import unicodify
 
 from .setup_texenv import setup_texenv
-from .utils.html_table import get_image_for_html_table
+from .utils.html_table import get_image_for_html_table, render_html
 from .utils.image import get_image_size
 from .utils.spellchecker import check_spelling
 from .utils.text import (
@@ -47,6 +49,15 @@ CAPFIRST_ENABLED = False
 # Templates for each class here.
 
 
+def get_width_of_element_by_xpath(browser, xpath):
+    javascript_code = """
+    document.evaluate('{xpath}', document, null,\
+        XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.offsetWidth;
+    """.format(xpath=xpath).strip()
+
+    return browser.evaluate_script(javascript_code)
+
+
 def delegate(element, do_spellcheck=False, **kwargs):
     """
     Takes html element in form of etree and converts it into string.
@@ -66,32 +77,32 @@ def delegate(element, do_spellcheck=False, **kwargs):
     if element.tag == 'div':
         my_element = HTMLElement(element, do_spellcheck, **kwargs)
 
-    # elif element.tag == 'table':
-    #     my_element = Table(element, do_spellcheck, **kwargs)
     elif element.tag == 'table':
-        # my_element = Table(element, do_spellcheck, **kwargs)
-        table_inner_html = u''.join([etree.tostring(e) for e in element])
-        items = (
-                ("&#13;", ""),
-                ("&uuml;", "&#10003;"),
-                ("&#252;", "&#10003;"),
-                ("\\checkmark", "&#10003;"),
-                (u"ü", "&#10003;"),
+        my_element = Table(element, do_spellcheck, **kwargs)
+    # elif element.tag == 'table':
+    #     # my_element = Table(element, do_spellcheck, **kwargs)
+    #     table_inner_html = u''.join([etree.tostring(e) for e in element])
+    #     items = (
+    #             ("&#13;", ""),
+    #             ("&uuml;", "&#10003;"),
+    #             ("&#252;", "&#10003;"),
+    #             ("\\checkmark", "&#10003;"),
+    #             (u"ü", "&#10003;"),
 
-        )
-        for oldvalue, newvalue in items:
-            table_inner_html = table_inner_html.replace(oldvalue, newvalue)
+    #     )
+    #     for oldvalue, newvalue in items:
+    #         table_inner_html = table_inner_html.replace(oldvalue, newvalue)
 
-        image_file = get_image_for_html_table(
-            table_inner_html, do_spellcheck=do_spellcheck)
+    #     image_file = get_image_for_html_table(
+    #         table_inner_html, do_spellcheck=do_spellcheck)
 
-        new_html = u"<img src='{0}'/>".format(image_file)
-        new_element = etree.HTML(new_html).find(".//img")
-        my_element = IMG(new_element, is_table=True, **kwargs)
-        my_element.content["is_table"] = True
+    #     new_html = u"<img src='{0}'/>".format(image_file)
+    #     new_element = etree.HTML(new_html).find(".//img")
+    #     my_element = IMG(new_element, is_table=True, **kwargs)
+    #     my_element.content["is_table"] = True
     elif element.tag == 'tr':
         my_element = TR(element, do_spellcheck, **kwargs)
-    elif element.tag == 'tdr':
+    elif element.tag == 'td':
         my_element = TD(element, do_spellcheck, **kwargs)
     elif element.tag == 'img':
         try:
@@ -268,38 +279,70 @@ class Table(HTMLElement):
 
     def __init__(self, element, *args, **kwargs):
         HTMLElement.__init__(self, element, *args, **kwargs)
-        # check whether its html or cnxml table
-        # html table
-        # must get number of columns. # find maximum number of td elements
-        # in a single row
-        max_td = 0
+
+        row_with_max_td = None
+        max_td_count = 0
+
         for row in element.findall('.//tr'):
-            ncols = len(row.findall('.//td'))
-            max_td = max([max_td, ncols])
-            ncols = len(row.findall('.//th'))
-            max_td = max([max_td, ncols])
+            col_count = len(row.findall('.//td')) + len(row.findall('.//th'))
 
-        self.content['ncols'] = max_td
-        ncols = max_td
+            if col_count > max_td_count:
+                row_with_max_td = row
+                max_td_count = col_count
 
-        # try a fancy column specifier for longtable
-        colspecifier = r"p{%1.3f\textwidth}" % (
-            float(0.85 / ncols))
-        # colspecifier = " c "
-        self.content['cols'] = '|' + '|'.join(
-            [colspecifier for i in range(int(ncols))]) + '|'
-        patterns = [
-            (re.compile(r'&\s+\\\\ \\hline', re.MULTILINE),
-             r'\\tabularnewline \\hline'),
-            (re.compile(r'\\tabularnewline \\hline\s+\\\\', re.MULTILINE),
-             r'\\tabularnewline \\hline'),
-        ]
-        for pattern, replacement in patterns:
-            self.content['text'] = pattern.sub(
-                replacement, self.content['text'])
+        tree = element.getroottree()
+        body_element = tree.find(".//table").getroottree().find(".//body")
+        complete_html_string = re.sub(
+            r'^<body>|</body>$',
+            '',
+            lxml.etree.tostring(body_element).strip()
+        ).strip()
+        rendered_html = render_html(complete_html_string)
 
-        self.content['text'] = self.content['text'].replace(
-            '\\tabularnewline \\hline\n\\\\', '\\tabularnewline \\hline')
+        unique_id = str(uuid.uuid4())
+        html_file = u"/tmp/html2latex_table_{0}.html".format(unique_id)
+        with open(html_file, "wb") as f:
+            f.write(rendered_html)
+
+        url = u"file://{0}".format(html_file)
+
+        with splinter.Browser('phantomjs') as browser:
+            browser.visit(url)
+
+            col_widths = []
+            for element in row_with_max_td.getchildren():
+                if element.tag == "td" or element.tag == "th":
+                    xpath = tree.getpath(element)
+                    width = get_width_of_element_by_xpath(browser, xpath)
+                    col_widths.append(width)
+
+        total_width = sum(col_widths)
+
+        colspecifiers = []
+
+        for col_width in col_widths:
+            # try a fancy column specifier for longtable
+            colspecifier = r"p{%1.4f\textwidth}" % (
+                float(0.9 * col_width / total_width))
+
+            colspecifiers.append(colspecifier)
+
+        self.content['ncols'] = max_td_count
+
+        self.content['cols'] = '|' + '|'.join(colspecifiers) + '|'
+
+        # patterns = [
+        #     (re.compile(r'&\s+\\\\ \\hline', re.MULTILINE),
+        #      r'\\tabularnewline \\hline'),
+        #     (re.compile(r'\\tabularnewline \\hline\s+\\\\', re.MULTILINE),
+        #      r'\\tabularnewline \\hline'),
+        # ]
+        # for pattern, replacement in patterns:
+        #     self.content['text'] = pattern.sub(
+        #         replacement, self.content['text'])
+
+        # self.content['text'] = self.content['text'].replace(
+        #     '\\tabularnewline \\hline\n\\\\', '\\tabularnewline \\hline')
 
         # self.content['text'] = re.compile(r'&\s+\\\s+\hline', re.MULTILINE).sub(
         #     r'\tabularnewline \hline', self.content['text'])
@@ -379,7 +422,10 @@ class IMG(HTMLElement):
             output_filename = re.sub(r"[^A-Za-z0-9\.]", "-", self.src)
             if len(output_filename) > 128:
                 output_filename = hashlib.sha512(output_filename).hexdigest()
-            output_filepath = os.path.normpath(os.path.join(REMOTE_IMAGE_ROOT, output_filename))
+            output_filepath = os.path.normpath(
+                os.path.join(
+                    REMOTE_IMAGE_ROOT,
+                    output_filename))
 
             if not os.path.splitext(output_filepath):
                 output_filepath = output_filepath + ".png"

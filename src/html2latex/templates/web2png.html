@@ -1,0 +1,39 @@
+<html>
+
+<head>
+    <title></title>
+    <link rel="stylesheet" href="file://{{ STATIC_ROOT }}/bower_components/sass-bootstrap/dist/css/bootstrap.css" />
+    <script type="text/javascript" src="file://{{ STATIC_ROOT }}/bower_components/MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+
+    </script>
+    <style type="text/css">
+    table-nonfluid {
+        width: auto;
+        border: 1px solid #d1d1d1;
+    }
+    thead tr:first-child th, tbody tr:first-child td, tbody tr:first-child th  {
+        background-color: #d1d1d1;
+        color: black;
+        font-weight: bold;
+        text-align:center;
+        vertical-align:middle;
+    }
+    td, th {
+        height: 12pt;
+        padding: 2pt;
+        border: 1px solid #d1d1d1;
+        background-color: #ffffff;
+        vertical-align:middle;
+    }
+    td p, th p {
+        padding:0;
+        margin: 0;
+    }
+    </style>
+</head>
+
+<body>
+    {{ html|safe }}
+</body>
+
+</html>
