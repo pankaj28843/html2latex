@@ -41,7 +41,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.27"
+VERSION = "0.0.34"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -150,8 +150,8 @@ class HTMLElement(object):
         self.get_template()
         self.cap_first()
         self.fix_tail()
-        self.spell_check()
         self.escape_latex_characters()
+        self.spell_check()
 
         def fix_spaces(self, match):
             group = match.groups()[0] or ""
@@ -457,6 +457,7 @@ class IMG(HTMLElement):
         try:
             ALIGN_IMAGE_IN_CENTER = self.ALIGN_IMAGE_IN_CENTER
         except AttributeError:
+
             ALIGN_IMAGE_IN_CENTER = False
 
         # import ipdb; ipdb.set_trace()
