@@ -1,0 +1,11 @@
+
+\begin{filecontents*}{\jobname-((( jobname )))}
+((( encoded_string )))
+\end{filecontents*}
+\immediate\write18{base64 --decode \jobname-((( jobname ))) > \jobname-((( image_filepath )))}
+
+((* if ALIGN_IMAGE_IN_CENTER *))\begin{center}((* endif *))
+\includegraphics[width=\minof{(((content.imagewidth)))pt}{0.95\linewidth},height=\minof{(((content.imageheight)))pt}{0.8\textheight},keepaspectratio]{\jobname-((( image_filepath )))}
+((* if ALIGN_IMAGE_IN_CENTER *))\end{center}((* endif *))
+((* if content.is_table *))\par\vspace{-5pt}((* endif *))
+(((content.tail)))

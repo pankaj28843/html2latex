@@ -3,12 +3,14 @@
 Convert HTML generated from CKEditor to LaTeX environment.
 """
 # Standard Library
+import base64
 import copy
 import hashlib
 import hmac
 import os
 import re
 import subprocess
+import uuid
 
 # Third Party Stuff
 import jinja2
@@ -41,7 +43,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.27"
+VERSION = "0.0.35"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -150,8 +152,8 @@ class HTMLElement(object):
         self.get_template()
         self.cap_first()
         self.fix_tail()
-        self.spell_check()
         self.escape_latex_characters()
+        self.spell_check()
 
         def fix_spaces(self, match):
             group = match.groups()[0] or ""
@@ -459,14 +461,35 @@ class IMG(HTMLElement):
         except AttributeError:
             ALIGN_IMAGE_IN_CENTER = False
 
-        # import ipdb; ipdb.set_trace()
-        context = {
-            "content": self.content,
-            "ALIGN_IMAGE_IN_CENTER": ALIGN_IMAGE_IN_CENTER,
-        }
+        try:
+            USE_BASE64_ENCODED_STRING_FOR_IMAGE = self.USE_BASE64_ENCODED_STRING_FOR_IMAGE
+        except AttributeError:
+            USE_BASE64_ENCODED_STRING_FOR_IMAGE = False
+
+        if USE_BASE64_ENCODED_STRING_FOR_IMAGE is True:
+            filename, file_extension = os.path.splitext(self.src)
+
+            jobname_base64 = "%s.base64" % uuid.uuid4()
+            jobname_tmp_image = "%s%s" % (uuid.uuid4(), file_extension)
+
+            with open(self.src, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read())
+
+            context = {
+                "content": self.content,
+                "jobname": jobname_base64,
+                "image_filepath": jobname_tmp_image,
+                "encoded_string": encoded_string,
+                "ALIGN_IMAGE_IN_CENTER": ALIGN_IMAGE_IN_CENTER,
+            }
+            self.template = texenv.get_template('img_base64_encoded_string.tex')
+        else:
+            context = {
+                "content": self.content,
+                "ALIGN_IMAGE_IN_CENTER": ALIGN_IMAGE_IN_CENTER,
+            }
+
         output = self.template.render(**context)
-        # import ipdb; ipdb.set_trace()
-        # output = "\\begin{center}" + output + "\end{center}"
         return output
 
 

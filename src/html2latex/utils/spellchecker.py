@@ -38,7 +38,8 @@ def check_spelling(text, language=DEFAULT_LANGUAGE):
 
     for word in incorrect_words:
         text = text.replace(
-            word, r"\textcolor{red}{\Large \textbf{" + word + "}}")
+            word, r" \textcolor{red}{\Large \textbf{" + word + "}} ")
+
     return text
 
 
