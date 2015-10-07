@@ -43,7 +43,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.34"
+VERSION = "0.0.35"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -106,7 +106,6 @@ def delegate(element, do_spellcheck=False, **kwargs):
         my_element = TD(element, do_spellcheck, **kwargs)
     elif element.tag == 'img':
         try:
-            # import ipdb; ipdb.set_trace()
             my_element = IMG(element, do_spellcheck, **kwargs)
         except IOError:
             return ''
@@ -131,11 +130,46 @@ def delegate(element, do_spellcheck=False, **kwargs):
         return my_element.render()
 
 
+def fix_mathjax_equation(equation):
+    equation = equation.strip()
+    equation = " ".join(re.split(r"\r|\n", equation))
+    equation = re.sub(r'^\\\s*\(', "", equation, re.MULTILINE)
+    equation = re.sub(r'\\\s*\)$', "", equation, re.MULTILINE)
+    equation = re.sub(
+        r"\{\{\{\{\{([\w,\.^]+)\}\}\}\}\}", r"{\1}", equation)
+    equation = re.sub(r"\{\{\{\{([\w,\.^]+)\}\}\}\}", r"{\1}", equation)
+    equation = re.sub(r"\{\{\{([\w,\.^]+)\}\}\}", r"{\1}", equation)
+    equation = re.sub(r"\{\{([\w,\.^]+)\}\}", r"{\1}", equation)
+    # if equation.startswith("\(") and equation.endswith("\)"):
+    #     equation = equation[2:-2].strip()
+
+    # equation = html_parser.unescape(equation)
+    # equation = escape_tex(equation)
+    equation = equation.replace("&", "\&")
+    equation = equation.replace("<", "\\textless")
+    equation = equation.replace(">", "\\textgreater")
+    equation = equation.replace("\;", "\,")
+
+    equation = equation.strip()
+
+    if "\\\\" in equation and not equation.startswith("\\begin{gathered}"):
+        equation = "\\begin{gathered}" + equation + "\\end{gathered}"
+
+    equation = "\\begin{math}" + equation + "\\end{math}"
+
+    return equation
+
+
 class HTMLElement(object):
 
     def __init__(self, element, do_spellcheck=False, **kwargs):
         self.element = element
         self.do_spellcheck = do_spellcheck
+
+        if self.element.tag == 'span' and 'math-tex' in self.element.attrib.get('class', ''):
+            self.is_mathjax_equation = True
+        else:
+            self.is_mathjax_equation = False
 
         self._init_kwargs = copy.deepcopy(kwargs)
         for key, value in kwargs.iteritems():
@@ -146,6 +180,10 @@ class HTMLElement(object):
         self.content = {}
         self.content[
             'text'] = self.element.text if self.element.text is not None else ''
+
+        if self.is_mathjax_equation is True:
+            self.content['text'] = fix_mathjax_equation(self.content['text'])
+
         self.content[
             'tail'] = self.element.tail if self.element.tail is not None else ''
         self.content['tag'] = escape_latex(self.element.tag)
@@ -214,6 +252,9 @@ class HTMLElement(object):
     def escape_latex_characters(self):
         """escape latex characters from text
         """
+        if self.is_mathjax_equation is True:
+            return
+
         text = self.content['text']
         text = clean(text)
         text = escape_latex(text)
@@ -323,7 +364,7 @@ class Table(HTMLElement):
         for col_width in col_widths:
             # try a fancy column specifier for longtable
             colspecifier = r"p{%1.4f\textwidth}" % (
-                float(0.9 * col_width / total_width))
+                float(0.8 * col_width / total_width))
 
             colspecifiers.append(colspecifier)
 
@@ -351,7 +392,7 @@ class Table(HTMLElement):
         self.content['text'] = self.content['text'].replace('\\par', ' ')
         self.content['text'] = self.content['text'].replace('\n', '')
         self.content['text'] = self.content[
-            'text'].replace('\\hline\n\\\\', '\\hline')
+            'text'].replace('\\hline\n\\\\', '\\hline ')
 
         self.template = texenv.get_template('table.tex')
 
@@ -393,7 +434,6 @@ class IMG(HTMLElement):
     is_table = False
 
     def __init__(self, element, *args, **kwargs):
-        # import ipdb; ipdb.set_trace()
 
         HTMLElement.__init__(self, element, *args, **kwargs)
         for key, value in kwargs.items():
@@ -506,13 +546,11 @@ class IMG(HTMLElement):
 
             ALIGN_IMAGE_IN_CENTER = False
 
-        # import ipdb; ipdb.set_trace()
         context = {
             "content": self.content,
             "ALIGN_IMAGE_IN_CENTER": ALIGN_IMAGE_IN_CENTER,
         }
         output = self.template.render(**context)
-        # import ipdb; ipdb.set_trace()
         # output = "\\begin{center}" + output + "\end{center}"
         return output
 
