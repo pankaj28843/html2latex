@@ -44,7 +44,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.35"
+VERSION = "0.0.37"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -307,15 +307,33 @@ class Table(HTMLElement):
 
         url = u"file://{0}".format(html_file)
 
-        with splinter.Browser('phantomjs') as browser:
-            browser.visit(url)
+        col_widths = []
+        width_not_available = False
+        for element in row_with_max_td.getchildren():
+            if element.tag == "td" or element.tag == "th":
+                try:
+                    width = re.findall(r'width:(\d*\.\d+|\d+)', element.attrib.get('style'))[-1]
+                    width = float(width)
+                except:
+                    width_not_available = True
+                    break
+                col_widths.append(width)
 
+        if width_not_available is True:
             col_widths = []
             for element in row_with_max_td.getchildren():
                 if element.tag == "td" or element.tag == "th":
-                    xpath = tree.getpath(element)
-                    width = get_width_of_element_by_xpath(browser, xpath)
-                    col_widths.append(width)
+                    col_widths.append(50)
+
+        # with splinter.Browser('phantomjs') as browser:
+        #     browser.visit(url)
+
+        #     col_widths = []
+        #     for element in row_with_max_td.getchildren():
+        #         if element.tag == "td" or element.tag == "th":
+        #             xpath = tree.getpath(element)
+        #             width = get_width_of_element_by_xpath(browser, xpath)
+        #             col_widths.append(width)
 
         total_width = sum(col_widths)
 
@@ -323,7 +341,7 @@ class Table(HTMLElement):
 
         for col_width in col_widths:
             # try a fancy column specifier for longtable
-            colspecifier = r"p{%1.4f\textwidth}" % (
+            colspecifier = r"p{%1.4f\linewidth}" % (
                 float(0.9 * col_width / total_width))
 
             colspecifiers.append(colspecifier)
