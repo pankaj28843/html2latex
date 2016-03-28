@@ -2,7 +2,7 @@
 \begin{center}
 \begin{tabular}{(((content.cols)))} \hline
 ((* for t in content.text.split('\n') *))
-((* if 'longtable' not in t *))
+((* if 'tabular' not in t *))
 (((- t -)))
 ((* endif *))
 ((* endfor *))

@@ -44,7 +44,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.38"
+VERSION = "0.0.41"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -79,28 +79,30 @@ def delegate(element, do_spellcheck=False, **kwargs):
         my_element = HTMLElement(element, do_spellcheck, **kwargs)
 
     elif element.tag == 'table':
-        my_element = Table(element, do_spellcheck, **kwargs)
-    # elif element.tag == 'table':
-    #     # my_element = Table(element, do_spellcheck, **kwargs)
-    #     table_inner_html = u''.join([etree.tostring(e) for e in element])
-    #     items = (
-    #             ("&#13;", ""),
-    #             ("&uuml;", "&#10003;"),
-    #             ("&#252;", "&#10003;"),
-    #             ("\\checkmark", "&#10003;"),
-    #             (u"ü", "&#10003;"),
+        USE_IMAGE_FOR_TABLE = kwargs.get('USE_IMAGE_FOR_TABLE', False)
 
-    #     )
-    #     for oldvalue, newvalue in items:
-    #         table_inner_html = table_inner_html.replace(oldvalue, newvalue)
+        if not USE_IMAGE_FOR_TABLE:
+            my_element = Table(element, do_spellcheck, **kwargs)
+        else:
+            table_inner_html = u''.join([etree.tostring(e) for e in element])
+            items = (
+                    ("&#13;", ""),
+                    ("&uuml;", "&#10003;"),
+                    ("&#252;", "&#10003;"),
+                    ("\\checkmark", "&#10003;"),
+                    (u"ü", "&#10003;"),
 
-    #     image_file = get_image_for_html_table(
-    #         table_inner_html, do_spellcheck=do_spellcheck)
+            )
+            for oldvalue, newvalue in items:
+                table_inner_html = table_inner_html.replace(oldvalue, newvalue)
 
-    #     new_html = u"<img src='{0}'/>".format(image_file)
-    #     new_element = etree.HTML(new_html).find(".//img")
-    #     my_element = IMG(new_element, is_table=True, **kwargs)
-    #     my_element.content["is_table"] = True
+            image_file = get_image_for_html_table(
+                table_inner_html, do_spellcheck=do_spellcheck)
+
+            new_html = u"<img src='{0}'/>".format(image_file)
+            new_element = etree.HTML(new_html).find(".//img")
+            my_element = IMG(new_element, is_table=True, **kwargs)
+            my_element.content["is_table"] = True
     elif element.tag == 'tr':
         my_element = TR(element, do_spellcheck, **kwargs)
     elif element.tag == 'td':
@@ -308,32 +310,35 @@ class Table(HTMLElement):
         url = u"file://{0}".format(html_file)
 
         col_widths = []
-        width_not_available = False
-        for element in row_with_max_td.getchildren():
-            if element.tag == "td" or element.tag == "th":
-                try:
-                    width = re.findall(r'width:(\d*\.\d+|\d+)', element.attrib.get('style'))[-1]
-                    width = float(width)
-                except:
-                    width_not_available = True
-                    break
-                col_widths.append(width)
+        for td_element in row_with_max_td.iterchildren():
+            css = td_element.attrib.get('style', '')
+            if not css:
+                col_widths.append(None)
+                break
 
-        if width_not_available is True:
-            col_widths = []
-            for element in row_with_max_td.getchildren():
-                if element.tag == "td" or element.tag == "th":
-                    col_widths.append(50)
+            try:
+                _widths = re.findall(
+                    r'width\s*:\s*(\d+)',
+                    css,
+                    re.IGNORECASE)
+                width = _widths[0]
+            except IndexError:
+                col_widths.append(None)
+                break
 
-        # with splinter.Browser('phantomjs') as browser:
-        #     browser.visit(url)
+            width = float(width)
+            col_widths.append(width)
 
-        #     col_widths = []
-        #     for element in row_with_max_td.getchildren():
-        #         if element.tag == "td" or element.tag == "th":
-        #             xpath = tree.getpath(element)
-        #             width = get_width_of_element_by_xpath(browser, xpath)
-        #             col_widths.append(width)
+        if not col_widths or None in col_widths:
+            with splinter.Browser('phantomjs') as browser:
+                browser.visit(url)
+
+                col_widths = []
+                for element in row_with_max_td.getchildren():
+                    if element.tag == "td" or element.tag == "th":
+                        xpath = tree.getpath(element)
+                        width = get_width_of_element_by_xpath(browser, xpath)
+                        col_widths.append(width)
 
         total_width = sum(col_widths)
 
@@ -342,7 +347,7 @@ class Table(HTMLElement):
         for col_width in col_widths:
             # try a fancy column specifier for longtable
             colspecifier = r"p{%1.4f\linewidth}" % (
-                float(0.9 * col_width / total_width))
+                float(0.7 * col_width / total_width))
 
             colspecifiers.append(colspecifier)
 
@@ -371,9 +376,6 @@ class Table(HTMLElement):
         self.content['text'] = self.content['text'].replace('\n', '')
         self.content['text'] = self.content[
             'text'].replace('\\hline\n\\\\', '\\hline ')
-
-        self.content['text'] = self.content[
-            'text'].replace('\\hline', '\\hline ')
 
         self.template = texenv.get_template('table.tex')
 
@@ -461,20 +463,41 @@ class IMG(HTMLElement):
 
             self.src = self.element.attrib['src'] = output_filepath
 
-        # Don't convert images to grayscale
-        # jpg_filename = ''.join(os.path.splitext(self.src)[:-1])
-        # jpg_filepath = os.path.normpath(os.path.join(
-        #     GRAYSCALED_IMAGES,
-        #     hashlib.sha512(jpg_filename).hexdigest() + '_grayscaled.jpg',
-        # ))
+        try:
+            CONVERT_IMAGE_TO_GRAYSCALE = self.CONVERT_IMAGE_TO_GRAYSCALE
+        except AttributeError:
+            CONVERT_IMAGE_TO_GRAYSCALE = False
 
-        # if not os.path.isfile(jpg_filepath):
-        #     p = subprocess.Popen(
-        #         ["convert", self.src, '-type', 'Grayscale', jpg_filepath]
-        #     )
-        #     p.wait()
+        if CONVERT_IMAGE_TO_GRAYSCALE is True:
+            jpg_filename = ''.join(os.path.splitext(self.src)[:-1])
+            jpg_filepath = os.path.normpath(os.path.join(
+                GRAYSCALED_IMAGES,
+                hashlib.sha512(jpg_filename).hexdigest() + '_grayscaled.jpg',
+            ))
+            jpg_filepath = '/tmp/{}.jpg'.format(str(uuid.uuid4()))
 
-        # self.src = self.element.attrib['src'] = jpg_filepath
+            # if not os.path.isfile(jpg_filepath):
+            tmp_filepath_1 = '/tmp/{}.jpg'.format(str(uuid.uuid4()))
+            p = subprocess.Popen(
+                ['convert', self.src, '-background', 'white', '-alpha',
+                 'remove', '-colorspace', 'cmyk', tmp_filepath_1]
+            )
+            p.wait()
+
+            tmp_filepath_2 = '/tmp/{}.jpg'.format(str(uuid.uuid4()))
+            p = subprocess.Popen(
+                ['convert', tmp_filepath_1, '-type', 'Grayscale',
+                 tmp_filepath_2]
+            )
+            p.wait()
+            p = subprocess.Popen(
+                ['convert', tmp_filepath_2, '-background', 'white', '-alpha',
+                 'remove', '-colorspace', 'cmyk',
+                 jpg_filepath]
+            )
+            p.wait()
+
+            self.src = self.element.attrib['src'] = jpg_filepath
 
         self.style = self.element.attrib.get('style', "")
 
@@ -500,20 +523,8 @@ class IMG(HTMLElement):
                 width, height = get_image_size(self.src)
                 img_width = 3. / 4 * width
                 img_height = 3. / 4 * height
-            if not self.is_table:
-                image = Image.open(self.src)
-                # new_image = image.convert("LA")
-                # if image.size == new_image.size:
-                #     image = new_image
-                # enhancer = ImageEnhance.Brightness(image)
-                # enhancer.enhance(1.1)
-                # enhancer = ImageEnhance.Contrast(image)
-                # enhancer.enhance(1.1)
-                src = self.src + "grayscaled.png"
-                image.save(src, quality=100)
         except IOError as e:
-            raise e
-            # width, height = (-1, -1)
+            raise
 
         self.content['imagename'] = self.src
         self.content['imagewidth'], self.content[
@@ -640,7 +651,7 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
 
     main_template = texenv.get_template('doc.tex')
     output = unicode(unescape(main_template.render(content=content))).encode(
-        'utf-8').replace(r'& \\ \hline', r'\\ \hline')
+        'utf-8').replace(r'& \\ \hline', r'\\ \hline ')
     output = fix_formatting(output)
 
     output = re.sub(r"(?i)e\. g\.", "e.g.", output)
@@ -674,7 +685,7 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
     # output = re.sub(r"\\par\s*\\noindent", r"\\par\\noindent", output)
     # output = re.sub(r"(\\par\\noindent)+", r"\\par\\noindent", output)
 
-    # output = re.sub(r"\s+&\s+", r"\\&", output)
+    output = re.sub(r"\s+&\s+", r"\\&", output)
 
     output = output.replace("begin{bfseries}", "begin{bfseries} ")
     output = output.replace("\\end{bfseries}", " \\end{bfseries} ")
