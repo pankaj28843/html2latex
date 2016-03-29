@@ -44,7 +44,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.41"
+VERSION = "0.0.42"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -109,7 +109,6 @@ def delegate(element, do_spellcheck=False, **kwargs):
         my_element = TD(element, do_spellcheck, **kwargs)
     elif element.tag == 'img':
         try:
-            # import ipdb; ipdb.set_trace()
             my_element = IMG(element, do_spellcheck, **kwargs)
         except IOError:
             return ''
@@ -124,8 +123,6 @@ def delegate(element, do_spellcheck=False, **kwargs):
     try:
         my_element
     except NameError:
-        # error_message(u"Error with element!! %s\n\n" %
-        #               etree.tostring(element), terminate=False)
         return ''
 
     if my_element is None:
@@ -183,8 +180,6 @@ class HTMLElement(object):
         except jinja2.exceptions.TemplateNotFound:
             self.template = texenv.get_template('not_implemented.tex')
         except TypeError:
-            # error_message(
-            #     "Error in element: " + repr(self.element), terminate=False)
             self.template = texenv.get_template('error.tex')
 
     def cap_first(self):
@@ -220,7 +215,6 @@ class HTMLElement(object):
         text = self.content['text']
         text = clean(text)
         text = escape_latex(text)
-        # text = fix_text(text)
         self.content['text'] = text.replace("\r", "\n")
 
         """escape latex characters from tail
@@ -228,18 +222,9 @@ class HTMLElement(object):
         tail = self.content['tail']
         tail = clean(tail)
         tail = escape_latex(tail)
-        # tail = fix_text(tail)
         self.content['tail'] = tail.replace("\r", "\n")
 
-    # self.content['text'] = self.content['text'].replace(" ", "\\,")
-    # self.content['text'] = re.sub(
-    #     r' ( )* ?', fix_spaces, self.content['text'])
-    # self.content['tail'] = self.content['tail'].replace(" ", "\\,")
     def render(self):
-        # return an empty string if the content is empty
-        # if self.content['text'].strip() == '' and self.content['tail'].strip() == '':
-        #     return ''
-        # else:
         return self.template.render(content=self.content)
 
     def render_children(self):
@@ -355,23 +340,6 @@ class Table(HTMLElement):
 
         self.content['cols'] = '|' + '|'.join(colspecifiers) + '|'
 
-        # patterns = [
-        #     (re.compile(r'&\s+\\\\ \\hline', re.MULTILINE),
-        #      r'\\tabularnewline \\hline'),
-        #     (re.compile(r'\\tabularnewline \\hline\s+\\\\', re.MULTILINE),
-        #      r'\\tabularnewline \\hline'),
-        # ]
-        # for pattern, replacement in patterns:
-        #     self.content['text'] = pattern.sub(
-        #         replacement, self.content['text'])
-
-        # self.content['text'] = self.content['text'].replace(
-        #     '\\tabularnewline \\hline\n\\\\', '\\tabularnewline \\hline')
-
-        # self.content['text'] = re.compile(r'&\s+\\\s+\hline', re.MULTILINE).sub(
-        #     r'\tabularnewline \hline', self.content['text'])
-        # self.content['text'] = self.content['text'].replace(
-        #     r'& \\ \hline', r'\tabularnewline \hline')
         self.content['text'] = self.content['text'].replace('\\par', ' ')
         self.content['text'] = self.content['text'].replace('\n', '')
         self.content['text'] = self.content[
@@ -630,14 +598,10 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
     Converts Html Element into LaTeX
     """
 
-    # if "The nature of the roots of the quadratic equation" in html:
-    #     import ipdb; ipdb.set_trace()
 
     # If html string has no text then don't need to do anything
     if not check_if_html_has_text(html):
         return ""
-
-    # html = clean_paragraph_ending(html)
 
     html = html.replace("&uuml;", "\\checkmark")
     html = html.replace("&#252;", "\\checkmark")
@@ -682,10 +646,6 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
     )
     for oldvalue, newvalue in items:
         output = output.replace(oldvalue, newvalue)
-    # output = re.sub(r"\\par\s*\\noindent", r"\\par\\noindent", output)
-    # output = re.sub(r"(\\par\\noindent)+", r"\\par\\noindent", output)
-
-    output = re.sub(r"\s+&\s+", r"\\&", output)
 
     output = output.replace("begin{bfseries}", "begin{bfseries} ")
     output = output.replace("\\end{bfseries}", " \\end{bfseries} ")
