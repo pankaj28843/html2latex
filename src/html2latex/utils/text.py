@@ -196,10 +196,10 @@ REGEX_FORMATTING_REPLACEMENTS = (
     (re.compile(r'\s*\(\s*([^\)]*)\s*\)\s*'), r' (\1) '),
     # remove \par from end
     (re.compile(r'\\par\s*$'), r''),
-    (re.compile(r'>'), r'\\textgreater '),
-    (re.compile(r'&gt;'), r'\\textgreater '),
-    (re.compile(r'<'), r'\\textless '),
-    (re.compile(r'&lt;'), r'\\textless '),
+    # (re.compile(r'>'), r'\\textgreater '),
+    # (re.compile(r'&gt;'), r'\\textgreater '),
+    # (re.compile(r'<'), r'\\textless '),
+    # (re.compile(r'&lt;'), r'\\textless '),
 )
 
 

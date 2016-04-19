@@ -25,6 +25,7 @@ from xamcheck_utils.html import check_if_html_has_text
 from xamcheck_utils.text import unicodify
 
 from .setup_texenv import setup_texenv
+from .utils.unpack_merged_cells_in_table import unpack_merged_cells_in_table
 from .utils.html_table import get_image_for_html_table, render_html
 from .utils.image import get_image_size
 from .utils.spellchecker import check_spelling
@@ -44,7 +45,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.42"
+VERSION = "0.0.56"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -75,16 +76,18 @@ def delegate(element, do_spellcheck=False, **kwargs):
     except AttributeError:
         pass
 
+    css_classes = element.attrib.get('class', '').lower()
+
     if element.tag == 'div':
         my_element = HTMLElement(element, do_spellcheck, **kwargs)
 
     elif element.tag == 'table':
         USE_IMAGE_FOR_TABLE = kwargs.get('USE_IMAGE_FOR_TABLE', False)
+        table_inner_html = u''.join([etree.tostring(e) for e in element])
 
         if not USE_IMAGE_FOR_TABLE:
             my_element = Table(element, do_spellcheck, **kwargs)
         else:
-            table_inner_html = u''.join([etree.tostring(e) for e in element])
             items = (
                     ("&#13;", ""),
                     ("&uuml;", "&#10003;"),
@@ -114,6 +117,38 @@ def delegate(element, do_spellcheck=False, **kwargs):
             return ''
     elif element.tag == 'a':
         my_element = A(element, do_spellcheck, **kwargs)
+    elif element.tag == 'span' and 'math-tex' in css_classes:
+        equation = element.text or ''
+        tail = element.tail or ''
+
+        equation = equation.strip()
+        equation = " ".join(re.split(r"\r|\n", equation))
+        equation = re.sub(r'^\\\s*\(', "", equation, re.MULTILINE)
+        equation = re.sub(r'\\\s*\)$', "", equation, re.MULTILINE)
+        equation = re.sub(
+            r"\{\{\{\{\{([\w,\.^]+)\}\}\}\}\}", r"{\1}", equation)
+        equation = re.sub(r"\{\{\{\{([\w,\.^]+)\}\}\}\}", r"{\1}", equation)
+        equation = re.sub(r"\{\{\{([\w,\.^]+)\}\}\}", r"{\1}", equation)
+        equation = re.sub(r"\{\{([\w,\.^]+)\}\}", r"{\1}", equation)
+
+        from HTMLParser import HTMLParser
+        html_parser = HTMLParser()
+        equation = html_parser.unescape(equation)
+
+        equation = equation.replace("&", "\&")
+        equation = equation.replace("<", "\\textless")
+        equation = equation.replace(">", "\\textgreater")
+        equation = equation.replace("\;", "\,")
+
+        equation = equation.strip()
+
+        if "\\\\" in equation and not equation.startswith("\\begin{gathered}"):
+            equation = "\\begin{gathered}" + equation + "\\end{gathered}"
+
+        equation = "\\begin{math}" + equation + "\\end{math}"
+        _latex_code = equation + ' ' + tail
+        return _latex_code
+
     elif isinstance(element, etree._Comment):
         my_element = None  # skip XML comments
     else:
@@ -135,6 +170,11 @@ class HTMLElement(object):
 
     def __init__(self, element, do_spellcheck=False, **kwargs):
         self.element = element
+
+        _html = etree.tounicode(self.element)
+
+        self.has_content = check_if_html_has_text(_html)
+
         self.do_spellcheck = do_spellcheck
 
         self._init_kwargs = copy.deepcopy(kwargs)
@@ -158,6 +198,19 @@ class HTMLElement(object):
         for a in self.element.attrib:
             self.content[a] = self.element.attrib[a]
 
+        css = self.element.attrib.get('style', '') or ''
+        css = css.lower()
+        text_alignment = None
+        try:
+            text_alignment = re.findall(
+                r'text\-align\s*:\s*(\w+)',
+                css,
+                re.IGNORECASE)[-1]
+        except:
+            pass
+
+        self.content["text_alignment"] = text_alignment
+
         self.get_template()
         self.cap_first()
         self.fix_tail()
@@ -171,8 +224,6 @@ class HTMLElement(object):
 
         self.content['text'] = re.sub(
             r'( )+?', ' ', self.content['text']).rstrip()
-
-        self.render_children()
 
     def get_template(self):
         try:
@@ -195,9 +246,9 @@ class HTMLElement(object):
         """
         tail = self.content['tail']
         if (len(tail) > 0) and (tail[0] in [' \t\r\n']):
-            tail = ' ' + tail
+            tail = ' ' + tail.lstrip()
         if (len(tail) > 0) and (tail[-1] in [' \t\r\n']):
-            tail = tail + ' '
+            tail = tail.rstrip() + ' '
         self.content['tail'] = tail
 
     def spell_check(self):
@@ -225,7 +276,10 @@ class HTMLElement(object):
         self.content['tail'] = tail.replace("\r", "\n")
 
     def render(self):
-        return self.template.render(content=self.content)
+        self.render_children()
+        latex_code = self.template.render(content=self.content)
+
+        return latex_code
 
     def render_children(self):
         if self.element.tag == "p":
@@ -267,6 +321,26 @@ class Table(HTMLElement):
 
     def __init__(self, element, *args, **kwargs):
         HTMLElement.__init__(self, element, *args, **kwargs)
+
+        if self.element.getprevious() is not None:
+            self.content['has_previous_element'] = True
+        else:
+            self.content['has_previous_element'] = False
+
+        if self.element.getnext() is not None:
+            self.content['has_next_element'] = True
+        else:
+            self.content['has_next_element'] = False
+
+        if not self.has_content:
+            return
+
+        _old_html = etree.tounicode(self.element)
+
+        _new_html = unpack_merged_cells_in_table(_old_html)
+        _new_html = re.sub(r"<strong>|</strong>", "", _new_html)
+
+        self.element = element = etree.HTML(_new_html).findall('.//table')[0]
 
         row_with_max_td = None
         max_td_count = 0
@@ -319,22 +393,41 @@ class Table(HTMLElement):
                 browser.visit(url)
 
                 col_widths = []
-                for element in row_with_max_td.getchildren():
-                    if element.tag == "td" or element.tag == "th":
-                        xpath = tree.getpath(element)
+                for _element in row_with_max_td.getchildren():
+                    if _element.tag == "td" or _element.tag == "th":
+                        xpath = tree.getpath(_element)
                         width = get_width_of_element_by_xpath(browser, xpath)
+
                         col_widths.append(width)
 
         total_width = sum(col_widths)
 
         colspecifiers = []
 
-        for col_width in col_widths:
-            # try a fancy column specifier for longtable
-            colspecifier = r"p{%1.4f\linewidth}" % (
-                float(0.7 * col_width / total_width))
+        table_width_scaleup_factor = 0.85
 
+        col_widths_in_latex = []
+        for col_width in col_widths:
+            _col_width_latex = r'%1.4f\linewidth' % (
+                float(table_width_scaleup_factor) * float(float(col_width) / float(total_width))
+            )
+            colspecifier = r">{\raggedright\arraybackslash}p{%s}" % _col_width_latex
+
+            col_widths_in_latex.append(_col_width_latex)
             colspecifiers.append(colspecifier)
+
+        first_row = self.element.findall('.//tr')[0]
+
+        for _index, row in enumerate(self.element.findall('.//tr')):
+            for td, col_width_latex, colspecifier in zip(row.findall('.//td'), col_widths_in_latex, colspecifiers):
+                if td is None:
+                    continue
+
+                td.set('__colspecifier', colspecifier)
+                td.set('__col_width_latex', col_width_latex)
+
+                if _index == 0:
+                    td.set('is_first_row', "1")
 
         self.content['ncols'] = max_td_count
 
@@ -347,6 +440,14 @@ class Table(HTMLElement):
 
         self.template = texenv.get_template('table.tex')
 
+    def render(self, *args, **kwargs):
+        if not self.has_content:
+            return ''
+
+        latex_code = super(Table, self).render(*args, **kwargs)
+
+        return latex_code
+
 
 class TR(HTMLElement):
 
@@ -354,31 +455,107 @@ class TR(HTMLElement):
     Rows in html table
     """
 
-    def __init__(self, element, *args, **kwargs):
-        HTMLElement.__init__(self, element, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        obj = super(TR, self).__init__(*args, **kwargs)
+
         self.template = texenv.get_template('tr.tex')
+
+        bottom_line_latex = ''
+
+        for (col_index, td) in enumerate(self.element.iterchildren()):
+            col_number = col_index + 1
+
+            if td.attrib.get('__bottom_line'):
+                bottom_line_latex += (
+                    r'\cline{' + '{col}-{col}'.format(col=col_number) + '}')
+
+        self.content['bottom_line_latex'] = bottom_line_latex
+
+        elements_to_be_deleted = []
+
+        children = [x for x in self.element.iterchildren()]
+        for (col_index, td) in enumerate(children):
+            colspan = td.attrib.get('colspan') or td.attrib.get('_colspan')
+
+            if colspan:
+                colspan = int(colspan)
+                _col_widths = [td.attrib.get('__col_width_latex')]
+
+                for i in range(col_index + 1, col_index + colspan):
+                    child = children[i]
+
+                    _col_widths.append(child.attrib.get('__col_width_latex'))
+                    elements_to_be_deleted.append(child)
+
+                td.set("__col_width_latex", '+'.join(_col_widths))
+
+        for td in elements_to_be_deleted:
+            self.element.remove(td)
+
+        return obj
 
 
 class TD(HTMLElement):
-
     """
     Columns in Html table
     """
 
-    def __init__(self, element, *args, **kwargs):
-        HTMLElement.__init__(self, element, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        obj = super(TD, self).__init__(*args, **kwargs)
+
         self.template = texenv.get_template('td.tex')
 
+        tr = self.element.getparent()
+        is_first_row = tr.getprevious() is None
 
-class TH(HTMLElement):
+        self.content['is_first_row'] = is_first_row
+        self.content['colspecifier'] = self.element.attrib.get('__colspecifier')
+        self.content['col_width_latex'] = self.element.attrib.get('__col_width_latex')
+
+        self.content['rowspan'] = self.element.attrib.get('rowspan') or self.element.attrib.get('_rowspan')
+        self.content['colspan'] = self.element.attrib.get('colspan') or self.element.attrib.get('_colspan')
+
+        return obj
+
+    def render(self, *args, **kwargs):
+        latex_code = super(TD, self).render(*args, **kwargs)
+
+        append_ampersand = self.element.getnext() is not None
+
+        pattern = re.compile(r'&\s*$')
+        latex_code = pattern.sub('', latex_code)
+
+        latex_code = re.sub(r'\s*\\par\s*$', ' ', latex_code)
+        latex_code = re.sub(r'\s*\\par\s*\}\s*$', ' }', latex_code)
+
+        tr = self.element.getparent()
+        is_first_row = tr.getprevious() is None
+
+        if is_first_row:
+            if not ('multicol' in latex_code or 'multirow' in latex_code):
+
+                colspecifier = self.element.attrib.get('__colspecifier', 'c')
+
+                latex_code = r'\multicolumn{1}{|' + colspecifier + r'|}{\cellcolor{black!20}\fontsize{11}{13}\fontseries{b}\selectfont ' + latex_code + r'}'
+
+        if append_ampersand is True:
+            latex_code += ' & '
+
+        return latex_code
+
+
+class TH(TD):
 
     """
     Columns in Html table
     """
 
-    def __init__(self, element, *args, **kwargs):
-        HTMLElement.__init__(self, element, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        obj = super(TH, self).__init__(*args, **kwargs)
+
         self.template = texenv.get_template('th.tex')
+
+        return obj
 
 
 class IMG(HTMLElement):
@@ -597,8 +774,6 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
     """
     Converts Html Element into LaTeX
     """
-
-
     # If html string has no text then don't need to do anything
     if not check_if_html_has_text(html):
         return ""
@@ -610,13 +785,17 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
     root = etree.HTML(html)
     body = root.find('.//body')
 
-    content = u''.join([delegate(element, do_spellcheck=do_spellcheck, **kwargs)
+    line_separator = kwargs.get('LINE_SPERATOR', '')
+
+    content = line_separator.join([delegate(element, do_spellcheck=do_spellcheck, **kwargs)
                        for element in body])
 
-    main_template = texenv.get_template('doc.tex')
-    output = unicode(unescape(main_template.render(content=content))).encode(
-        'utf-8').replace(r'& \\ \hline', r'\\ \hline ')
-    output = fix_formatting(output)
+    # main_template = texenv.get_template('doc.tex')
+    # output = unicode(unescape(main_template.render(content=content))).encode(
+    #     'utf-8').replace(r'& \\ \hline', r'\\ \hline ')
+    # output = fix_formatting(output)
+
+    output = content
 
     output = re.sub(r"(?i)e\. g\.", "e.g.", output)
     output = re.sub(r"(?i)i\. e\.", "i.e.", output)
@@ -631,7 +810,9 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
         r"([a-zA-Z0-9]+)\s*\\begin\{textsubscript\}\s*(\w+)\s*\\end\{textsubscript\}",
         r"\\begin{math}\1_{\2}\\end{math}", output)
 
-    output = output.decode("utf-8")
+    if not isinstance(output, unicode):
+        output = output.decode("utf-8")
+
     items = (
         (u'\u2713', " \checkmark "),
         (u'\u009f', ""),

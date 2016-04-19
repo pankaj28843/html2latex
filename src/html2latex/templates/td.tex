@@ -1,7 +1,9 @@
-((* if content.colspan *))
-\multicolumn{(((content.colspan)))}{|X|} (((content.text.lstrip())))(((content.tail.rstrip()))) &
+((* if content.colspan and content.rowspan *))
+\multicolumn{(((content.colspan)))}{|p{((( content.col_width_latex )))}|}{\multirow{(((content.rowspan)))}{\linewidth}{((( content.text.lstrip() )))} (((content.tail.rstrip()))) &
+((* elif content.colspan *))
+\multicolumn{(((content.colspan)))}{|p{((( content.col_width_latex )))}|}{((( content.text.lstrip() )))} (((content.tail.rstrip()))) &
 ((* elif content.rowspan *))
-\multirow{(((content.rowspan)))}{*}{(((content.text.lstrip())))(((content.tail.rstrip())))}\\
+\multirow{(((content.rowspan)))}{\linewidth}{((( content.text.lstrip() )))} ((( content.tail.rstrip() ))) &
 ((* else *))
-(((content.text.lstrip())))(((content.tail.rstrip()))) &
+((( content.text.lstrip() ))) (((content.tail.rstrip()))) &
 ((* endif *))
