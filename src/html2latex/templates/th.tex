@@ -1,7 +1,7 @@
 ((* if content.colspan *))
-\multicolumn{(((content.colspan)))}{|X|} \textbf{(((content.text.lstrip())))(((content.tail.rstrip())))} &
+\multicolumn{(((content.colspan)))}{|X|} \textbf{(((content.text)))(((content.tail)))} &
 ((* elif content.rowspan *))
-\multirow{(((content.rowspan)))}{*}{\textbf{(((content.text.lstrip())))(((content.tail.rstrip())))}}\\
+\multirow{(((content.rowspan)))}{*}{\textbf{(((content.text)))(((content.tail)))}}\\
 ((* else *))
-\textbf{(((content.text.lstrip())))(((content.tail.rstrip())))} &
+\textbf{(((content.text)))(((content.tail)))} &
 ((* endif *))

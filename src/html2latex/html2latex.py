@@ -45,7 +45,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.56"
+VERSION = "0.0.62"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -200,7 +200,7 @@ class HTMLElement(object):
 
         css = self.element.attrib.get('style', '') or ''
         css = css.lower()
-        text_alignment = None
+        text_alignment = kwargs.get('text_alignment')
         try:
             text_alignment = re.findall(
                 r'text\-align\s*:\s*(\w+)',
@@ -209,7 +209,22 @@ class HTMLElement(object):
         except:
             pass
 
-        self.content["text_alignment"] = text_alignment
+        # If parent is <p> tag and it's center aligned then no need to align
+        # children
+        parent_element = self.element.getparent()
+        if parent_element is not None and parent_element.tag == 'p':
+            if parent_element.attrib.get('text_alignment') == 'center':
+                text_alignment = None
+
+        parent_element_tag = None
+        if parent_element:
+            parent_element_tag = parent_element.tag
+
+        self.content['parent_element'] = parent_element
+        self.content['parent_element_tag'] = parent_element_tag
+
+        self.element.set('text_alignment', text_alignment or '')
+        self._init_kwargs["text_alignment"] = self.content["text_alignment"] = text_alignment
 
         self.get_template()
         self.cap_first()
@@ -338,7 +353,7 @@ class Table(HTMLElement):
         _old_html = etree.tounicode(self.element)
 
         _new_html = unpack_merged_cells_in_table(_old_html)
-        _new_html = re.sub(r"<strong>|</strong>", "", _new_html)
+        # _new_html = re.sub(r"<strong>|</strong>", "", _new_html)
 
         self.element = element = etree.HTML(_new_html).findall('.//table')[0]
 
@@ -518,28 +533,18 @@ class TD(HTMLElement):
         return obj
 
     def render(self, *args, **kwargs):
-        latex_code = super(TD, self).render(*args, **kwargs)
-
-        append_ampersand = self.element.getnext() is not None
-
-        pattern = re.compile(r'&\s*$')
-        latex_code = pattern.sub('', latex_code)
-
-        latex_code = re.sub(r'\s*\\par\s*$', ' ', latex_code)
-        latex_code = re.sub(r'\s*\\par\s*\}\s*$', ' }', latex_code)
 
         tr = self.element.getparent()
         is_first_row = tr.getprevious() is None
+        is_last_column = self.element.getnext() is None
 
-        if is_first_row:
-            if not ('multicol' in latex_code or 'multirow' in latex_code):
+        self.content['is_first_row'] = is_first_row
+        self.content['is_last_column'] = is_last_column
 
-                colspecifier = self.element.attrib.get('__colspecifier', 'c')
+        latex_code = super(TD, self).render(*args, **kwargs)
 
-                latex_code = r'\multicolumn{1}{|' + colspecifier + r'|}{\cellcolor{black!20}\fontsize{11}{13}\fontseries{b}\selectfont ' + latex_code + r'}'
-
-        if append_ampersand is True:
-            latex_code += ' & '
+        latex_code = re.sub(r'\s*\\par\s*', ' ', latex_code)
+        latex_code = re.sub(r'\s*\\par\s*\}\s*', ' }', latex_code)
 
         return latex_code
 

@@ -100,14 +100,19 @@ def unpack_merged_cells_in_table(html):
         for k, v in tr.attrib.items():
             new_tr.set(k, v)
 
+        all_cells = [x for x in tr.iterchildren()]
+
         col_index = 0
         for td in tr.iterchildren():
             if td.attrib.get('colspan') is None and td.attrib.get('rowspan') is None:
                 td_to_be_removed = find_next_untouched_td(new_tr, col_index)
                 replace_td(new_tr, td_to_be_removed, td)
-                col_index = new_tr.index(td) + 1
+
+                col_index += 1
 
             elif td.attrib.get('colspan'):
+                col_index = all_cells.index(td)
+
                 colspan = int(td.attrib.get('colspan'))
                 td_to_be_removed = find_next_untouched_td(new_tr, col_index)
                 replace_td(new_tr, td_to_be_removed, td)
@@ -116,12 +121,13 @@ def unpack_merged_cells_in_table(html):
                 td.set('_colspan', str(colspan))
 
                 for _col_index in range(col_index + 1, col_index + colspan):
-                    _tr = new_table.findall('.//tr')[row_index]
-                    _td = _tr.findall('.//td')[_col_index]
+                    _td = new_tr.findall('.//td')[_col_index]
 
                     _td.set('__is_used', '1')
 
-                col_index = new_tr.index(td) + 1
+                # set next col_index
+                col_index = _col_index + 1
+
             elif td.attrib.get('rowspan'):
                 rowspan = int(td.attrib.get('rowspan'))
                 td_to_be_removed = find_next_untouched_td(new_tr, col_index)
@@ -147,7 +153,7 @@ def unpack_merged_cells_in_table(html):
 
                 _td.set('__bottom_line', '1')
 
-                col_index = new_tr.index(td) + 1
+                col_index += 1
 
     for _td in new_table.findall('.//td') + new_table.findall('.//th'):
         try:
