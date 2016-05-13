@@ -176,8 +176,6 @@ def clean(text):
         (u'â', ''),
         #(u'â', '``'),
         #(u'â', '\'\''),
-        (u'\u00a0', ' '),
-        (u'\u00c2', ' '),
     )
     for oldvalue, newvalue in items:
         text = text.replace(oldvalue, newvalue)

@@ -41,7 +41,7 @@ def get_blank_td():
 
 def create_blank_table(rows, cols):
     blank_html = '''
-    <table>
+    <table  border="1">
     <tbody></tbody>
     </table>
     '''
@@ -92,6 +92,21 @@ def unpack_merged_cells_in_table(html):
         except KeyError:
             pass
 
+        colspan = int(_td.attrib.get('colspan', 1))
+        rowspan = int(_td.attrib.get('rowspan', 1))
+
+        if colspan == 1:
+            try:
+                _td.attrib.pop('colspan')
+            except KeyError:
+                pass
+
+        if rowspan == 1:
+            try:
+                _td.attrib.pop('rowspan')
+            except KeyError:
+                pass
+
     root = etree.HTML(etree.tounicode(root))
 
     for row_index, tr in enumerate(root.findall('.//tr')):
@@ -100,19 +115,27 @@ def unpack_merged_cells_in_table(html):
         for k, v in tr.attrib.items():
             new_tr.set(k, v)
 
-        all_cells = [x for x in tr.iterchildren()]
+        all_cells = []
+
+        for td in tr.iterchildren():
+            colspan = int(td.attrib.get('colspan', 1))
+            all_cells.append(td)
+
+            for _ in range(1, colspan):
+                all_cells.append(None)
 
         col_index = 0
         for td in tr.iterchildren():
-            if td.attrib.get('colspan') is None and td.attrib.get('rowspan') is None:
+            colspan = int(td.attrib.get('colspan', 1))
+            rowspan = int(td.attrib.get('rowspan', 1))
+
+            if colspan == 1 and rowspan == 1:
                 td_to_be_removed = find_next_untouched_td(new_tr, col_index)
                 replace_td(new_tr, td_to_be_removed, td)
 
                 col_index += 1
-
-            elif td.attrib.get('colspan'):
+            if colspan > 1:
                 col_index = all_cells.index(td)
-
                 colspan = int(td.attrib.get('colspan'))
                 td_to_be_removed = find_next_untouched_td(new_tr, col_index)
                 replace_td(new_tr, td_to_be_removed, td)
@@ -127,9 +150,7 @@ def unpack_merged_cells_in_table(html):
 
                 # set next col_index
                 col_index = _col_index + 1
-
-            elif td.attrib.get('rowspan'):
-                rowspan = int(td.attrib.get('rowspan'))
+            elif rowspan > 1:
                 td_to_be_removed = find_next_untouched_td(new_tr, col_index)
                 replace_td(new_tr, td_to_be_removed, td)
 
@@ -165,43 +186,70 @@ def unpack_merged_cells_in_table(html):
 
 if __name__ == '__main__':
     html = r'''
-    <p><strong>Go to your nearest farmer and collect the information for the following table:</strong></p>
 
-<table border="1" cellpadding="0" cellspacing="0" style="width:604px">
+<table border="0" cellpadding="0" cellspacing="0" style="width:580px">
     <tbody>
         <tr>
-            <td rowspan="2" style="height:41px; width:227px">
-            <p style="text-align:center"><strong>Paddy growing season</strong></p>
-            </td>
-            <td rowspan="2" style="height:41px">
-            <p style="text-align:center"><strong>Paddy production per hectare</strong></p>
-            </td>
-            <td colspan="2" style="height:41px">
-            <p style="text-align:center"><strong>Quality of seed</strong></p>
-            </td>
+            <td rowspan="2" style="height:51px; width:60px">Tick One</td>
+            <td rowspan="2" style="width:76px">Terms (Yrs)</td>
+            <td rowspan="2" style="width:80px">No. of Issue</td>
+            <td colspan="2" style="width:101px">Cover prices</td>
+            <td colspan="2" style="width:101px">You pay</td>
+            <td colspan="2" style="width:101px">You save</td>
+            <td rowspan="2" style="width:60px">% saving</td>
         </tr>
         <tr>
-            <td style="height:28px; width:57px">
-            <p style="text-align:center"><strong>Size</strong></p>
-            </td>
-            <td style="height:28px; width:95px">
-            <p style="text-align:center"><strong>Weight</strong></p>
-            </td>
+            <td style="height:20px">USD</td>
+            <td>Rs.</td>
+            <td>USD</td>
+            <td>Rs.</td>
+            <td>USD</td>
+            <td>Rs.</td>
         </tr>
         <tr>
-            <td style="height:79px; width:227px">
-            <p style="text-align:center">Rabi<br />
-            Kharif</p>
-            </td>
-            <td style="height:79px">&nbsp;</td>
-            <td style="height:79px">&nbsp;</td>
+            <td style="height:20px">&nbsp;</td>
+            <td>1</td>
+            <td>12</td>
+            <td>120</td>
+            <td>480</td>
+            <td>102</td>
+            <td>400</td>
+            <td>18</td>
+            <td>80</td>
+            <td>17</td>
+        </tr>
+        <tr>
+            <td style="height:20px">&nbsp;</td>
+            <td>2</td>
+            <td>24</td>
+            <td>240</td>
+            <td>960</td>
+            <td>192</td>
+            <td>750</td>
+            <td>48</td>
+            <td>210</td>
+            <td>22</td>
+        </tr>
+        <tr>
+            <td style="height:20px">&nbsp;</td>
+            <td>3</td>
+            <td>36</td>
+            <td>360</td>
+            <td>1440</td>
+            <td>252</td>
+            <td>1000</td>
+            <td>108</td>
+            <td>440</td>
+            <td>30</td>
         </tr>
     </tbody>
-</table>
+</table>    '''
 
-<p>&nbsp;</p>
+    output_html = unpack_merged_cells_in_table(html)
+    import os
+    import lxml
+    output_html = etree.tostring(lxml.html.document_fromstring(output_html)[0])
+    print output_html
 
-<p>Students&#39; activity.</p>
-    '''
-
-    print unpack_merged_cells_in_table(html)
+    with open(os.path.expanduser('~/unmerged_table.html'), 'w') as f:
+        f.write(output_html)

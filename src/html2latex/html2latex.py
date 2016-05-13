@@ -45,7 +45,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.62"
+VERSION = "0.0.68"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -120,6 +120,9 @@ def delegate(element, do_spellcheck=False, **kwargs):
     elif element.tag == 'span' and 'math-tex' in css_classes:
         equation = element.text or ''
         tail = element.tail or ''
+        tail = clean(tail)
+        tail = escape_tex(tail)
+        tail = tail.replace("\r", "\n")
 
         equation = equation.strip()
         equation = " ".join(re.split(r"\r|\n", equation))
@@ -171,6 +174,12 @@ class HTMLElement(object):
     def __init__(self, element, do_spellcheck=False, **kwargs):
         self.element = element
 
+        # try:
+        #     if self.element.tag == 'p' and self.element.getparent().tag == 'td':
+        #         import ipdb; ipdb.set_trace()
+        # except:
+        #     pass
+
         _html = etree.tounicode(self.element)
 
         self.has_content = check_if_html_has_text(_html)
@@ -189,6 +198,7 @@ class HTMLElement(object):
         self.content[
             'tail'] = self.element.tail if self.element.tail is not None else ''
         self.content['tag'] = escape_latex(self.element.tag)
+        self.escape_latex_characters()
 
         """ Get attributes of the elements"""
         try:
@@ -229,7 +239,6 @@ class HTMLElement(object):
         self.get_template()
         self.cap_first()
         self.fix_tail()
-        self.escape_latex_characters()
         self.spell_check()
 
         def fix_spaces(self, match):
@@ -238,7 +247,7 @@ class HTMLElement(object):
             return " " + group + " "
 
         self.content['text'] = re.sub(
-            r'( )+?', ' ', self.content['text']).rstrip()
+            r'( )+?', ' ', self.content['text'])
 
     def get_template(self):
         try:
@@ -259,12 +268,13 @@ class HTMLElement(object):
     def fix_tail(self):
         """Fix tail of the element to include spaces accordingly
         """
-        tail = self.content['tail']
-        if (len(tail) > 0) and (tail[0] in [' \t\r\n']):
-            tail = ' ' + tail.lstrip()
-        if (len(tail) > 0) and (tail[-1] in [' \t\r\n']):
-            tail = tail.rstrip() + ' '
-        self.content['tail'] = tail
+        return
+        # tail = self.content['tail']
+        # if (len(tail) > 0) and (tail[0] in [' \t\r\n']):
+        #     tail = ' ' + tail.lstrip()
+        # if (len(tail) > 0) and (tail[-1] in [' \t\r\n']):
+        #     tail = tail.rstrip() + ' '
+        # self.content['tail'] = tail
 
     def spell_check(self):
         """Do spell check and highlight invalid words using enchant
@@ -280,14 +290,21 @@ class HTMLElement(object):
         """
         text = self.content['text']
         text = clean(text)
-        text = escape_latex(text)
+        text = escape_tex(text)
+
+        text = text.replace(u'\u00a0', '\\,')
+        text = text.replace(u'\u00c2', '\\,')
+
         self.content['text'] = text.replace("\r", "\n")
 
         """escape latex characters from tail
         """
         tail = self.content['tail']
         tail = clean(tail)
-        tail = escape_latex(tail)
+        tail = escape_tex(tail)
+        tail = tail.replace(u'\u00a0', '\\,')
+        tail = tail.replace(u'\u00c2', '\\,')
+
         self.content['tail'] = tail.replace("\r", "\n")
 
     def render(self):
@@ -420,6 +437,7 @@ class Table(HTMLElement):
         colspecifiers = []
 
         table_width_scaleup_factor = 0.85
+        self.content["table_width_scaleup_factor"] = table_width_scaleup_factor
 
         col_widths_in_latex = []
         for col_width in col_widths:
@@ -448,10 +466,10 @@ class Table(HTMLElement):
 
         self.content['cols'] = '|' + '|'.join(colspecifiers) + '|'
 
-        self.content['text'] = self.content['text'].replace('\\par', ' ')
-        self.content['text'] = self.content['text'].replace('\n', '')
-        self.content['text'] = self.content[
-            'text'].replace('\\hline\n\\\\', '\\hline ')
+        # self.content['text'] = self.content['text'].replace('\\par', ' ')
+        # self.content['text'] = self.content['text'].replace('\n', '')
+        # self.content['text'] = self.content[
+        #     'text'].replace('\\hline\n\\\\', '\\hline ')
 
         self.template = texenv.get_template('table.tex')
 
@@ -543,8 +561,8 @@ class TD(HTMLElement):
 
         latex_code = super(TD, self).render(*args, **kwargs)
 
-        latex_code = re.sub(r'\s*\\par\s*', ' ', latex_code)
-        latex_code = re.sub(r'\s*\\par\s*\}\s*', ' }', latex_code)
+        # latex_code = re.sub(r'\s*\\par\s*', ' ', latex_code)
+        # latex_code = re.sub(r'\s*\\par\s*\}\s*', ' }', latex_code)
 
         return latex_code
 
