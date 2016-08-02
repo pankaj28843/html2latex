@@ -45,7 +45,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.68"
+VERSION = "0.0.73"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -139,9 +139,10 @@ def delegate(element, do_spellcheck=False, **kwargs):
         equation = html_parser.unescape(equation)
 
         equation = equation.replace("&", "\&")
-        equation = equation.replace("<", "\\textless")
-        equation = equation.replace(">", "\\textgreater")
+        equation = equation.replace("<", "\\textless ")
+        equation = equation.replace(">", "\\textgreater ")
         equation = equation.replace("\;", "\,")
+        equation = equation.replace(u"Δ", "\Delta ")
 
         equation = equation.strip()
 
@@ -734,7 +735,8 @@ class IMG(HTMLElement):
                 "ALIGN_IMAGE_IN_CENTER": ALIGN_IMAGE_IN_CENTER,
             }
 
-        output = self.template.render(**context)
+        output = self.template.render(**context).strip()
+        output += self.content['tail']
         return output
 
 
@@ -823,15 +825,8 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
     output = re.sub(r"(?i)e\. g\.", "e.g.", output)
     output = re.sub(r"(?i)i\. e\.", "i.e.", output)
 
-    for underscore in re.findall(r"s+_+|\s*_{2,}", output):
+    for underscore in re.findall(r"\s+_+|\s*_{2,}", output):
         output = output.replace(underscore, escape_latex(underscore), 1)
-
-    output = re.sub(
-        r"([a-zA-Z0-9]+)\s*\\begin\{textsupscript\}\s*(\w+)\s*\\end\{textsupscript\}",
-        r"\\begin{math}\1^{\2}\\end{math}", output)
-    output = re.sub(
-        r"([a-zA-Z0-9]+)\s*\\begin\{textsubscript\}\s*(\w+)\s*\\end\{textsubscript\}",
-        r"\\begin{math}\1_{\2}\\end{math}", output)
 
     if not isinstance(output, unicode):
         output = output.decode("utf-8")
@@ -845,7 +840,6 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
         (u'\u0086', u"¶"),
         (u'\u2012', u"-"),
         (u'\u25b3', u"∆"),
-        (u'||', u'\\begin{math}\\parallel\\end{math}'),
         (u'\u03f5', u'\\epsilon '),
     )
     for oldvalue, newvalue in items:

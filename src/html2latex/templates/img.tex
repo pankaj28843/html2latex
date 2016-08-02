@@ -1,5 +1,4 @@
 ((* if ALIGN_IMAGE_IN_CENTER *))\begin{center}((* endif *))
-\raisebox{-1.0\height}{\includegraphics[width=\minof{(((content.imagewidth)))pt}{0.95\linewidth},height=\minof{(((content.imageheight)))pt}{0.8\textheight},keepaspectratio]{(((content.imagename)))}}
+\includegraphics[width=\minof{(((content.imagewidth)))pt}{0.95\linewidth},height=\minof{(((content.imageheight)))pt}{0.8\textheight},keepaspectratio]{(((content.imagename)))}
 ((* if ALIGN_IMAGE_IN_CENTER *))\end{center}((* endif *))
 ((* if content.is_table *))\par\vspace{-5pt}((* endif *))
-(((content.tail)))
