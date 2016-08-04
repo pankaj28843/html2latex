@@ -45,7 +45,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.73"
+VERSION = "0.0.75"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -715,8 +715,9 @@ class IMG(HTMLElement):
         if USE_BASE64_ENCODED_STRING_FOR_IMAGE is True:
             filename, file_extension = os.path.splitext(self.src)
 
-            jobname_base64 = "%s.base64" % uuid.uuid4()
-            jobname_tmp_image = "%s%s" % (uuid.uuid4(), file_extension)
+            unique_id = uuid.uuid4()
+            jobname_base64 = "%s.base64" % unique_id
+            jobname_tmp_image = "%s%s" % (unique_id, file_extension)
 
             with open(self.src, "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read())
