@@ -45,7 +45,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.75"
+VERSION = "0.0.76"
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
@@ -187,7 +187,7 @@ class HTMLElement(object):
 
         self.do_spellcheck = do_spellcheck
 
-        self._init_kwargs = copy.deepcopy(kwargs)
+        self._init_kwargs = kwargs
         for key, value in kwargs.iteritems():
             setattr(self, key, value)
 
@@ -537,6 +537,11 @@ class TD(HTMLElement):
     def __init__(self, *args, **kwargs):
         obj = super(TD, self).__init__(*args, **kwargs)
 
+        self.content['use_gray_cell_color_in_first_row'] = kwargs.get(
+            'USE_GRAY_CELL_COLOR_IN_FIRST_ROW',
+            True
+        )
+
         self.template = texenv.get_template('td.tex')
 
         tr = self.element.getparent()
@@ -586,9 +591,12 @@ class IMG(HTMLElement):
     is_table = False
 
     def __init__(self, element, *args, **kwargs):
+        self.filecontents_string_list = kwargs['cache']['filecontents_string_list']
         # import ipdb; ipdb.set_trace()
 
         HTMLElement.__init__(self, element, *args, **kwargs)
+        self.init_kwargs = kwargs
+
         for key, value in kwargs.items():
             setattr(self, key, value)
         self.get_image_link()
@@ -714,6 +722,8 @@ class IMG(HTMLElement):
 
         if USE_BASE64_ENCODED_STRING_FOR_IMAGE is True:
             filename, file_extension = os.path.splitext(self.src)
+            img_format = Image.open(self.src).format
+            file_extension = ".%s" % img_format.lower()
 
             unique_id = uuid.uuid4()
             jobname_base64 = "%s.base64" % unique_id
@@ -730,6 +740,9 @@ class IMG(HTMLElement):
                 "ALIGN_IMAGE_IN_CENTER": ALIGN_IMAGE_IN_CENTER,
             }
             self.template = texenv.get_template('img_base64_encoded_string.tex')
+            filecontents_template = texenv.get_template('img_base64_encoded_string_filecontents.tex')
+            filecontents_string = filecontents_template.render(**context).strip()
+            self.filecontents_string_list.append(filecontents_string)
         else:
             context = {
                 "content": self.content,
@@ -812,9 +825,14 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
     body = root.find('.//body')
 
     line_separator = kwargs.get('LINE_SPERATOR', '')
+    cache = {
+        "filecontents_string_list": [],
+    }
 
-    content = line_separator.join([delegate(element, do_spellcheck=do_spellcheck, **kwargs)
+    content = line_separator.join([delegate(element, do_spellcheck=do_spellcheck, cache=cache, **kwargs)
                        for element in body])
+
+    content = '\n'.join(cache["filecontents_string_list"]) + content
 
     # main_template = texenv.get_template('doc.tex')
     # output = unicode(unescape(main_template.render(content=content))).encode(

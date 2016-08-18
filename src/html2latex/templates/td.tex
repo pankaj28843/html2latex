@@ -5,5 +5,5 @@
 ((* elif content.rowspan *))
 \multirow{(((content.rowspan)))}{\linewidth}{((* if content.text_alignment == 'center' *))\centering\arraybackslash ((* endif *))(((content.text)))} ((( content.tail ))) ((* if not content.is_last_column *))&((* endif *))
 ((* else *))
-((* if content.is_first_row*))\multicolumn{1}{|>{\raggedright\arraybackslash}p{((( content.col_width_latex )))}|}{\cellcolor{black!20}\fontseries{b}\selectfont ((* endif *))((* if content.text_alignment == 'center' *))\centering\arraybackslash ((* endif *))(((content.text)))((* if content.is_first_row*))}((* endif *)) (((content.tail))) ((* if not content.is_last_column *))&((* endif *))
+((* if content.is_first_row and content.use_gray_cell_color_in_first_row *))\multicolumn{1}{|>{\raggedright\arraybackslash}p{((( content.col_width_latex )))}|}{\cellcolor{black!20}\fontseries{b}\selectfont ((* endif *))((* if content.text_alignment == 'center' *))\centering\arraybackslash ((* endif *))(((content.text)))((* if content.is_first_row and content.use_gray_cell_color_in_first_row *))}((* endif *)) (((content.tail))) ((* if not content.is_last_column *))&((* endif *))
 ((* endif *))

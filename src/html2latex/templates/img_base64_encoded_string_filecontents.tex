@@ -1,0 +1,4 @@
+\begin{filecontents*}{\jobname-((( jobname )))}
+((( encoded_string )))
+\end{filecontents*}
+\immediate\write18{base64 --decode \jobname-((( jobname ))) > \jobname-((( image_filepath )))}
