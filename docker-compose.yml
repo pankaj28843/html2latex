@@ -9,6 +9,7 @@ services:
   demo-app:
     build: .
     container_name: "demo_app"
+    restart: always
     depends_on:
       - redis
     environment:
@@ -17,7 +18,7 @@ services:
       - REDIS_PORT=6379
       - CAPFIRST_ENABLED=True
       - CACHE_ENABLED=${CACHE_ENABLED:-True}
-      - ENV=${ENV:-prod}
+      - ENV=${ENV:-production}
     ports:
       - "15005:15005"
     links:

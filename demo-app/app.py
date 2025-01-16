@@ -1,37 +1,29 @@
-# demo-app/app.py
 from __future__ import print_function  # For Python 2.7 print compatibility
 import os
-import hashlib
 import hmac
 
 import redis
-from flask import Flask, request, jsonify, render_template_string, render_template
+from flask import Flask, request, jsonify, render_template
 
-# Import the library's function
-# Make sure your PYTHONPATH or installed package includes your html2latex
 from html2latex.html2latex import html2latex
 
 app = Flask(__name__)
 
-# --------------------------
-# Setup Redis (moved from library)
-# --------------------------
 redis_host = os.environ.get("REDIS_HOST", "localhost")
 redis_port = int(os.environ.get("REDIS_PORT", 6379))
 redis_db = int(os.environ.get("REDIS_DB", 0))
 
 cache = redis.StrictRedis(host=redis_host, port=redis_port, db=redis_db)
 
-# Optionally read CAPFIRST_ENABLED from env
 capfirst_enabled = os.environ.get("CAPFIRST_ENABLED", "False").lower().strip() == "true"
 cache_enabled = os.environ.get("CACHE_ENABLED", "False").lower().strip() == "true"
+
+ENV = os.environ.get("ENV", "production").lower().strip()
+DEBUG = ENV != "production"
 
 
 def cache_key_for_html(html_string):
     """Generate a cache key for the given HTML string."""
-    # Using a stable hash approach:
-    # Combine with any relevant environment-driven config
-    # so that if CAPFIRST changes, the cache is invalidated.
     key_source = "{}__capfirst_{}".format(html_string, capfirst_enabled)
     # Just an example hashing strategy
     return "demo_app:" + hmac.new(key_source).hexdigest()
@@ -69,8 +61,7 @@ def convert_html():
     if not cache_enabled:
         try:
             latex_result = html2latex(html_string, CAPFIRST_ENABLED=capfirst_enabled)
-        except Exception as e:
-            raise e
+        except Exception:
             return jsonify({"error": "Error converting HTML to LaTeX"}), 500
 
     # First, check the cache
@@ -84,8 +75,7 @@ def convert_html():
     # Pass any env-based config (e.g. CAPFIRST_ENABLED) if relevant
     try:
         latex_result = html2latex(html_string, CAPFIRST_ENABLED=capfirst_enabled)
-    except Exception as e:
-        raise e
+    except Exception:
         return jsonify({"error": "Error converting HTML to LaTeX"}), 500
 
     # Store in cache
@@ -95,5 +85,4 @@ def convert_html():
 
 
 if __name__ == "__main__":
-    # Run the Flask dev server on port 15005
-    app.run(host="0.0.0.0", port=15005, debug=True)
+    app.run(host="0.0.0.0", port=15005, debug=DEBUG)
