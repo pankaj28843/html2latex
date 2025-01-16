@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>HTML to LaTeX Demo with TinyMCE & Syntax Highlighting</title>
+
+    <!-- (Optional) MathJax if you want to render math in the HTML editor -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS_HTML"></script> -->
+
+    <!-- TinyMCE's default content stylesheet + highlight.js dark theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tinymce@7.6.0/skins/ui/oxide/content.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.0/styles/dark.min.css" />
+
+    <!-- Minimal styling to fill the screen and arrange editor/output side by side -->
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: sans-serif;
+        }
+
+        h1 {
+            margin: 0;
+            padding: 16px;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f7f7f7;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100% - 60px);
+            /* subtract top bar (h1, etc.) height */
+        }
+
+        .editor-section,
+        .output-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .editor-section h3,
+        .output-section h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+
+        button {
+            margin-right: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+
+        /* Make TinyMCE fill its container area */
+        #html-input {
+            flex: 1;
+        }
+
+        /* Output area styling */
+        .output-area {
+            flex: 1;
+            overflow: auto;
+            background: #2d2d2d;
+            /* keep or change as needed */
+            padding: 16px;
+            /* increased padding for breathing room */
+            border: 1px solid #444;
+        }
+
+        /* Remove any text shadows that might blur the code */
+        .hljs,
+        code.hljs {
+            text-shadow: none !important;
+            background: none !important;
+            /* If the theme sets a background gradient/shadow, remove it */
+        }
+
+        /* Improve readability by forcing a more comfortable font/color/size */
+        .hljs {
+            font-family: Menlo, Monaco, "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #f8f8f2 !important;
+            /* override the text color if it's too dim */
+            background: #2d2d2d !important;
+            /* unify background (in case the theme uses multiple tones) */
+            padding: 0.5em;
+            /* small inner padding if needed */
+            border-radius: 4px;
+            /* slight rounding, if you like */
+        }
+
+        /* If you want to override specific syntax colors from the dark theme,
+   you can target .hljs-<token> elements. For example: */
+        .hljs-comment,
+        .hljs-quote {
+            color: #999 !important;
+            font-style: italic;
+        }
+
+        .hljs-keyword,
+        .hljs-selector-tag,
+        .hljs-name {
+            color: #c678dd !important;
+            /* purple-ish for keywords */
+        }
+
+        .hljs-string,
+        .hljs-symbol,
+        .hljs-bullet {
+            color: #98c379 !important;
+            /* green-ish for strings */
+        }
+
+        /* ...add more .hljs-xxx overrides if needed. */
+
+        /* Optionally wrap lines if your code can get very long */
+        .output-area pre.latex-output code {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top title bar with heading -->
+    <div class="top-bar">
+        <h1>HTML to LaTeX Demo</h1>
+        <div>
+            <button id="convert-button">Convert to LaTeX</button>
+            <button id="copy-button">Copy LaTeX</button>
+        </div>
+    </div>
+
+    <!-- Main container -->
+    <div class="container">
+        <!-- Left side: the editor -->
+        <div class="editor-section">
+            <h3>Enter your HTML here:</h3>
+            <textarea id="html-input">
+
+  <!-- Main Heading -->
+  <h1>Beautiful Math Equations</h1>
+
+  <!-- Subheading -->
+  <h2>Introduction</h2>
+  <p>
+    Welcome to this demo of <strong>HTML to LaTeX</strong> conversion. Here,
+    we showcase how <em>MathJax</em> can beautifully render <span class="math-tex">\( \LaTeX \)</span>
+    equations inside HTML.
+  </p>
+
+  <!-- Paragraph with both inline and displayed equations -->
+  <p>
+    Here is an inline Pythagorean identity:
+    <span class="math-tex">\( x^2 + y^2 = z^2 \)</span>.
+    <br>
+    And here is a displayed integral:
+    <span class="math-tex">\[ \int_0^1 x^n \, dx = \frac{1}{n+1} \]</span>
+  </p>
+
+  <!-- Another heading -->
+  <h2>More Examples</h2>
+  <p>
+    Euler's famous identity in inline form:
+    <span class="math-tex">\( e^{\pi i} + 1 = 0 \)</span>.
+  </p>
+
+  <!-- Unordered list with equations -->
+  <ul>
+    <li>First list item with Greek letters:
+      <span class="math-tex">\( \alpha + \beta = \gamma \)</span>
+    </li>
+    <li>Second list item with a fraction:
+      <span class="math-tex">\( \frac{a}{b} = \frac{c}{d} \)</span>
+    </li>
+  </ul>
+
+  <!-- Ordered list with equations -->
+  <ol>
+    <li>Square root:
+      <span class="math-tex">\( \sqrt{2} \)</span>
+    </li>
+    <li>Summation formula:
+      <span class="math-tex">\( \sum_{k=1}^n k = \frac{n(n+1)}{2} \)</span>
+    </li>
+  </ol>
+
+  <!-- Table with equations in cells -->
+  <h2>Equations in a Table</h2>
+  <table border="1" cellspacing="0" cellpadding="5">
+    <thead>
+      <tr>
+        <th>Variable/Expression</th>
+        <th>Equation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Quadratic Formula</td>
+        <td><span class="math-tex">\( x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} \)</span></td>
+      </tr>
+      <tr>
+        <td>Line Equation</td>
+        <td><span class="math-tex">\( y = mx + c \)</span></td>
+      </tr>
+      <tr>
+        <td>Circle Equation</td>
+        <td><span class="math-tex">\( (x - h)^2 + (y - k)^2 = r^2 \)</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+      </textarea>
+        </div>
+
+        <!-- Right side: the output -->
+        <div class="output-section">
+            <h3>Output LaTeX:</h3>
+            <!-- Use <pre><code> for highlight.js to parse -->
+            <div class="output-area">
+                <pre class="latex-output" id="latex-output">
+          <!-- We'll dynamically fill this with the LaTeX code below -->
+        </pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- TinyMCE -->
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@7.6.0/tinymce.min.js"
+        integrity="sha256-Eu3oCxyZxzsm2T9ylrDcYE3I37P5XeQRBAOOLIq7Phw=" crossorigin="anonymous"></script>
+
+    <!-- highlight.js core + LaTeX language -->
+    <script type="module">
+        import hljs from 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.0/es/highlight.min.js';
+        import latex from 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.0/es/languages/latex.min.js';
+        hljs.registerLanguage('latex', latex);
+
+        // Initialize TinyMCE
+        tinymce.init({
+            selector: '#html-input',
+            menubar: false,
+            license_key: 'gpl',
+            plugins: 'lists link image table code',
+            toolbar: 'undo redo | bold italic | bullist numlist outdent indent | table mathjax',
+            external_plugins: {
+                mathjax: 'https://cdn.jsdelivr.net/npm/@dimakorotkov/tinymce-mathjax@1.0.11/plugin.min.js',
+            },
+            mathjax: {
+                lib: 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js',
+                className: 'math-tex',
+                symbols: { start: '\\(', end: '\\)' }, //optional: mathjax symbols
+                configUrl: 'https://cdn.jsdelivr.net/npm/@dimakorotkov/tinymce-mathjax@1.0.11/config.js' //optional: mathjax config js
+            },
+            // Attempt to fill parent container height
+            height: '100%',
+            resize: false,
+        });
+
+        // Convert HTML to LaTeX
+        function convertHTML() {
+            // Grab content from TinyMCE
+            const htmlString = tinymce.activeEditor.getContent();
+
+            // POST to /convert, expecting JSON { latex: '...' }
+            fetch('/convert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ html_string: htmlString }),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    // data.latex is the LaTeX result
+                    const outputEl = document.getElementById('latex-output');
+
+                    // Put the LaTeX into a code block for highlight.js
+                    // NOTE: Not escaping < or > can pose XSS risk if content is untrusted
+                    outputEl.innerHTML = `<code class="language-latex">${data.latex}</code>`;
+
+                    // Highlight the new code block
+                    const codeBlock = outputEl.querySelector('code.language-latex');
+                    hljs.highlightElement(codeBlock);
+                })
+                .catch((err) => {
+                    console.error(err);
+                    alert('Error: ' + err);
+                });
+        }
+
+        // Copy LaTeX to clipboard
+        function copyLatex() {
+            // Get whatever is in the code block
+            const codeBlock = document.querySelector('#latex-output code.language-latex');
+            if (!codeBlock) {
+                alert('No LaTeX code to copy.');
+                return;
+            }
+            const latexText = codeBlock.textContent;
+            navigator.clipboard.writeText(latexText)
+                .then(() => {
+                    alert('Copied to clipboard!');
+                })
+                .catch((err) => {
+                    alert('Failed to copy: ' + err);
+                });
+        }
+
+        // Event listeners
+        document.getElementById('convert-button').addEventListener('click', convertHTML);
+        document.getElementById('copy-button').addEventListener('click', copyLatex);
+    </script>
+</body>
+
+</html>

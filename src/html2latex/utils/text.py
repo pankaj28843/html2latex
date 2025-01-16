@@ -6,10 +6,7 @@ import htmlentitydefs
 import re
 
 # Third Party Stuff
-import redis
 from lxml import etree
-
-redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 REGEX_LATEX_SUBS = (
     (re.compile(r'\\'), r'\\textbackslash '),
@@ -59,11 +56,6 @@ REGEX_UNESCAPE_LATEX_SUBS = (
 #     (re.compile(r'\\textless '), r'<'),
 #     (re.compile(r'\\textless '), r'&lt;'),
 #     (re.compile(r'\\degree '), r'&degree;'),
-
-
-def latex_for_html(html):
-    hashed_html = u"webkit2png-{0}".format(hashlib.sha512(html).hexdigest())
-    return redis_client.get(hashed_html)
 
 
 """

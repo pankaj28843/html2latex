@@ -1,4 +1,6 @@
 # Local development dependencies go here
 -r base.txt
+Flask==1.1.4
 ipdb==0.8
 ipython==2.3.1
+redis==2.9.1

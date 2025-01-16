@@ -1,13 +1,7 @@
 Jinja2==2.7.3
 MarkupSafe==0.23
-Pillow==2.6.1
 argparse==1.2.1
-html2text==2014.12.24
+html2text==2015.6.12
 lxml==3.4.1
-mmh3==2.3
 pyenchant==1.6.6
-redis==2.9.1
-repoze.lru==0.6
-selenium==2.44.0
-splinter==0.7.0
-xamcheck-utils==0.0.11
+git+https://github.com/pankaj28843/xamcheck-utils.git@master

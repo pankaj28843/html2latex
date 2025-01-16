@@ -1,0 +1,29 @@
+version: '3'
+services:
+  redis:
+    image: "redis:5.0-alpine"
+    container_name: "redis_cache"
+    ports:
+      - "6379:6379"
+
+  demo-app:
+    build: .
+    container_name: "demo_app"
+    depends_on:
+      - redis
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CAPFIRST_ENABLED=True
+      - CACHE_ENABLED=${CACHE_ENABLED:-True}
+      - ENV=${ENV:-prod}
+    ports:
+      - "15005:15005"
+    links:
+      - "redis"
+    volumes:
+      - .:/app
+    working_dir: /app
+    env_file:
+      - .env

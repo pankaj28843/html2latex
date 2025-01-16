@@ -3,7 +3,7 @@ import os
 import subprocess
 
 # Third Party Stuff
-from pip.req import parse_requirements
+from pip._internal.req.req_file import parse_requirements
 from setuptools import find_packages, setup
 from setuptools.command.install import install as InstallCommand
 from setuptools.command.test import test as TestCommand
@@ -16,7 +16,7 @@ install_reqs = parse_requirements(
     session=0,
 )
 
-install_requires = [str(ir.req) for ir in install_reqs]
+install_requires = [str(ir.requirement) for ir in install_reqs if not ir.requirement.startswith('git+')]
 
 
 def read(fname):

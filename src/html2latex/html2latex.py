@@ -10,23 +10,20 @@ import hmac
 import os
 import re
 import subprocess
+import sys
 import uuid
+import logging
 
 # Third Party Stuff
 import jinja2
-import lxml
-import mmh3
-import redis
-import splinter
 from lxml import etree
-from PIL import Image
-from repoze.lru import lru_cache
+from lxml.html import document_fromstring
 from xamcheck_utils.html import check_if_html_has_text
 from xamcheck_utils.text import unicodify
 
 from .setup_texenv import setup_texenv
 from .utils.unpack_merged_cells_in_table import unpack_merged_cells_in_table
-from .utils.html_table import get_image_for_html_table, render_html
+from .utils.html_table import render_html
 from .utils.image import get_image_size
 from .utils.spellchecker import check_spelling
 from .utils.text import (
@@ -39,6 +36,13 @@ from .utils.text import (
     unescape
 )
 
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[logging.StreamHandler(sys.stdout)],
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 capfirst = lambda x: x and x[0].upper() + x[1:]
 
 loader = jinja2.FileSystemLoader(
@@ -46,7 +50,6 @@ loader = jinja2.FileSystemLoader(
 texenv = setup_texenv(loader)
 
 VERSION = "0.0.62"
-redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 CAPFIRST_ENABLED = False
 # Templates for each class here.
 
@@ -70,6 +73,7 @@ def delegate(element, do_spellcheck=False, **kwargs):
        \chapter{Title}'''
     # delegate the work to classes handling special cases
 
+
     # Filter out empty tags
     try:
         element.tag
@@ -77,35 +81,21 @@ def delegate(element, do_spellcheck=False, **kwargs):
         pass
 
     css_classes = element.attrib.get('class', '').lower()
+    logger.info("Delegating work to classes handling special cases, tag: {}".format(element.tag))
 
     if element.tag == 'div':
         my_element = HTMLElement(element, do_spellcheck, **kwargs)
 
+    elif element.tag == 'h1':
+        my_element = H1(element, do_spellcheck, **kwargs)
+    elif element.tag == 'h2':
+        my_element = H2(element, do_spellcheck, **kwargs)
+    elif element.tag == 'h3':
+        my_element = H3(element, do_spellcheck, **kwargs)
+    elif element.tag == 'h4':
+        my_element = H4(element, do_spellcheck, **kwargs)
     elif element.tag == 'table':
-        USE_IMAGE_FOR_TABLE = kwargs.get('USE_IMAGE_FOR_TABLE', False)
-        table_inner_html = u''.join([etree.tostring(e) for e in element])
-
-        if not USE_IMAGE_FOR_TABLE:
-            my_element = Table(element, do_spellcheck, **kwargs)
-        else:
-            items = (
-                    ("&#13;", ""),
-                    ("&uuml;", "&#10003;"),
-                    ("&#252;", "&#10003;"),
-                    ("\\checkmark", "&#10003;"),
-                    (u"ü", "&#10003;"),
-
-            )
-            for oldvalue, newvalue in items:
-                table_inner_html = table_inner_html.replace(oldvalue, newvalue)
-
-            image_file = get_image_for_html_table(
-                table_inner_html, do_spellcheck=do_spellcheck)
-
-            new_html = u"<img src='{0}'/>".format(image_file)
-            new_element = etree.HTML(new_html).find(".//img")
-            my_element = IMG(new_element, is_table=True, **kwargs)
-            my_element.content["is_table"] = True
+        my_element = Table(element, do_spellcheck, **kwargs)
     elif element.tag == 'tr':
         my_element = TR(element, do_spellcheck, **kwargs)
     elif element.tag == 'td':
@@ -241,9 +231,11 @@ class HTMLElement(object):
             r'( )+?', ' ', self.content['text']).rstrip()
 
     def get_template(self):
+        logger.info("Getting template for tag: {}".format(self.element.tag))
         try:
             self.template = texenv.get_template(self.element.tag + '.tex')
         except jinja2.exceptions.TemplateNotFound:
+            logger.info("Template not found for tag: {}".format(self.element.tag))
             self.template = texenv.get_template('not_implemented.tex')
         except TypeError:
             self.template = texenv.get_template('error.tex')
@@ -316,6 +308,30 @@ class HTMLElement(object):
         pass
 
 
+class H1(HTMLElement):
+    def __init__(self, element, *args, **kwargs):
+        HTMLElement.__init__(self, element, *args, **kwargs)
+        self.template = texenv.get_template('h1.tex')
+
+
+class H2(HTMLElement):
+    def __init__(self, element, *args, **kwargs):
+        HTMLElement.__init__(self, element, *args, **kwargs)
+        self.template = texenv.get_template('h2.tex')
+
+
+class H3(HTMLElement):
+    def __init__(self, element, *args, **kwargs):
+        HTMLElement.__init__(self, element, *args, **kwargs)
+        self.template = texenv.get_template('h3.tex')
+
+
+class H4(HTMLElement):
+    def __init__(self, element, *args, **kwargs):
+        HTMLElement.__init__(self, element, *args, **kwargs)
+        self.template = texenv.get_template('h4.tex')
+
+
 class A(HTMLElement):
 
     """
@@ -335,7 +351,7 @@ class A(HTMLElement):
 class Table(HTMLElement):
 
     def __init__(self, element, *args, **kwargs):
-        HTMLElement.__init__(self, element, *args, **kwargs)
+        super(Table, self).__init__(element, *args, **kwargs)
 
         if self.element.getprevious() is not None:
             self.content['has_previous_element'] = True
@@ -351,18 +367,18 @@ class Table(HTMLElement):
             return
 
         _old_html = etree.tounicode(self.element)
-
         _new_html = unpack_merged_cells_in_table(_old_html)
+        # Optional: Remove <strong> tags if you desire
         # _new_html = re.sub(r"<strong>|</strong>", "", _new_html)
 
+        # Re-parse the table HTML after unpack_merged_cells_in_table
         self.element = element = etree.HTML(_new_html).findall('.//table')[0]
 
+        # Identify the row with the largest number of columns
         row_with_max_td = None
         max_td_count = 0
-
         for row in element.findall('.//tr'):
             col_count = len(row.findall('.//td')) + len(row.findall('.//th'))
-
             if col_count > max_td_count:
                 row_with_max_td = row
                 max_td_count = col_count
@@ -372,7 +388,7 @@ class Table(HTMLElement):
         complete_html_string = re.sub(
             r'^<body>|</body>$',
             '',
-            lxml.etree.tostring(body_element).strip()
+            etree.tostring(body_element).strip()
         ).strip()
         rendered_html = render_html(complete_html_string)
 
@@ -383,84 +399,113 @@ class Table(HTMLElement):
 
         url = u"file://{0}".format(html_file)
 
+        # --------------------------------------------------
+        # 1) Attempt to read col widths from <colgroup><col>
+        # --------------------------------------------------
         col_widths = []
-        for td_element in row_with_max_td.iterchildren():
-            css = td_element.attrib.get('style', '')
-            if not css:
-                col_widths.append(None)
-                break
+        col_elements = element.findall('.//colgroup/col')
+        if col_elements:
+            for col_el in col_elements:
+                css = col_el.attrib.get('style', '')
+                if not css:
+                    col_widths.append(None)
+                    continue
+                # e.g., style="width: 10%;" or style="width: 50px;"
+                match_px = re.search(r'width\s*:\s*([0-9]+)px', css, re.IGNORECASE)
+                match_pct = re.search(r'width\s*:\s*([0-9\.]+)%', css, re.IGNORECASE)
+                match_num = re.search(r'width\s*:\s*([0-9\.]+)', css, re.IGNORECASE)
 
-            try:
-                _widths = re.findall(
-                    r'width\s*:\s*(\d+)',
-                    css,
-                    re.IGNORECASE)
-                width = _widths[0]
-            except IndexError:
-                col_widths.append(None)
-                break
+                if match_px:
+                    col_widths.append(float(match_px.group(1)))  # store px as float
+                elif match_pct:
+                    col_widths.append(float(match_pct.group(1))) # store pct as float
+                elif match_num:
+                    col_widths.append(float(match_num.group(1))) # e.g., width: 10
+                else:
+                    col_widths.append(None)
+        else:
+            # --------------------------------------------------
+            # 2) Fallback: read widths from the row_with_max_td
+            # --------------------------------------------------
+            col_widths = []
+            if row_with_max_td is not None:
+                for td_element in row_with_max_td.iterchildren():
+                    css = td_element.attrib.get('style', '')
+                    if not css:
+                        col_widths.append(None)
+                        continue
+                    try:
+                        # e.g., style="width: 15"
+                        _widths = re.findall(r'width\s*:\s*(\d+)', css, re.IGNORECASE)
+                        width = _widths[0]
+                        col_widths.append(float(width))
+                    except (IndexError, ValueError):
+                        col_widths.append(None)
 
-            width = float(width)
-            col_widths.append(width)
-
-        if not col_widths or None in col_widths:
-            with splinter.Browser('phantomjs') as browser:
-                browser.visit(url)
-
-                col_widths = []
-                for _element in row_with_max_td.getchildren():
-                    if _element.tag == "td" or _element.tag == "th":
-                        xpath = tree.getpath(_element)
-                        width = get_width_of_element_by_xpath(browser, xpath)
-
-                        col_widths.append(width)
+        # -----------------------------------------------------------------------
+        # 3) If we have no valid widths (all None, or empty), use a simple heuristic
+        # -----------------------------------------------------------------------
+        if not col_widths or all(w is None for w in col_widths):
+            # Heuristic: just distribute columns evenly, so each "column width" = 1
+            # We'll treat these as relative widths below
+            col_widths = [1.0 for _ in range(max_td_count)]
+        else:
+            # If some columns have None, replace with a simple heuristic, e.g. average
+            valid_widths = [w for w in col_widths if w is not None]
+            if valid_widths:
+                avg = sum(valid_widths) / len(valid_widths)
+            else:
+                avg = 1.0
+            col_widths = [w if w is not None else avg for w in col_widths]
 
         total_width = sum(col_widths)
+        if total_width == 0:
+            # Avoid division by zero
+            total_width = 1.0
 
+        # Compute col specifiers
         colspecifiers = []
-
         table_width_scaleup_factor = 0.85
 
         col_widths_in_latex = []
         for col_width in col_widths:
-            _col_width_latex = r'%1.4f\linewidth' % (
-                float(table_width_scaleup_factor) * float(float(col_width) / float(total_width))
-            )
-            colspecifier = r">{\raggedright\arraybackslash}p{%s}" % _col_width_latex
-
+            # fraction of total (scaled by factor)
+            fraction = (table_width_scaleup_factor * (col_width / total_width))
+            _col_width_latex = r'%1.4f\linewidth' % fraction
             col_widths_in_latex.append(_col_width_latex)
-            colspecifiers.append(colspecifier)
 
-        first_row = self.element.findall('.//tr')[0]
+            colspecifiers.append(r">{\raggedright\arraybackslash}p{%s}" % _col_width_latex)
 
-        for _index, row in enumerate(self.element.findall('.//tr')):
-            for td, col_width_latex, colspecifier in zip(row.findall('.//td'), col_widths_in_latex, colspecifiers):
+        # Tag each cell in each row with the chosen col specs
+        for row_index, row in enumerate(self.element.findall('.//tr')):
+            # Zip to avoid index mismatch if the row has fewer or more cells
+            for td, col_width_latex, colspecifier in zip(
+                row.findall('.//td'),
+                col_widths_in_latex,
+                colspecifiers
+            ):
                 if td is None:
                     continue
-
                 td.set('__colspecifier', colspecifier)
                 td.set('__col_width_latex', col_width_latex)
-
-                if _index == 0:
+                if row_index == 0:
                     td.set('is_first_row', "1")
 
         self.content['ncols'] = max_td_count
-
         self.content['cols'] = '|' + '|'.join(colspecifiers) + '|'
 
+        # Clean up text content
         self.content['text'] = self.content['text'].replace('\\par', ' ')
         self.content['text'] = self.content['text'].replace('\n', '')
-        self.content['text'] = self.content[
-            'text'].replace('\\hline\n\\\\', '\\hline ')
+        self.content['text'] = self.content['text'].replace('\\hline\n\\\\', '\\hline ')
 
+        # Set your LaTeX template
         self.template = texenv.get_template('table.tex')
 
     def render(self, *args, **kwargs):
         if not self.has_content:
             return ''
-
         latex_code = super(Table, self).render(*args, **kwargs)
-
         return latex_code
 
 
@@ -720,20 +765,11 @@ class IMG(HTMLElement):
         return output
 
 
-@lru_cache(512)
-def hash_string(s):
-    return "html2latex_{version}_{mmh3_hash}_{hmac_of_sha512_hash}".format(
-        version=VERSION,
-        mmh3_hash=mmh3.hash128(s),
-        hmac_of_sha512_hash=hmac.new(hashlib.sha512(s).hexdigest()).hexdigest(),
-    )
-
-
 def fix_encoding_of_html_using_lxml(html):
     fixed_html = re.sub(
         r'^<body>|</body>$',
         "",
-        etree.tostring(lxml.html.document_fromstring(html)[0])
+        etree.tostring(document_fromstring(html)[0])
     ).strip()
 
     if re.search(r'^<p>', html) is None:
@@ -758,21 +794,7 @@ def html2latex(html, **kwargs):
         return ''
 
     html = fix_encoding_of_html_using_lxml(html)
-
-    html_to_be_hashed = u"{html}__{kwargs}".format(
-        html=html,
-        kwargs=kwargs
-    )
-
-    hashed_html = hash_string(html_to_be_hashed)
-
-    latex_code = redis_client.get(hashed_html)
-
-    if not latex_code:
-        latex_code = _html2latex(html, **kwargs)
-        redis_client.set(hashed_html, latex_code)
-
-    return latex_code
+    return _html2latex(html, **kwargs)
 
 
 def _html2latex(html, do_spellcheck=False, **kwargs):
