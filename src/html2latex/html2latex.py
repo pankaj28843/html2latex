@@ -6,7 +6,6 @@ Convert HTML generated from CKEditor to LaTeX environment.
 import base64
 import copy
 import hashlib
-import hmac
 import os
 import re
 import subprocess
@@ -19,7 +18,6 @@ import jinja2
 from lxml import etree
 from lxml.html import document_fromstring
 from xamcheck_utils.html import check_if_html_has_text
-from xamcheck_utils.text import unicodify
 
 from .setup_texenv import setup_texenv
 from .utils.unpack_merged_cells_in_table import unpack_merged_cells_in_table
@@ -28,12 +26,7 @@ from .utils.image import get_image_size
 from .utils.spellchecker import check_spelling
 from .utils.text import (
     clean,
-    clean_paragraph_ending,
     escape_latex,
-    escape_tex,
-    fix_formatting,
-    fix_text,
-    unescape
 )
 
 logging.basicConfig(
@@ -81,7 +74,6 @@ def delegate(element, do_spellcheck=False, **kwargs):
         pass
 
     css_classes = element.attrib.get('class', '').lower()
-    logger.info("Delegating work to classes handling special cases, tag: {}".format(element.tag))
 
     if element.tag == 'div':
         my_element = HTMLElement(element, do_spellcheck, **kwargs)
@@ -231,11 +223,9 @@ class HTMLElement(object):
             r'( )+?', ' ', self.content['text']).rstrip()
 
     def get_template(self):
-        logger.info("Getting template for tag: {}".format(self.element.tag))
         try:
             self.template = texenv.get_template(self.element.tag + '.tex')
         except jinja2.exceptions.TemplateNotFound:
-            logger.info("Template not found for tag: {}".format(self.element.tag))
             self.template = texenv.get_template('not_implemented.tex')
         except TypeError:
             self.template = texenv.get_template('error.tex')

@@ -6,7 +6,6 @@ import re
 
 # Third Party Stuff
 import jinja2
-from lxml import etree
 
 REGEX_SN = re.compile(r'(?i)\s*(s\s*\.*\s*no\.*|s\s*\.*\s*n\.*)\s*')
 

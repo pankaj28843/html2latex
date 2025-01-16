@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 # Standard Library
-import hashlib
 import htmlentitydefs
 import re
 
