@@ -130,3 +130,9 @@ We provide a **demo Flask app** (still Python 2.7) that showcases HTML-to-LaTeX 
 - **Python 3 compatibility**: We plan to upgrade the codebase to Python 3, and adopt more modern Python libraries.
 - **Modular design**: Reduce the domain-specific logic (like weird text replacements) and make it a more generic HTML-to-LaTeX converter.
 - **Comprehensive test suite**: The code has mostly been tested in production (at ClassKlap), but lacks thorough automated tests.
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
