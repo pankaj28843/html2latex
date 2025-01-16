@@ -49,7 +49,7 @@ loader = jinja2.FileSystemLoader(
     os.path.dirname(os.path.realpath(__file__)) + '/templates')
 texenv = setup_texenv(loader)
 
-VERSION = "0.0.62"
+VERSION = "0.0.63"
 CAPFIRST_ENABLED = False
 # Templates for each class here.
 

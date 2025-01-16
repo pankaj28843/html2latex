@@ -1,9 +1,9 @@
 {
   "name": "html2latex",
   "version": "0.0.0",
-  "homepage": "https://github.com/psjinx/html2latex",
+  "homepage": "https://github.com/pankaj28843/html2latex",
   "authors": [
-    "Pankaj Singh <psjinx@gmail.com>"
+    "Pankaj Singh <pankaj28843@gmail.com>"
   ],
   "license": "MIT",
   "ignore": [

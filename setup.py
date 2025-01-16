@@ -55,13 +55,13 @@ class CustomInstallCommand(InstallCommand):
 
 setup(
     name="html2latex",
-    version="0.0.62",
+    version="0.0.63",
     author="Pankaj Singh",
     author_email="pankaj@xamcheck.com",
     description=("Convert HTML to latex."),
     license="BSD",
     keywords="html, latex",
-    url="https://github.com/psjinx/html2latex",
+    url="https://github.com/pankaj28843/html2latex",
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
