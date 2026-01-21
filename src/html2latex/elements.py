@@ -21,6 +21,24 @@ from .utils.image import get_image_size
 from .utils.text import apply_inline_styles, clean, escape_latex, parse_inline_style
 from .utils.unpack_merged_cells_in_table import unpack_merged_cells_in_table
 
+_RE_MATH_SPLIT = re.compile(r"\r|\n")
+_RE_MATH_OPEN = re.compile(r"^\\\s*\(", re.MULTILINE)
+_RE_MATH_CLOSE = re.compile(r"\\\s*\)$", re.MULTILINE)
+_RE_MATH_BRACE5 = re.compile(r"\{\{\{\{\{([\w,\.^]+)\}\}\}\}\}")
+_RE_MATH_BRACE4 = re.compile(r"\{\{\{\{([\w,\.^]+)\}\}\}\}")
+_RE_MATH_BRACE3 = re.compile(r"\{\{\{([\w,\.^]+)\}\}\}")
+_RE_MATH_BRACE2 = re.compile(r"\{\{([\w,\.^]+)\}\}")
+_RE_MULTI_SPACE = re.compile(r"( )+?")
+_RE_PRE_OPEN = re.compile(r"^<pre[^>]*>", re.IGNORECASE)
+_RE_PRE_CLOSE = re.compile(r"</pre>$", re.IGNORECASE)
+_RE_TAGS = re.compile(r"<[^>]+>")
+_RE_COL_WIDTH_PX = re.compile(r"width\s*:\s*([0-9]+)px", re.IGNORECASE)
+_RE_COL_WIDTH_PCT = re.compile(r"width\s*:\s*([0-9\.]+)%", re.IGNORECASE)
+_RE_COL_WIDTH_NUM = re.compile(r"width\s*:\s*([0-9\.]+)", re.IGNORECASE)
+_RE_COL_WIDTH_SIMPLE = re.compile(r"width\s*:\s*(\d+)", re.IGNORECASE)
+_RE_IMG_WIDTH_PX = re.compile(r"width:(\d+)px")
+_RE_IMG_HEIGHT_PX = re.compile(r"height:(\d+)px")
+
 
 def _spellcheck(text: str) -> str:
     # Resolve the function dynamically so tests can monkeypatch
@@ -75,13 +93,13 @@ def delegate(element, do_spellcheck: bool = False, **kwargs):
         tail = element.tail or ""
 
         equation = equation.strip()
-        equation = " ".join(re.split(r"\r|\n", equation))
-        equation = re.sub(r"^\\\s*\(", "", equation, flags=re.MULTILINE)
-        equation = re.sub(r"\\\s*\)$", "", equation, flags=re.MULTILINE)
-        equation = re.sub(r"\{\{\{\{\{([\w,\.^]+)\}\}\}\}\}", r"{\1}", equation)
-        equation = re.sub(r"\{\{\{\{([\w,\.^]+)\}\}\}\}", r"{\1}", equation)
-        equation = re.sub(r"\{\{\{([\w,\.^]+)\}\}\}", r"{\1}", equation)
-        equation = re.sub(r"\{\{([\w,\.^]+)\}\}", r"{\1}", equation)
+        equation = " ".join(_RE_MATH_SPLIT.split(equation))
+        equation = _RE_MATH_OPEN.sub("", equation)
+        equation = _RE_MATH_CLOSE.sub("", equation)
+        equation = _RE_MATH_BRACE5.sub(r"{\1}", equation)
+        equation = _RE_MATH_BRACE4.sub(r"{\1}", equation)
+        equation = _RE_MATH_BRACE3.sub(r"{\1}", equation)
+        equation = _RE_MATH_BRACE2.sub(r"{\1}", equation)
 
         from html import unescape
 
@@ -191,7 +209,7 @@ class HTMLElement(object):
             group = group.replace(" ", "\\,")
             return " " + group + " "
 
-        self.content["text"] = re.sub(r"( )+?", " ", self.content["text"]).rstrip()
+        self.content["text"] = _RE_MULTI_SPACE.sub(" ", self.content["text"]).rstrip()
 
     def get_template(self):
         try:
@@ -263,9 +281,9 @@ class HTMLElement(object):
 
     def _extract_raw_text(self):
         html = self.element.to_html()
-        html = re.sub(r"^<pre[^>]*>", "", html, flags=re.IGNORECASE)
-        html = re.sub(r"</pre>$", "", html, flags=re.IGNORECASE)
-        html = re.sub(r"<[^>]+>", "", html)
+        html = _RE_PRE_OPEN.sub("", html)
+        html = _RE_PRE_CLOSE.sub("", html)
+        html = _RE_TAGS.sub("", html)
         from html import unescape as html_unescape
 
         return html_unescape(html)
@@ -392,9 +410,9 @@ class Table(HTMLElement):
                     col_widths.append(None)
                     continue
                 # e.g., style="width: 10%;" or style="width: 50px;"
-                match_px = re.search(r"width\s*:\s*([0-9]+)px", css, re.IGNORECASE)
-                match_pct = re.search(r"width\s*:\s*([0-9\.]+)%", css, re.IGNORECASE)
-                match_num = re.search(r"width\s*:\s*([0-9\.]+)", css, re.IGNORECASE)
+                match_px = _RE_COL_WIDTH_PX.search(css)
+                match_pct = _RE_COL_WIDTH_PCT.search(css)
+                match_num = _RE_COL_WIDTH_NUM.search(css)
 
                 if match_px:
                     col_widths.append(float(match_px.group(1)))  # store px as float
@@ -417,7 +435,7 @@ class Table(HTMLElement):
                         continue
                     try:
                         # e.g., style="width: 15"
-                        _widths = re.findall(r"width\s*:\s*(\d+)", css, re.IGNORECASE)
+                        _widths = _RE_COL_WIDTH_SIMPLE.findall(css)
                         width = _widths[0]
                         col_widths.append(float(width))
                     except (IndexError, ValueError):
@@ -693,15 +711,13 @@ class IMG(HTMLElement):
         img_width = None
         img_height = None
 
-        try:
-            img_width = int(float(re.findall(r"width:(\d+)px", self.style)[0]) * 0.75)
-        except IndexError:
-            pass
+        match_width = _RE_IMG_WIDTH_PX.search(self.style)
+        if match_width:
+            img_width = int(float(match_width.group(1)) * 0.75)
 
-        try:
-            img_height = int(float(re.findall(r"height:(\d+)px", self.style)[0]) * 0.75)
-        except IndexError:
-            pass
+        match_height = _RE_IMG_HEIGHT_PX.search(self.style)
+        if match_height:
+            img_height = int(float(match_height.group(1)) * 0.75)
 
         try:
             if img_width is None or img_height is None:

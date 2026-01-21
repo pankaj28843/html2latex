@@ -10,6 +10,17 @@ from .html_adapter import parse_html
 from .utils.html import check_if_html_has_text
 from .utils.text import escape_latex
 
+_RE_E_G = re.compile(r"(?i)e\. g\.")
+_RE_I_E = re.compile(r"(?i)i\. e\.")
+_RE_UNDERSCORES = re.compile(r"s+_+|\s*_{2,}")
+_RE_TEXTSUP = re.compile(
+    r"([a-zA-Z0-9]+)\s*\\begin\{textsupscript\}\s*(\w+)\s*\\end\{textsupscript\}"
+)
+_RE_TEXTSUB = re.compile(
+    r"([a-zA-Z0-9]+)\s*\\begin\{textsubscript\}\s*(\w+)\s*\\end\{textsubscript\}"
+)
+_RE_NOINDENT_PAR = re.compile(r"\\noindent\s*\\par")
+
 
 def fix_encoding_of_html_using_lxml(html: str) -> str:
     # Legacy name retained for compatibility; uses justhtml now.
@@ -53,22 +64,14 @@ def _html2latex(html: str, do_spellcheck: bool = False, **kwargs):
 
     output = content
 
-    output = re.sub(r"(?i)e\. g\.", "e.g.", output)
-    output = re.sub(r"(?i)i\. e\.", "i.e.", output)
+    output = _RE_E_G.sub("e.g.", output)
+    output = _RE_I_E.sub("i.e.", output)
 
-    for underscore in re.findall(r"s+_+|\s*_{2,}", output):
+    for underscore in _RE_UNDERSCORES.findall(output):
         output = output.replace(underscore, escape_latex(underscore), 1)
 
-    output = re.sub(
-        r"([a-zA-Z0-9]+)\s*\\begin\{textsupscript\}\s*(\w+)\s*\\end\{textsupscript\}",
-        r"\\begin{math}\1^{\2}\\end{math}",
-        output,
-    )
-    output = re.sub(
-        r"([a-zA-Z0-9]+)\s*\\begin\{textsubscript\}\s*(\w+)\s*\\end\{textsubscript\}",
-        r"\\begin{math}\1_{\2}\\end{math}",
-        output,
-    )
+    output = _RE_TEXTSUP.sub(r"\\begin{math}\1^{\2}\\end{math}", output)
+    output = _RE_TEXTSUB.sub(r"\\begin{math}\1_{\2}\\end{math}", output)
 
     if isinstance(output, bytes):
         output = output.decode("utf-8")
@@ -91,7 +94,7 @@ def _html2latex(html: str, do_spellcheck: bool = False, **kwargs):
     output = output.replace("begin{underline}", "begin{underline} ")
     output = output.replace("\\end{underline}", " \\end{underline} ")
 
-    output = re.sub(r"\\noindent\s*\\par", r"\\vspace{11pt}", output)
+    output = _RE_NOINDENT_PAR.sub(r"\\vspace{11pt}", output)
 
     output = output.replace(r"\end{math}\\textendash", r"\end{math}\textendash")
 
