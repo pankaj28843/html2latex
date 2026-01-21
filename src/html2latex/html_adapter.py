@@ -9,7 +9,7 @@ from justhtml import JustHTML, ParseError
 from justhtml.node import Comment, Element, Text
 
 
-@dataclass
+@dataclass(slots=True)
 class HtmlDocument:
     root: "HtmlNode"
     errors: list[ParseError] | None = None
@@ -41,6 +41,8 @@ def is_comment(node: "HtmlNode") -> bool:
 
 class HtmlNode:
     """Thin wrapper around a justhtml node (Element or DocumentFragment)."""
+
+    __slots__ = ("_node",)
 
     def __init__(self, node):
         self._node = node

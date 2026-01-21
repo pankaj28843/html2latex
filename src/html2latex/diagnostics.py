@@ -8,7 +8,7 @@ from typing import Any, Iterable
 from justhtml.tokens import ParseError
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DiagnosticLocation:
     line: int | None = None
     column: int | None = None
@@ -16,7 +16,7 @@ class DiagnosticLocation:
     node_path: str | None = None
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DiagnosticEvent:
     code: str
     category: str
