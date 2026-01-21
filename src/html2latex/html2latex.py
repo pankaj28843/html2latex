@@ -58,7 +58,7 @@ def delegate(element, do_spellcheck=False, **kwargs):
     """
     Takes html element and converts it into string.
     """
-    """>>> html = '<h1>Title</h1>'
+    r""">>> html = '<h1>Title</h1>'
        >>> # delegate is called internally after parsing
        >>> # Example output:
        >>> print delegate(...)  # doctest: +SKIP
@@ -90,6 +90,8 @@ def delegate(element, do_spellcheck=False, **kwargs):
         my_element = TR(element, do_spellcheck, **kwargs)
     elif element.tag == "td":
         my_element = TD(element, do_spellcheck, **kwargs)
+    elif element.tag == "th":
+        my_element = TH(element, do_spellcheck, **kwargs)
     elif element.tag == "img":
         try:
             my_element = IMG(element, do_spellcheck, **kwargs)
@@ -103,8 +105,8 @@ def delegate(element, do_spellcheck=False, **kwargs):
 
         equation = equation.strip()
         equation = " ".join(re.split(r"\r|\n", equation))
-        equation = re.sub(r"^\\\s*\(", "", equation, re.MULTILINE)
-        equation = re.sub(r"\\\s*\)$", "", equation, re.MULTILINE)
+        equation = re.sub(r"^\\\s*\(", "", equation, flags=re.MULTILINE)
+        equation = re.sub(r"\\\s*\)$", "", equation, flags=re.MULTILINE)
         equation = re.sub(r"\{\{\{\{\{([\w,\.^]+)\}\}\}\}\}", r"{\1}", equation)
         equation = re.sub(r"\{\{\{\{([\w,\.^]+)\}\}\}\}", r"{\1}", equation)
         equation = re.sub(r"\{\{\{([\w,\.^]+)\}\}\}", r"{\1}", equation)
@@ -114,10 +116,10 @@ def delegate(element, do_spellcheck=False, **kwargs):
 
         equation = unescape(equation)
 
-        equation = equation.replace("&", "\&")
+        equation = equation.replace("&", "\\&")
         equation = equation.replace("<", "\\textless")
         equation = equation.replace(">", "\\textgreater")
-        equation = equation.replace("\;", "\,")
+        equation = equation.replace("\\;", "\\,")
 
         equation = equation.strip()
 
