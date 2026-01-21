@@ -6,12 +6,14 @@ Convert HTML generated from CKEditor to LaTeX environment.
 from __future__ import annotations
 
 import logging
+import os
+import subprocess
 import sys
 
 from .elements import A, H1, H2, H3, H4, IMG, TD, TH, TR, Table, HTMLElement, delegate
 from .helpers import capfirst, get_width_of_element_by_xpath
 from .pipeline import _html2latex, fix_encoding_of_html_using_lxml, html2latex
-from .template_env import loader, texenv
+from .template_env import get_texenv, loader, texenv
 from .utils.spellchecker import check_spelling
 
 logging.basicConfig(
@@ -41,9 +43,11 @@ __all__ = [
     "check_spelling",
     "delegate",
     "fix_encoding_of_html_using_lxml",
+    "get_texenv",
     "get_width_of_element_by_xpath",
     "html2latex",
     "loader",
+    "os",
+    "subprocess",
     "texenv",
 ]
-

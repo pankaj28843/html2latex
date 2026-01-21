@@ -15,7 +15,7 @@ import jinja2
 
 from .helpers import capfirst
 from .html_adapter import is_comment, parse_html
-from .template_env import texenv
+from .template_env import get_texenv
 from .utils.html import check_if_html_has_text
 from .utils.image import get_image_size
 from .utils.text import apply_inline_styles, clean, escape_latex, parse_inline_style
@@ -195,11 +195,11 @@ class HTMLElement(object):
 
     def get_template(self):
         try:
-            self.template = texenv.get_template(self.element.tag + ".tex")
+            self.template = get_texenv().get_template(self.element.tag + ".tex")
         except jinja2.exceptions.TemplateNotFound:
-            self.template = texenv.get_template("not_implemented.tex")
+            self.template = get_texenv().get_template("not_implemented.tex")
         except TypeError:
-            self.template = texenv.get_template("error.tex")
+            self.template = get_texenv().get_template("error.tex")
 
     def cap_first(self):
         """Capitalize first alphabet of the element"""
@@ -306,25 +306,25 @@ class HTMLElement(object):
 class H1(HTMLElement):
     def __init__(self, element, *args, **kwargs):
         HTMLElement.__init__(self, element, *args, **kwargs)
-        self.template = texenv.get_template("h1.tex")
+        self.template = get_texenv().get_template("h1.tex")
 
 
 class H2(HTMLElement):
     def __init__(self, element, *args, **kwargs):
         HTMLElement.__init__(self, element, *args, **kwargs)
-        self.template = texenv.get_template("h2.tex")
+        self.template = get_texenv().get_template("h2.tex")
 
 
 class H3(HTMLElement):
     def __init__(self, element, *args, **kwargs):
         HTMLElement.__init__(self, element, *args, **kwargs)
-        self.template = texenv.get_template("h3.tex")
+        self.template = get_texenv().get_template("h3.tex")
 
 
 class H4(HTMLElement):
     def __init__(self, element, *args, **kwargs):
         HTMLElement.__init__(self, element, *args, **kwargs)
-        self.template = texenv.get_template("h4.tex")
+        self.template = get_texenv().get_template("h4.tex")
 
 
 class A(HTMLElement):
@@ -479,7 +479,7 @@ class Table(HTMLElement):
         self.content["text"] = self.content["text"].replace("\\hline\n\\\\", "\\hline ")
 
         # Set your LaTeX template
-        self.template = texenv.get_template("table.tex")
+        self.template = get_texenv().get_template("table.tex")
 
     def render(self, *args, **kwargs):
         if not self.has_content:
@@ -496,7 +496,7 @@ class TR(HTMLElement):
     def __init__(self, *args, **kwargs):
         obj = super(TR, self).__init__(*args, **kwargs)
 
-        self.template = texenv.get_template("tr.tex")
+        self.template = get_texenv().get_template("tr.tex")
 
         bottom_line_latex = ""
 
@@ -540,7 +540,7 @@ class TD(HTMLElement):
     def __init__(self, *args, **kwargs):
         obj = super(TD, self).__init__(*args, **kwargs)
 
-        self.template = texenv.get_template("td.tex")
+        self.template = get_texenv().get_template("td.tex")
 
         tr = self.element.getparent()
         is_first_row = tr.getprevious() is None
@@ -582,7 +582,7 @@ class TH(TD):
     def __init__(self, *args, **kwargs):
         obj = super(TH, self).__init__(*args, **kwargs)
 
-        self.template = texenv.get_template("th.tex")
+        self.template = get_texenv().get_template("th.tex")
 
         return obj
 
@@ -606,12 +606,10 @@ class IMG(HTMLElement):
         GRAYSCALED_IMAGES = "/var/tmp/html2latex-grayscaled-images"
 
         # Make sure that directory exists.
-        if not os.path.isdir(REMOTE_IMAGE_ROOT):
-            os.makedirs(REMOTE_IMAGE_ROOT)
+        os.makedirs(REMOTE_IMAGE_ROOT, exist_ok=True)
 
         # Make sure that directory exists.
-        if not os.path.isdir(GRAYSCALED_IMAGES):
-            os.makedirs(GRAYSCALED_IMAGES)
+        os.makedirs(GRAYSCALED_IMAGES, exist_ok=True)
 
         # get the link to the image and download it.
         if self.src.startswith("http"):
@@ -716,7 +714,7 @@ class IMG(HTMLElement):
         self.content["imagename"] = self.src
         self.content["imagewidth"], self.content["imageheight"] = img_width, img_height
 
-        self.template = texenv.get_template("img.tex")
+        self.template = get_texenv().get_template("img.tex")
 
     def render(self):
         try:
@@ -745,7 +743,7 @@ class IMG(HTMLElement):
                 "encoded_string": encoded_string,
                 "ALIGN_IMAGE_IN_CENTER": ALIGN_IMAGE_IN_CENTER,
             }
-            self.template = texenv.get_template("img_base64_encoded_string.tex")
+            self.template = get_texenv().get_template("img_base64_encoded_string.tex")
         else:
             context = {
                 "content": self.content,
