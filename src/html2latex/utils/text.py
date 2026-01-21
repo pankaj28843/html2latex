@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
 
 # Standard Library
-from html import entities as html_entities
 import re
+from html import entities as html_entities
 
 # Third Party Stuff
 from justhtml import JustHTML
 from justhtml.node import Element
 
 REGEX_LATEX_SUBS = (
-    (re.compile(r'\\'), r'\\textbackslash '),
-    (re.compile(r'>'), r"\\textgreater "),
-    (re.compile(r'&gt;'), r"\\textgreater "),
-    (re.compile(r'<'), r'\\textless '),
-    (re.compile(r'&lt;'), r'\\textless '),
-    (re.compile(r'&degree;'), r'\\degree '),
-    (re.compile(r'([{}_#%&$])'), r'\\\1'),
-    (re.compile(r'~'), r'\~'),
-    (re.compile(r'-'), r'\\textendash '),
-    (re.compile(r'\^'), r'\^'),
+    (re.compile(r"\\"), r"\\textbackslash "),
+    (re.compile(r">"), r"\\textgreater "),
+    (re.compile(r"&gt;"), r"\\textgreater "),
+    (re.compile(r"<"), r"\\textless "),
+    (re.compile(r"&lt;"), r"\\textless "),
+    (re.compile(r"&degree;"), r"\\degree "),
+    (re.compile(r"([{}_#%&$])"), r"\\\1"),
+    (re.compile(r"~"), r"\~"),
+    (re.compile(r"-"), r"\\textendash "),
+    (re.compile(r"\^"), r"\^"),
     (re.compile(r'"'), r"''"),
-    (re.compile(r'\.\.\.+'), r'\\ldots '),
+    (re.compile(r"\.\.\.+"), r"\\ldots "),
 )
 
 REGEX_UNESCAPE_LATEX_SUBS = (
@@ -30,26 +30,24 @@ REGEX_UNESCAPE_LATEX_SUBS = (
     # (re.compile(r'\\textgreater '), r'>'),
     # (re.compile(r'\\textless '), r'&lt;'),
     # (re.compile(r'\\degree '), r'&degree;'),
-
-
     # (re.compile(r'\\([\[{}_#%&$\]])'), r'(\1)'),
     # (re.compile(r'\~{}'), r'~'),
     # (re.compile(r'\\textendash '), r'-'),
     # (re.compile(r'\^{}'), r'\^'),
     # (re.compile(r'"'), r"''"),
-    (re.compile(r'\\ldots '), r'....'),
+    (re.compile(r"\\ldots "), r"...."),
     (re.compile(r"''"), r'"'),
-    (re.compile(r'\^'), r'^'),
-    (re.compile(r'\\~'), r'~'),
-    (re.compile(r'\['), '\lbrack '),
-    (re.compile(r'\]'), '\\rbrack '),
-    (re.compile(r'\\([{}_#%&$])'), r'\1'),
-    (re.compile(r'\\degree '), r'&degree;'),
-    #(re.compile(r'\\textless '), r'&lt;'),
-    (re.compile(r'\\textgreater '), r'>'),
-    #(re.compile(r'\\textgreater '), r'&gt;'),
-    (re.compile(r'\\textless '), r'<'),
-    (re.compile(r'\\textbackslash '), r'\\'),
+    (re.compile(r"\^"), r"^"),
+    (re.compile(r"\\~"), r"~"),
+    (re.compile(r"\["), r"\\lbrack "),
+    (re.compile(r"\]"), r"\\rbrack "),
+    (re.compile(r"\\([{}_#%&$])"), r"\1"),
+    (re.compile(r"\\degree "), r"&degree;"),
+    # (re.compile(r'\\textless '), r'&lt;'),
+    (re.compile(r"\\textgreater "), r">"),
+    # (re.compile(r'\\textgreater '), r'&gt;'),
+    (re.compile(r"\\textless "), r"<"),
+    (re.compile(r"\\textbackslash "), r"\\"),
 )
 #     (re.compile(r'\\textgreater '), r'>'),
 #     (re.compile(r'\\textgreater '), r'&gt;'),
@@ -100,6 +98,7 @@ def unescape(text):
             except KeyError:
                 pass
         return text  # leave as is
+
     return re.sub("&#?\w+;", fixup, text)
 
 
@@ -107,28 +106,20 @@ def escape_latex(text):
     # if "The nature of the roots of the quadratic equation" in text:
     #     import ipdb; ipdb.set_trace()
 
-    '''Escape some latex special characters'''
-    text = text.replace('[', '\lbrack ')
-    text = text.replace(']', '\\rbrack ')
+    """Escape some latex special characters"""
+    text = text.replace("[", r"\lbrack ")
+    text = text.replace("]", r"\rbrack ")
 
-    text = re.sub(
-        r'([{}$])',
-        r'\\\1',
-        re.sub(
-            r'\\([{}$])',
-            r'\1',
-            text
-        )
-    )
+    text = re.sub(r"([{}$])", r"\\\1", re.sub(r"\\([{}$])", r"\1", text))
 
     items = (
-        (r'&', r'\&'),
-        (r'#', r'\#'),
-        (r'_', r'\underline{\thickspace}'),
-        (r'-', r'\textendash\,'),
-        (r'%', r'\%'),
-        (r'\\%', r'\%'),
-        (r'\rm', r'\mathrm'),
+        (r"&", r"\&"),
+        (r"#", r"\#"),
+        (r"_", r"\underline{\thickspace}"),
+        (r"-", r"\textendash\,"),
+        (r"%", r"\%"),
+        (r"\\%", r"\%"),
+        (r"\rm", r"\mathrm"),
     )
     for oldvalue, newvalue in items:
         text = text.replace(oldvalue, newvalue)
@@ -141,11 +132,11 @@ def unescape_latex(text):
     Return the string obtained by replacing the leftmost non-overlapping occurrences of pattern in string.
     """
     items = (
-        (r'\%', r'%'),
-        (r'\underline{\thickspace}', r'_'),
-        (r'\_', r'_'),
-        (r'\#', r'#'),
-        (r'\&', r'&'),
+        (r"\%", r"%"),
+        (r"\underline{\thickspace}", r"_"),
+        (r"\_", r"_"),
+        (r"\#", r"#"),
+        (r"\&", r"&"),
     )
     for oldvalue, newvalue in items:
         text = text.replace(oldvalue, newvalue)
@@ -161,15 +152,15 @@ def clean(text):
     Replaces non-supported charcters into LaTeX characters.
     """
     items = (
-        (u'Â', ' '),
-        (u'â', ''),
-        (u'â', ''),
-        (u'â', '\''),
-        (u'â', ''),
-        #(u'â', '``'),
-        #(u'â', '\'\''),
-        (u'\u00a0', ' '),
-        (u'\u00c2', ' '),
+        ("Â", " "),
+        ("â", ""),
+        ("â", ""),
+        ("â", "'"),
+        ("â", ""),
+        # (u'â', '``'),
+        # (u'â', '\'\''),
+        ("\u00a0", " "),
+        ("\u00c2", " "),
     )
     for oldvalue, newvalue in items:
         text = text.replace(oldvalue, newvalue)
@@ -179,52 +170,49 @@ def clean(text):
 
 REGEX_FORMATTING_REPLACEMENTS = (
     # colon
-    (re.compile(r'\s*:\s*'), r': '),
+    (re.compile(r"\s*:\s*"), r": "),
     # semi colon
-    (re.compile(r'\s*;\s*'), r'; '),
+    (re.compile(r"\s*;\s*"), r"; "),
     # question mark
-    (re.compile(r'\s*\?\s*'), r'? '),
+    (re.compile(r"\s*\?\s*"), r"? "),
     # parenthesis
-    (re.compile(r'\s*\(\s*([^\)]*)\s*\)\s*'), r' (\1) '),
+    (re.compile(r"\s*\(\s*([^\)]*)\s*\)\s*"), r" (\1) "),
     # remove \par from end
-    (re.compile(r'\\par\s*$'), r''),
-    # (re.compile(r'>'), r'\\textgreater '),
-    # (re.compile(r'&gt;'), r'\\textgreater '),
-    # (re.compile(r'<'), r'\\textless '),
-    # (re.compile(r'&lt;'), r'\\textless '),
+    (re.compile(r"\\par\s*$"), r""),
+    (re.compile(r"&gt;"), r"\\textgreater "),
+    (re.compile(r"&lt;"), r"\\textless "),
+    (re.compile(r">"), r"\\textgreater "),
+    (re.compile(r"<"), r"\\textless "),
 )
 
 
 REGEX_COMPLEX_FORMATTING_REPLACEMENTS = (
     # Quoted text using single or double quotes
-    (re.compile(
-        r'\s*"\s*([^"]*)\s*([.?]{0,1})\s*"\s*([.?]{0,1})\s*'), r' ``{0}{1}{2}" '),
-    (re.compile(
-        r'\s*\'\s*([^\']*)\s*([.?]{0,1})\s*\'\s*([.?]{0,1})\s*'), r" `{0}'{1}{2} "),
+    (re.compile(r'\s*"\s*([^"]*)\s*([.?]{0,1})\s*"\s*([.?]{0,1})\s*'), r' ``{0}{1}{2}" '),
+    (re.compile(r"\s*\'\s*([^\']*)\s*([.?]{0,1})\s*\'\s*([.?]{0,1})\s*"), r" `{0}'{1}{2} "),
     # quoted text using apostrophe etc.
-    (re.compile(
-        r'“\s*([^”]*)\s*([.?]{0,1})\s*”\s*([.?]{0,1})\s*'), r' ``{0}{1}{2}" '),
-    (re.compile(
-        r'\s*‘\s*([^’]*)\s*([.?]{0,1})\s*’\s*([.?]{0,1})\s*'), r" `{0}'{1}{2} "),
+    (re.compile(r"“\s*([^”]*)\s*([.?]{0,1})\s*”\s*([.?]{0,1})\s*"), r' ``{0}{1}{2}" '),
+    (re.compile(r"\s*‘\s*([^’]*)\s*([.?]{0,1})\s*’\s*([.?]{0,1})\s*"), r" `{0}'{1}{2} "),
 )
 
-REGEX_CLEAN_PRARAGRAPH_ENDING = r'|'.join((
-    r"(?:&nbsp;\s*)+</p>",
-    r"(?:<br\s*/>\s*)+</p>",
-    r"(?:<br\s*>\s*)+</p>",
-    r"\s+</p>",))
+REGEX_CLEAN_PRARAGRAPH_ENDING = r"|".join(
+    (
+        r"(?:&nbsp;\s*)+</p>",
+        r"(?:<br\s*/>\s*)+</p>",
+        r"(?:<br\s*>\s*)+</p>",
+        r"\s+</p>",
+    )
+)
 
 REGEX_PRARAGRAPH_ENDING_CLEANERS = (
     # Following patterns are commented out because we don't want to do anything
     # with intended empty p tags. Empty p tags can be created by pressing Enter
     # key in CKEditor
-
     # Next 4 patterns are to remove empty paragraphs
     # (re.compile(r"<p>\s*(?:\s*&nbsp;\s*)+\s*</p>"), ""),
     # (re.compile(r"<p>\s*(?:\s*<br\s*/>\s*)+\s*</p>"), ""),
     # (re.compile(r"<p>\s*(?:\s*<br\s*>\s*)+\s*</p>"), ""),
     # (re.compile(r"<p>\s*</p>"), ""),
-
     # Remove empty tags from the last paragraph
     (re.compile(REGEX_CLEAN_PRARAGRAPH_ENDING), "</p>"),
 )
@@ -239,11 +227,11 @@ def ignore_decimals_numbers(match):
     groups[3] = groups[3]
 
     if groups[0] and not groups[3]:
-        return u"{0}. ".format(groups[0])
+        return "{0}. ".format(groups[0])
     elif groups[3] and not groups[0]:
-        return u". {0}".format(groups[3])
+        return ". {0}".format(groups[3])
     elif groups[0] and groups[3]:
-        return u"".join(groups)
+        return "".join(groups)
     else:
         return ". "
 
@@ -257,21 +245,20 @@ def ignore_comma_separated_numbers(match):
     groups[3] = groups[3]
 
     if groups[0] and not groups[3]:
-        return u"{0}, ".format(groups[0])
+        return "{0}, ".format(groups[0])
     elif groups[3] and not groups[0]:
-        return u", {0}".format(groups[3])
+        return ", {0}".format(groups[3])
     elif groups[0] and groups[3]:
-        return u"".join(groups)
+        return "".join(groups)
     else:
         return ", "
 
 
 REGEX_TEXT_REPLACEMENTS = (
     # period
-    (re.compile(r'([0-9]*)\s*(\.)(\s*)([0-9]*)?'), ignore_decimals_numbers),
+    (re.compile(r"([0-9]*)\s*(\.)(\s*)([0-9]*)?"), ignore_decimals_numbers),
     # comma
-    (re.compile(r'([0-9]*)\s*(,)(\s*)([0-9]*)?'),
-     ignore_comma_separated_numbers),
+    (re.compile(r"([0-9]*)\s*(,)(\s*)([0-9]*)?"), ignore_comma_separated_numbers),
 )
 
 
@@ -292,14 +279,17 @@ def fix_formatting(s):
         s = "\\noindent a)" + s[12:]
 
     for pattern, replacement in REGEX_COMPLEX_FORMATTING_REPLACEMENTS:
+
         def fixup(match):
             stripped_groups = [g.rstrip() for g in match.groups()]
             stripped_groups[0] = fix_formatting(stripped_groups[0])
             return replacement.format(*stripped_groups)
+
         s = pattern.sub(fixup, s)
 
     pattern = re.compile(
-        r'(?:\\includegraphics\s*\[\s*[^\]]*\s*\]\s*\{\s*[^\}]*\s*\}\s*|\\scalegraphics\s*\{\s*[^\}]*\s*\}\s*)+')
+        r"(?:\\includegraphics\s*\[\s*[^\]]*\s*\]\s*\{\s*[^\}]*\s*\}\s*|\\scalegraphics\s*\{\s*[^\}]*\s*\}\s*)+"
+    )
     for graphic in re.findall(pattern, s):
         # s = s.replace(
         #     graphic, "\\begin{center}" + graphic.strip() + "\end{center}")
@@ -317,16 +307,15 @@ def clean_paragraph_ending(html):
     html = re.sub(r"\s*/>", "/>", html.rstrip())
     parsed = JustHTML(html, fragment=True, safe=False)
     root = parsed.root
-    body_candidates = [node for node in root.children if isinstance(node, Element) and node.name == "body"]
+    body_candidates = [
+        node for node in root.children if isinstance(node, Element) and node.name == "body"
+    ]
     body = body_candidates[0] if body_candidates else root
 
     first_desc = _first_descendant_tag(body)
-    last_child_tag = _last_element_child_tag(body)
-
-    if (first_desc == "p" or last_child_tag != "p"):
+    if first_desc != "p":
         """
-        Don't clean if outermost tag is not a paragraph tag or if p is not the
-        last descendant.
+        Don't clean if outermost tag is not a paragraph tag.
         """
         return html
 

@@ -169,8 +169,8 @@ def unpack_merged_cells_in_table(html):
     return new_table.to_html(pretty=False)
 
 
-if __name__ == '__main__':
-    html = r'''
+if __name__ == "__main__":
+    html = r"""
     <p><strong>Go to your nearest farmer and collect the information for the following table:</strong></p>
 
 <table border="1" cellpadding="0" cellspacing="0" style="width:604px">
@@ -208,6 +208,6 @@ if __name__ == '__main__':
 <p>&nbsp;</p>
 
 <p>Students&#39; activity.</p>
-    '''
+    """
 
     print(unpack_merged_cells_in_table(html))

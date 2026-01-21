@@ -24,6 +24,7 @@ from html2latex.utils import text
 def test_escape_tex(value, expected):
     assert text.escape_tex(value) == expected
 
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
@@ -41,6 +42,7 @@ def test_escape_tex(value, expected):
 )
 def test_unescape_latex(value, expected):
     assert text.unescape_latex(expected) == value
+
 
 @pytest.mark.parametrize(
     ("value", "expected"),
