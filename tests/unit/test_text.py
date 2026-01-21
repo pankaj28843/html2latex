@@ -57,3 +57,8 @@ def test_unescape_latex(value, expected):
 )
 def test_escape_latex(value, expected):
     assert text.escape_latex(value) == expected
+
+
+def test_unescape():
+    value = "A&nbsp;B &amp; &#x41; &#65;"
+    assert text.unescape(value) == "A\\hspace{1pt}B & A A"

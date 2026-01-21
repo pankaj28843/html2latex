@@ -8,6 +8,7 @@ import pytest
 from html2latex.html2latex import html2latex
 
 TECTONIC_BIN = shutil.which("tectonic")
+PDFLATEX_BIN = shutil.which("pdflatex")
 
 
 def _build_document(body: str) -> str:
@@ -26,8 +27,9 @@ def _build_document(body: str) -> str:
 
 
 def test_latex_fixtures_compile(tmp_path: Path) -> None:
-    if not TECTONIC_BIN:
-        pytest.skip("tectonic not installed; skipping LaTeX validity checks")
+    engine = TECTONIC_BIN or PDFLATEX_BIN
+    if not engine:
+        pytest.skip("No LaTeX engine installed; skipping LaTeX validity checks")
     with open(Path("tests/golden/cases.json")) as handle:
         cases = json.load(handle)
 
@@ -43,11 +45,19 @@ def test_latex_fixtures_compile(tmp_path: Path) -> None:
     tex_path = tmp_path / "fixtures.tex"
     tex_path.write_text(tex_source)
 
-    result = subprocess.run(
-        [TECTONIC_BIN, "--keep-logs", "--outdir", str(tmp_path), str(tex_path)],
-        capture_output=True,
-        text=True,
-    )
+    if engine == TECTONIC_BIN:
+        command = [engine, "--keep-logs", "--outdir", str(tmp_path), str(tex_path)]
+    else:
+        command = [
+            engine,
+            "-interaction=nonstopmode",
+            "-halt-on-error",
+            "-output-directory",
+            str(tmp_path),
+            str(tex_path),
+        ]
+
+    result = subprocess.run(command, capture_output=True, text=True)
 
     assert result.returncode == 0, (
         f"Tectonic compilation failed.\nstdout:\n{result.stdout}\n\nstderr:\n{result.stderr}\n"

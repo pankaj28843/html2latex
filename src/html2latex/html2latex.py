@@ -314,7 +314,10 @@ class HTMLElement(object):
                 if child.tag == "br":
                     self.content["text"] += "\\newline"
                     if child.tail:
-                        self.content["text"] += child.tail
+                        tail = child.tail
+                        if tail and not tail.startswith((" ", "\t", "\r", "\n")):
+                            tail = " " + tail
+                        self.content["text"] += tail
                 else:
                     self.content["text"] += delegate(
                         child, do_spellcheck=self.do_spellcheck, **self._init_kwargs
@@ -672,7 +675,10 @@ class IMG(HTMLElement):
             jpg_filepath = os.path.normpath(
                 os.path.join(
                     GRAYSCALED_IMAGES,
-                    hashlib.sha512(jpg_filename).hexdigest() + "_grayscaled.jpg",
+                    hashlib.sha512(
+                        jpg_filename.encode() if isinstance(jpg_filename, str) else jpg_filename
+                    ).hexdigest()
+                    + "_grayscaled.jpg",
                 )
             )
             jpg_filepath = "/tmp/{}.jpg".format(str(uuid.uuid4()))

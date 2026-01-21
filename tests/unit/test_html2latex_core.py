@@ -38,12 +38,22 @@ def test_anchor_without_href():
     assert "\\href{Link}{Link}" in output
 
 
+def test_anchor_with_href():
+    output = html2latex("<a href='https://example.com'>Example</a>")
+    assert "\\href{https://example.com}{Example}" in output
+
+
 def test_comment_skipped():
     html = "<p>Hi</p><!-- note --><p>Bye</p>"
     output = html2latex(html)
     assert "note" not in output
     assert "Hi" in output
     assert "Bye" in output
+
+
+def test_div_render():
+    output = html2latex("<div>Block</div>")
+    assert "Block" in output
 
 
 def test_delegate_comment_node():

@@ -1,4 +1,4 @@
-from html2latex.html2latex import HTMLElement, get_width_of_element_by_xpath
+from html2latex.html2latex import HTMLElement, capfirst, get_width_of_element_by_xpath
 from html2latex.html_adapter import parse_html
 
 
@@ -22,3 +22,14 @@ def test_remove_empty_noop():
     element = parse_html("<p>Hi</p>").root.find(".//p")
     html_element = HTMLElement(element)
     html_element.remove_empty()
+
+
+def test_capfirst():
+    assert capfirst("hello") == "Hello"
+    assert capfirst("") == ""
+
+
+def test_fix_tail_spacing():
+    element = parse_html("<div><span>Hi</span> tail</div>").root.find(".//span")
+    html_element = HTMLElement(element)
+    assert html_element.content["tail"].startswith(" ")

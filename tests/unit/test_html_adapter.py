@@ -20,11 +20,17 @@ def test_html_adapter_navigation():
     found = doc.root.findall(".//div/span")
     assert [node.tag for node in found] == ["span"]
 
+    fallback = doc.root.findall(".//div/span/em")
+    assert fallback == []
+
     span.set("data-test", "1")
     assert span.attrib["data-test"] == "1"
 
+    span.tag = "em"
+    assert span.tag == "em"
+
     html = span.to_html()
-    assert "<span" in html
+    assert "<em" in html
 
 
 def test_html_adapter_descendants_and_comment():
@@ -69,3 +75,9 @@ def test_html_adapter_remove_child():
     html = div.to_html()
     assert "A" not in html
     assert "B" in html
+
+
+def test_html_adapter_remove_non_element():
+    doc = parse_html("Text only")
+    root = doc.root
+    root.remove(root)

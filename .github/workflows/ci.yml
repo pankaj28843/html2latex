@@ -32,7 +32,7 @@ jobs:
         run: uv run ruff format --check .
 
       - name: Pytest
-        run: uv run pytest
+        run: uv run pytest --cov=html2latex --cov-report=term-missing --cov-fail-under=90
 
   latex-validity:
     runs-on: ubuntu-latest
@@ -53,6 +53,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y tectonic || true
+          sudo apt-get install -y texlive-latex-base texlive-latex-extra latexmk || true
 
       - name: LaTeX validity
         run: uv run pytest tests/test_latex_validity.py -q

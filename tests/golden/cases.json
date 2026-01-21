@@ -12,7 +12,7 @@
   {
     "name": "br_in_p",
     "html": "<p>Hello<br/>World</p>",
-    "expected": "\\noindent Hello\\newlineWorld\\par"
+    "expected": "\\noindent Hello\\newline World\\par"
   },
   {
     "name": "ul_li",

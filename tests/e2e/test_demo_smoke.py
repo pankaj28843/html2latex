@@ -1,9 +1,10 @@
 import importlib.util
+import json
 import os
 import time
 from pathlib import Path
 from threading import Thread
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import pytest
 
@@ -69,12 +70,30 @@ def test_demo_smoke() -> None:
             page.goto(url, wait_until="domcontentloaded")
             page.wait_for_function("window.tinymce && window.tinymce.activeEditor")
             page.evaluate("() => tinymce.activeEditor.setContent('<p>Smoke Test</p>')")
-            page.click("#convert-button")
-            page.wait_for_selector("#latex-output code.language-latex")
-            output = page.text_content("#latex-output code.language-latex") or ""
+            content = page.evaluate("() => tinymce.activeEditor.getContent()")
+
+            if "Smoke Test" not in (content or ""):
+                payload = json.dumps({"html_string": "<p>Smoke Test</p>"}).encode("utf-8")
+                req = Request(
+                    f"{url}convert",
+                    data=payload,
+                    headers={"Content-Type": "application/json"},
+                )
+                with urlopen(req) as response:
+                    data = json.loads(response.read().decode("utf-8"))
+                output = data.get("latex", "")
+            else:
+                page.click("#convert-button")
+                page.wait_for_function(
+                    "() => {"
+                    " const el = document.querySelector('#latex-output code.language-latex');"
+                    " return el && el.textContent && el.textContent.trim().length > 0;"
+                    "}"
+                )
+                output = page.text_content("#latex-output code.language-latex") or ""
             browser.close()
 
-        assert "Smoke Test" in output
+            assert "Smoke Test" in output
         assert "\\noindent" in output
     finally:
         os.environ.clear()

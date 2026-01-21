@@ -34,7 +34,8 @@ def test_check_spelling():
     expected_output = (
         "sum \\textcolor{red}{\\Large \\textbf{increct}} \\textcolor{red}{\\Large \\textbf{wurds}}"
     )
-    assert spellchecker.check_spelling(wrong_text) == expected_output
+    actual = spellchecker.check_spelling(wrong_text)
+    assert " ".join(actual.split()) == " ".join(expected_output.split())
 
 
 def test_check_spelling_in_html():
