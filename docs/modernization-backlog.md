@@ -37,6 +37,7 @@ Data flow: HTML string -> parse -> DOM -> transform -> LaTeX string.
 - Supporting Python < 3.10.
 
 ## TODO List (maps to issues)
+- [ ] MOD-00 Dependency + external tooling audit (#41)
 - [ ] MOD-01 Decide Python support matrix + policy (#20)
 - [ ] MOD-02 justhtml adapter design + spike (#21)
 - [ ] MOD-03 Golden fixture corpus (#22)
@@ -60,6 +61,7 @@ Data flow: HTML string -> parse -> DOM -> transform -> LaTeX string.
 
 | Key | Issue | Link |
 | --- | ----- | ---- |
+| MOD-00 | Dependency + external tooling audit | https://github.com/pankaj28843/html2latex/issues/41 |
 | MOD-01 | Decide Python support matrix + version policy | https://github.com/pankaj28843/html2latex/issues/20 |
 | MOD-02 | justhtml adapter design + spike | https://github.com/pankaj28843/html2latex/issues/21 |
 | MOD-03 | Golden fixture corpus | https://github.com/pankaj28843/html2latex/issues/22 |
