@@ -204,4 +204,4 @@ if __name__ == '__main__':
 <p>Students&#39; activity.</p>
     '''
 
-    print unpack_merged_cells_in_table(html)
+    print(unpack_merged_cells_in_table(html))
