@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "html2latex"
+version = "0.0.63"
+description = "Convert HTML to LaTeX"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [
+  { name = "Pankaj Singh", email = "pankaj@xamcheck.com" }
+]
+keywords = ["html", "latex", "converter"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Utilities",
+]
+
+# NOTE: lxml remains until MOD-06 removes it. justhtml will replace it.
+dependencies = [
+  "Jinja2>=3.1",
+  "html2text",
+  "lxml",
+  "pyenchant",
+]
+
+[project.urls]
+Homepage = "https://github.com/pankaj28843/html2latex"
+Issues = "https://github.com/pankaj28843/html2latex/issues"
+
+[dependency-groups]
+# Development helpers
+# NOTE: versions will be pinned via uv.lock
+# NOTE: demo app deps are in demo group
+
+dev = [
+  "ipdb",
+  "ipython",
+]
+
+test = [
+  "pytest",
+]
+
+lint = [
+  "ruff",
+]
+
+demo = [
+  "Flask",
+  "redis",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["html2latex.tests*"]
+
+[tool.setuptools.package-data]
+html2latex = ["templates/*.tex", "templates/*.html", "templates/Readme"]
