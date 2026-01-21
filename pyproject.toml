@@ -76,3 +76,15 @@ html2latex = ["templates/*.tex", "templates/*.html", "templates/Readme"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = ["demo-app"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
