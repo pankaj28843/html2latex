@@ -1,5 +1,1 @@
-((* if content.parent_element_tag == 'pre' *))
-(((content.text)))
-((* else *))
-\\texttt{(((content.text)))}(((content.tail)))
-((* endif *))
+((* if content.parent_element_tag == 'pre' *))(((content.text)))((* else *))\texttt{(((content.text)))}(((content.tail)))((* endif *))
