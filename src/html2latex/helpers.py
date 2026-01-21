@@ -6,12 +6,8 @@ def capfirst(value: str | None) -> str | None:
 
 
 def get_width_of_element_by_xpath(browser, xpath: str):
-    javascript_code = (
-        """
+    javascript_code = """
     document.evaluate('{xpath}', document, null,\
         XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.offsetWidth;
-    """.format(xpath=xpath)
-        .strip()
-    )
+    """.format(xpath=xpath).strip()
     return browser.evaluate_script(javascript_code)
-
