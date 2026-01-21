@@ -19,3 +19,19 @@ def test_return_diagnostics_empty():
     output, diagnostics = html2latex("<p>Ok</p>", return_diagnostics=True)
     assert "Ok" in output
     assert diagnostics == []
+
+
+def test_asset_warning_collects_diagnostic():
+    output, diagnostics = html2latex(
+        "<p>Before <img src='missing.png'></p>", return_diagnostics=True
+    )
+    assert "Before" in output
+    assert any(
+        event.code == "asset/image-io-error" and event.severity == "warn"
+        for event in diagnostics
+    )
+
+
+def test_strict_does_not_raise_on_warning():
+    output = html2latex("<p>Before <img src='missing.png'></p>", strict=True)
+    assert "Before" in output
