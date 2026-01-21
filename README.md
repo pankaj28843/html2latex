@@ -46,7 +46,7 @@ Content teams authored study materials in a web-based rich text editor (e.g., Ti
   1. Legacy Python 2.7 assumptions still exist, but modernization to Python 3 is in progress.
   2. Last major code changes were done **in 2016**, so many parts may be outdated or fragile.
   3. **Heavily customized** for historical internal workflows. Some legacy behavior may still surface.
-  4. Some legacy table rendering paths reference deprecated tools; these are being phased out.
+  4. Legacy table rendering paths that relied on deprecated tools have been removed.
   5. No longer actively maintained in its present form. Use at your own risk or fork and modernize.
 
 ---

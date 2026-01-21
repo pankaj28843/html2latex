@@ -20,7 +20,6 @@ import jinja2
 from .html_adapter import is_comment, parse_html
 from .setup_texenv import setup_texenv
 from .utils.html import check_if_html_has_text
-from .utils.html_table import render_html
 from .utils.image import get_image_size
 from .utils.spellchecker import check_spelling
 from .utils.text import (
@@ -375,13 +374,6 @@ class Table(HTMLElement):
             if col_count > max_td_count:
                 row_with_max_td = row
                 max_td_count = col_count
-
-        rendered_html = render_html(_new_html)
-
-        unique_id = str(uuid.uuid4())
-        html_file = "/tmp/html2latex_table_{0}.html".format(unique_id)
-        with open(html_file, "w", encoding="utf-8") as f:
-            f.write(rendered_html)
 
         # --------------------------------------------------
         # 1) Attempt to read col widths from <colgroup><col>

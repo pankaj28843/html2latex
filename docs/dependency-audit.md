@@ -39,15 +39,15 @@ Scope: html2latex modernization (Python 3 + justhtml)
 
 | Tool | Where referenced | Status | Plan |
 | --- | --- | --- | --- |
-| phantomjs | README (Requirements) | Deprecated/unmaintained | Remove or make optional; document replacement if needed. |
-| bower | setup.py install hook | Deprecated | Remove install hook; no bower dependency in modern flow. |
-| webkit2png script | setup.py install hook | Script missing in repo | Remove install hook; re-evaluate feature need. |
+| phantomjs | README (Requirements) | Deprecated/unmaintained | Removed from modern flow. |
+| bower | setup.py install hook | Deprecated | Removed from modern flow. |
+| webkit2png script | setup.py install hook | Script missing in repo | Removed from modern flow. |
 | libxml2/libxslt | lxml build deps | Heavy system deps | Remove with lxml. |
 | enchant (system) | pyenchant | Required for spellcheck | Move to optional extra; document system package. |
 
 ## Observations
 - The project is Python 2.7–era; many dependencies are obsolete or redundant in Python 3.
-- The `setup.py` install hook attempts to copy a script that does not exist in the repo and runs `bower install` with `sudo`.
+- Legacy install hooks and bower-based assets have been removed from the modern flow.
 - A legacy git dependency was removed; only one function was used (check_if_html_has_text).
 
 ## Recommendations (priority)
