@@ -26,7 +26,7 @@ Scope: html2latex modernization (Python 3 + justhtml)
 | Tool | Where referenced | Status | Notes |
 | --- | --- | --- | --- |
 | enchant (system) | spellcheck extra | Optional | Required when using `spellcheck` extra. |
-| tectonic | `tests/test_latex_validity.py` | Optional | Used to compile LaTeX fixtures. |
+| tectonic | `tests/test_latex_validity.py` | Required | Used to compile LaTeX fixtures. |
 | Playwright browsers | `tests/e2e/test_demo_smoke.py` | Optional | Install via `python -m playwright install`. |
 
 ## Observations
@@ -35,5 +35,5 @@ Scope: html2latex modernization (Python 3 + justhtml)
 
 ## Recommendations (priority)
 1. Keep dependency groups minimal and documented.
-2. Maintain optional toolchain docs (tectonic, playwright) in `INSTALL.md`.
+2. Keep external tool requirements (tectonic, playwright) documented in `INSTALL.md`.
 3. Periodically refresh `uv.lock` to keep constraints current.

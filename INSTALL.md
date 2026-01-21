@@ -25,9 +25,14 @@ uv sync --group demo
 uv run python demo-app/app.py
 ```
 
-## LaTeX validity (optional)
+## LaTeX validity (requires `tectonic`)
 
-Install `tectonic` (recommended) and run the LaTeX validity test:
+Install `tectonic` and run the LaTeX validity test:
+
+```bash
+curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh
+sudo install -m 755 tectonic /usr/local/bin/tectonic
+```
 
 ```bash
 uv run pytest tests/test_latex_validity.py -q

@@ -145,7 +145,7 @@ We provide a **demo Flask app** that showcases HTML-to-LaTeX conversion, includi
 
 ## CI
 
-CI runs on GitHub Actions and executes `ruff` (lint + format) and `pytest` across the supported Python matrix, plus optional LaTeX validity and Playwright E2E smoke checks. The workflow lives in `.github/workflows/ci.yml`.
+CI runs on GitHub Actions and executes `ruff` (lint + format) and `pytest` across the supported Python matrix, plus LaTeX validity (requires `tectonic`) and Playwright E2E smoke checks. The workflow lives in `.github/workflows/ci.yml`.
 
 ---
 
