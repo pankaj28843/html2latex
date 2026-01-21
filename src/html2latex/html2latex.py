@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from .elements import A, H1, H2, H3, H4, IMG, TD, TH, TR, Table, HTMLElement, delegate
+from .elements import H1, H2, H3, H4, IMG, TD, TH, TR, A, HTMLElement, Table, delegate
 from .helpers import capfirst, get_width_of_element_by_xpath
 from .pipeline import _html2latex, fix_encoding_of_html_using_lxml, html2latex
 from .template_env import get_texenv, loader, texenv

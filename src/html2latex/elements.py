@@ -18,7 +18,7 @@ from .html_adapter import is_comment, parse_html
 from .template_env import get_texenv
 from .utils.html import check_if_html_has_text
 from .utils.image import get_image_size
-from .utils.text import apply_inline_styles, clean, escape_latex, parse_inline_style
+from .utils.text import apply_inline_styles, clean, escape_latex, escape_tex_argument, parse_inline_style
 from .utils.unpack_merged_cells_in_table import unpack_merged_cells_in_table
 
 _RE_MATH_SPLIT = re.compile(r"\r|\n")
@@ -355,7 +355,7 @@ class A(HTMLElement):
         HTMLElement.__init__(self, element, *args, **kwargs)
         # make it a url if the 'href' attribute is set
         if "href" in element.attrib.keys():
-            self.content["url"] = element.attrib["href"]
+            self.content["url"] = escape_tex_argument(element.attrib["href"])
         else:
             self.content["url"] = self.content["text"]
 
@@ -727,7 +727,7 @@ class IMG(HTMLElement):
         except IOError:
             raise
 
-        self.content["imagename"] = self.src
+        self.content["imagename"] = escape_tex_argument(self.src)
         self.content["imagewidth"], self.content["imageheight"] = img_width, img_height
 
         self.template = get_texenv().get_template("img.tex")
