@@ -113,9 +113,8 @@ def delegate(element, do_spellcheck=False, **kwargs):
         equation = re.sub(r"\{\{\{([\w,\.^]+)\}\}\}", r"{\1}", equation)
         equation = re.sub(r"\{\{([\w,\.^]+)\}\}", r"{\1}", equation)
 
-        from HTMLParser import HTMLParser
-        html_parser = HTMLParser()
-        equation = html_parser.unescape(equation)
+        from html import unescape
+        equation = unescape(equation)
 
         equation = equation.replace("&", "\&")
         equation = equation.replace("<", "\\textless")
@@ -160,7 +159,7 @@ class HTMLElement(object):
         self.do_spellcheck = do_spellcheck
 
         self._init_kwargs = copy.deepcopy(kwargs)
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             setattr(self, key, value)
 
         # we make a general dict to store the contents we send to the Jinja
@@ -378,13 +377,13 @@ class Table(HTMLElement):
         complete_html_string = re.sub(
             r'^<body>|</body>$',
             '',
-            etree.tostring(body_element).strip()
+            etree.tostring(body_element, encoding="unicode").strip()
         ).strip()
         rendered_html = render_html(complete_html_string)
 
         unique_id = str(uuid.uuid4())
         html_file = u"/tmp/html2latex_table_{0}.html".format(unique_id)
-        with open(html_file, "wb") as f:
+        with open(html_file, "w", encoding="utf-8") as f:
             f.write(rendered_html)
 
         url = u"file://{0}".format(html_file)
@@ -759,7 +758,7 @@ def fix_encoding_of_html_using_lxml(html):
     fixed_html = re.sub(
         r'^<body>|</body>$',
         "",
-        etree.tostring(document_fromstring(html)[0])
+        etree.tostring(document_fromstring(html)[0], encoding="unicode")
     ).strip()
 
     if re.search(r'^<p>', html) is None:
@@ -827,7 +826,7 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
         r"([a-zA-Z0-9]+)\s*\\begin\{textsubscript\}\s*(\w+)\s*\\end\{textsubscript\}",
         r"\\begin{math}\1_{\2}\\end{math}", output)
 
-    if not isinstance(output, unicode):
+    if isinstance(output, bytes):
         output = output.decode("utf-8")
 
     items = (

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Standard Library
-import htmlentitydefs
+from html import entities as html_entities
 import re
 
 # Third Party Stuff
@@ -87,15 +87,15 @@ def unescape(text):
             # character reference
             try:
                 if text[:3] == "&#x":
-                    return unichr(int(text[3:-1], 16))
+                    return chr(int(text[3:-1], 16))
                 else:
-                    return unichr(int(text[2:-1]))
+                    return chr(int(text[2:-1]))
             except ValueError:
                 pass
         else:
             # named entity
             try:
-                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+                text = chr(html_entities.name2codepoint[text[1:-1]])
             except KeyError:
                 pass
         return text  # leave as is
@@ -332,6 +332,6 @@ def clean_paragraph_ending(html):
 
     for element in root.iterdescendants():
         if element.tag == "u":
-            _html = etree.tostring(element)
+            _html = etree.tostring(element, encoding="unicode")
             html = html.replace(_html, re.sub(r"<br\s*/>", " ", _html))
     return html
