@@ -25,6 +25,12 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --group test --group lint
 
+      - name: Install tectonic
+        run: |
+          curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh
+          chmod +x tectonic
+          echo "$PWD" >> $GITHUB_PATH
+
       - name: Ruff lint
         run: uv run ruff check .
 
@@ -32,4 +38,49 @@ jobs:
         run: uv run ruff format --check .
 
       - name: Pytest
-        run: uv run pytest
+        run: uv run pytest --cov=html2latex --cov-report=term-missing --cov-fail-under=90
+
+  latex-validity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --group test
+
+      - name: Install tectonic
+        run: |
+          curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh
+          chmod +x tectonic
+          echo "$PWD" >> $GITHUB_PATH
+
+      - name: LaTeX validity
+        run: uv run pytest tests/test_latex_validity.py -q
+
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --group test --group demo --group e2e
+
+      - name: Install Playwright browsers
+        run: uv run python -m playwright install --with-deps chromium
+
+      - name: Playwright E2E
+        run: uv run pytest tests/e2e/test_demo_smoke.py -q

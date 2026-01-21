@@ -99,7 +99,7 @@ def unescape(text):
                 pass
         return text  # leave as is
 
-    return re.sub("&#?\w+;", fixup, text)
+    return re.sub(r"&#?\w+;", fixup, text)
 
 
 def escape_latex(text):
@@ -297,6 +297,69 @@ def fix_formatting(s):
         s = s.replace(graphic, graphic.strip())
 
     return s
+
+
+def parse_inline_style(style: str) -> dict:
+    parsed = {}
+    if not style:
+        return parsed
+    for part in style.split(";"):
+        if ":" not in part:
+            continue
+        key, value = part.split(":", 1)
+        key = key.strip().lower()
+        value = value.strip().lower()
+        if key:
+            parsed[key] = value
+    return parsed
+
+
+def _format_color(value: str) -> tuple[str | None, str | None]:
+    if not value:
+        return None, None
+    value = value.strip()
+    if value.startswith("#"):
+        hex_value = value.lstrip("#")
+        if len(hex_value) == 3:
+            hex_value = "".join(ch * 2 for ch in hex_value)
+        if len(hex_value) == 6 and all(ch in "0123456789abcdefABCDEF" for ch in hex_value):
+            return "HTML", hex_value.upper()
+        return None, None
+    if re.match(r"^[a-zA-Z]+$", value):
+        return "named", value
+    return None, None
+
+
+def apply_inline_styles(text: str, styles: dict) -> str:
+    if not text or not styles:
+        return text
+
+    font_weight = styles.get("font-weight")
+    font_style = styles.get("font-style")
+    text_decoration = styles.get("text-decoration", "")
+
+    if font_weight in {"bold", "bolder", "600", "700", "800", "900"}:
+        text = f"\\textbf{{{text}}}"
+    if font_style in {"italic", "oblique"}:
+        text = f"\\textit{{{text}}}"
+    if "underline" in text_decoration:
+        text = f"\\underline{{{text}}}"
+    if "line-through" in text_decoration:
+        text = f"\\sout{{{text}}}"
+
+    color_type, color_value = _format_color(styles.get("color", ""))
+    if color_type == "HTML":
+        text = f"\\textcolor[HTML]{{{color_value}}}{{{text}}}"
+    elif color_type == "named":
+        text = f"\\textcolor{{{color_value}}}{{{text}}}"
+
+    bg_type, bg_value = _format_color(styles.get("background-color", ""))
+    if bg_type == "HTML":
+        text = f"\\colorbox[HTML]{{{bg_value}}}{{{text}}}"
+    elif bg_type == "named":
+        text = f"\\colorbox{{{bg_value}}}{{{text}}}"
+
+    return text
 
 
 def clean_paragraph_ending(html):

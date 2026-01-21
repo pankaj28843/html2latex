@@ -1,7 +1,0 @@
-Jinja2==2.7.3
-MarkupSafe==0.23
-argparse==1.2.1
-html2text==2015.6.12
-lxml==3.4.1
-pyenchant==1.6.6
-git+https://github.com/pankaj28843/xamcheck-utils.git@master

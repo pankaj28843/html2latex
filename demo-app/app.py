@@ -7,7 +7,8 @@ from flask import Flask, request, jsonify, render_template
 
 from html2latex.html2latex import html2latex
 
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
 
 redis_host = os.environ.get("REDIS_HOST", "localhost")
 redis_port = int(os.environ.get("REDIS_PORT", 6379))

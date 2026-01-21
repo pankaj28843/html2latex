@@ -126,6 +126,15 @@ class HtmlNode:
         if isinstance(self._node, Element):
             self._node.attrs[key] = value
 
+    def remove(self, child: "HtmlNode") -> None:
+        if not isinstance(self._node, Element):
+            return
+        target = child._node if isinstance(child, HtmlNode) else child
+        if hasattr(self._node, "remove_child"):
+            self._node.remove_child(target)
+        elif hasattr(self._node, "remove"):
+            self._node.remove(target)
+
     def __iter__(self):
         return self.iterchildren()
 

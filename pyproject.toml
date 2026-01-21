@@ -10,7 +10,7 @@ readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 authors = [
-  { name = "Pankaj Singh", email = "pankaj@xamcheck.com" }
+  { name = "Pankaj Singh", email = "pankaj28843@gmail.com" }
 ]
 keywords = ["html", "latex", "converter"]
 classifiers = [
@@ -53,6 +53,7 @@ dev = [
 
 test = [
   "pytest>=9.0.2",
+  "pytest-cov>=6.0.0",
 ]
 
 lint = [
@@ -62,6 +63,10 @@ lint = [
 demo = [
   "Flask>=3.1.2",
   "redis>=7.1.0",
+]
+
+e2e = [
+  "playwright>=1.51.0",
 ]
 
 [tool.setuptools]
