@@ -17,7 +17,7 @@ import logging
 import jinja2
 from lxml import etree
 from lxml.html import document_fromstring
-from xamcheck_utils.html import check_if_html_has_text
+from .utils.html import check_if_html_has_text
 
 from .setup_texenv import setup_texenv
 from .utils.unpack_merged_cells_in_table import unpack_merged_cells_in_table
