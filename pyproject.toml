@@ -10,7 +10,7 @@ readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 authors = [
-  { name = "Pankaj Singh", email = "pankaj@xamcheck.com" }
+  { name = "Pankaj Singh" }
 ]
 keywords = ["html", "latex", "converter"]
 classifiers = [

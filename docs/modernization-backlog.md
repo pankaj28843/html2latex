@@ -44,7 +44,7 @@ Data flow: HTML string -> parse -> DOM -> transform -> LaTeX string.
 - [ ] MOD-04 Move to `pyproject.toml` + uv (#23)
 - [ ] MOD-05 Python 3 compatibility sweep (#24)
 - [ ] MOD-06 Replace lxml with justhtml (adapter + refactor) (#25)
-- [ ] MOD-07 Remove `xamcheck-utils` or inline required functionality (#26)
+- [ ] MOD-07 Remove legacy git dependency or inline required functionality (#26)
 - [ ] MOD-08 Upgrade dependencies (Jinja, html2text, pyenchant) (#27)
 - [ ] MOD-09 Jinja environment modernization (#28)
 - [ ] MOD-10 Retire legacy install hooks/external tooling (#29)
@@ -68,7 +68,7 @@ Data flow: HTML string -> parse -> DOM -> transform -> LaTeX string.
 | MOD-04 | Move to pyproject.toml + uv | https://github.com/pankaj28843/html2latex/issues/23 |
 | MOD-05 | Python 3 compatibility sweep | https://github.com/pankaj28843/html2latex/issues/24 |
 | MOD-06 | Replace lxml with justhtml (adapter + refactor) | https://github.com/pankaj28843/html2latex/issues/25 |
-| MOD-07 | Remove xamcheck-utils or inline functionality | https://github.com/pankaj28843/html2latex/issues/26 |
+| MOD-07 | Remove legacy git dependency or inline functionality | https://github.com/pankaj28843/html2latex/issues/26 |
 | MOD-08 | Upgrade dependencies (Jinja, html2text, pyenchant) | https://github.com/pankaj28843/html2latex/issues/27 |
 | MOD-09 | Jinja environment modernization | https://github.com/pankaj28843/html2latex/issues/28 |
 | MOD-10 | Retire legacy install hooks/external tooling | https://github.com/pankaj28843/html2latex/issues/29 |
@@ -150,7 +150,7 @@ Acceptance:
 Depends on: MOD-02, MOD-05
 Blocks: MOD-12, MOD-18
 
-### MOD-07 — Remove `xamcheck-utils` or inline functionality
+### MOD-07 — Remove legacy git dependency or inline functionality
 Goal: Remove git dependency and reduce fragility.
 Tasks:
 - Locate `check_if_html_has_text` usage.
