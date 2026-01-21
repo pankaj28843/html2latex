@@ -131,6 +131,14 @@ We provide a **demo Flask app** (still Python 2.7) that showcases HTML-to-LaTeX 
 - **Modular design**: Reduce the domain-specific logic (like weird text replacements) and make it a more generic HTML-to-LaTeX converter.
 - **Comprehensive test suite**: The code has mostly been tested in production (at ClassKlap), but lacks thorough automated tests.
 
+## Modernization Plan (Active)
+
+We are actively modernizing this project to Python 3, replacing `lxml` with `justhtml`, and adopting `uv`, `ruff`, and `pytest`.
+
+- Python version policy (planned): primary runtime Python 3.14.x, minimum supported Python 3.10 (justhtml requirement).
+- Full backlog + execution plan: `docs/modernization-backlog.md`
+- Issue tracker (ordered): https://github.com/pankaj28843/html2latex/issues/20 through https://github.com/pankaj28843/html2latex/issues/37
+
 ---
 
 ## License
