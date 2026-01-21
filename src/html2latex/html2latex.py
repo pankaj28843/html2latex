@@ -22,10 +22,7 @@ from .setup_texenv import setup_texenv
 from .utils.html import check_if_html_has_text
 from .utils.image import get_image_size
 from .utils.spellchecker import check_spelling
-from .utils.text import (
-    clean,
-    escape_latex,
-)
+from .utils.text import apply_inline_styles, clean, escape_latex, parse_inline_style
 from .utils.unpack_merged_cells_in_table import unpack_merged_cells_in_table
 
 logging.basicConfig(
@@ -177,6 +174,8 @@ class HTMLElement(object):
         for a in self.element.attrib:
             self.content[a] = self.element.attrib[a]
 
+        style_map = parse_inline_style(self.element.attrib.get("style", ""))
+        self.content["style_map"] = style_map
         css = self.element.attrib.get("style", "") or ""
         css = css.lower()
         text_alignment = kwargs.get("text_alignment")
@@ -188,6 +187,8 @@ class HTMLElement(object):
             )[-1]
         except IndexError:
             pass
+        if not text_alignment and style_map.get("text-align"):
+            text_alignment = style_map["text-align"]
 
         # If parent is <p> tag and it's center aligned then no need to align
         # children
@@ -211,6 +212,7 @@ class HTMLElement(object):
         self.fix_tail()
         self.escape_latex_characters()
         self.spell_check()
+        self.apply_inline_styles()
 
         def fix_spaces(self, match):
             group = match.groups()[0] or ""
@@ -256,8 +258,25 @@ class HTMLElement(object):
         else:
             pass
 
+    def apply_inline_styles(self):
+        if not self.content.get("style_map"):
+            return
+        if self.element.tag in {"span", "p", "div", "li", "td", "th", "a"}:
+            self.content["text"] = apply_inline_styles(
+                self.content["text"], self.content["style_map"]
+            )
+
     def escape_latex_characters(self):
         """escape latex characters from text"""
+        if self.element.tag == "pre":
+            raw_text = self._extract_raw_text()
+            self.content["text"] = raw_text
+
+            tail = self.content["tail"]
+            tail = clean(tail)
+            tail = escape_latex(tail)
+            self.content["tail"] = tail.replace("\r", "\n")
+            return
         text = self.content["text"]
         text = clean(text)
         text = escape_latex(text)
@@ -270,6 +289,15 @@ class HTMLElement(object):
         tail = escape_latex(tail)
         self.content["tail"] = tail.replace("\r", "\n")
 
+    def _extract_raw_text(self):
+        html = self.element.to_html()
+        html = re.sub(r"^<pre[^>]*>", "", html, flags=re.IGNORECASE)
+        html = re.sub(r"</pre>$", "", html, flags=re.IGNORECASE)
+        html = re.sub(r"<[^>]+>", "", html)
+        from html import unescape as html_unescape
+
+        return html_unescape(html)
+
     def render(self):
         self.render_children()
         latex_code = self.template.render(content=self.content)
@@ -277,6 +305,8 @@ class HTMLElement(object):
         return latex_code
 
     def render_children(self):
+        if self.element.tag == "pre":
+            return
         if self.element.tag == "p":
             for child in self.element:
                 if child.tag == "br":

@@ -1,3 +1,5 @@
-\begin{lstlisting}
+((* if content.parent_element_tag == 'pre' *))
 (((content.text)))
-\end{lstlisting}
+((* else *))
+\\texttt{(((content.text)))}(((content.tail)))
+((* endif *))
