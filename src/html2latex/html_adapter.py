@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Iterable, Optional
 
 from justhtml import JustHTML
-from justhtml.node import Comment, DocumentFragment, Element, Text
+from justhtml.node import Comment, Element, Text
 
 
 @dataclass

@@ -7,13 +7,13 @@ import re
 # Third Party Stuff
 import jinja2
 
-REGEX_SN = re.compile(r'(?i)\s*(s\s*\.*\s*no\.*|s\s*\.*\s*n\.*)\s*')
+REGEX_SN = re.compile(r"(?i)\s*(s\s*\.*\s*no\.*|s\s*\.*\s*n\.*)\s*")
 
 
 def render_html(html):
     static_root = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
-        '../static',
+        "../static",
     )
     context = {
         "html": html,
@@ -23,9 +23,9 @@ def render_html(html):
     loader = jinja2.FileSystemLoader(
         os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            '../templates',
+            "../templates",
         )
     )
     jinja2_env = jinja2.Environment(loader=loader)
-    template = jinja2_env.get_template('web2png.html')
+    template = jinja2_env.get_template("web2png.html")
     return template.render(**context)

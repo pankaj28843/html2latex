@@ -18,6 +18,7 @@ from html2latex.utils import text
 def test_clean(value, expected):
     assert text.clean(value) == expected
 
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
@@ -29,6 +30,7 @@ def test_clean(value, expected):
 )
 def test_clean_paragraph_ending(value, expected):
     assert text.clean_paragraph_ending(value) == expected
+
 
 @pytest.mark.parametrize(
     ("value", "expected"),
@@ -44,6 +46,7 @@ def test_clean_paragraph_ending(value, expected):
 )
 def test_fix_text(value, expected):
     assert text.fix_text(value) == expected
+
 
 @pytest.mark.parametrize(
     ("value", "expected"),

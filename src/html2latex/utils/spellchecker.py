@@ -29,7 +29,10 @@ def get_word_checker(language=DEFAULT_LANGUAGE):
     """
     _require_enchant()
     enchant_dictionary = enchant.Dict(language)
-    spell_checker = lambda w: not enchant_dictionary.check(w)
+
+    def spell_checker(word):
+        return not enchant_dictionary.check(word)
+
     return spell_checker
 
 
@@ -43,31 +46,29 @@ def find_incorrect_words(text, spell_checker):
 
 
 def check_spelling(text, language=DEFAULT_LANGUAGE):
-    '''
+    """
     Runs spellcheck and highlights incorrect words using LaTex.
-    '''
+    """
     spell_checker = get_word_checker(language)
     incorrect_words = find_incorrect_words(text, spell_checker)
 
     for word in incorrect_words:
-        text = text.replace(
-            word, r" \textcolor{red}{\Large \textbf{" + word + "}} ")
+        text = text.replace(word, r" \textcolor{red}{\Large \textbf{" + word + "}} ")
 
     return text
 
 
 def check_spelling_in_html(html, language=DEFAULT_LANGUAGE):
-    '''
+    """
     - Converts html to text.
     - Filter incorrect words and highlight them using appropriate HTML.
-    '''
+    """
     spell_checker = get_word_checker(language)
 
     text = html2text.html2text(html)
     incorrect_words = find_incorrect_words(text, spell_checker)
 
     for word in incorrect_words:
-        replacement = r'<strong style="color: red; font-size: 14px;">' + \
-            word + '</strong>'
+        replacement = r'<strong style="color: red; font-size: 14px;">' + word + "</strong>"
         html = re.sub(r"\s+{0}\s+".format(word), replacement, html)
     return html
