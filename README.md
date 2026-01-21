@@ -53,8 +53,7 @@ At [ClassKlap](https://www.classklap.com/), we develop personalized learning sol
 
 - **Python 3.10+** (primary target: latest stable 3.14.x)
 - Dependencies managed via `uv` and `pyproject.toml`
-- Some system packages may still be required for optional features:
-  - `enchant` (for spellcheck via `pyenchant`)
+- Spellcheck is optional: install the `spellcheck` extra and ensure the system `enchant` library is available.
 
 ---
 
@@ -71,6 +70,12 @@ At [ClassKlap](https://www.classklap.com/), we develop personalized learning sol
 
    ```bash
    uv sync
+   ```
+
+   Optional (spellcheck support):
+
+   ```bash
+   uv sync --extra spellcheck
    ```
 
 3. **Install** HTML2LaTeX (in “editable” mode):

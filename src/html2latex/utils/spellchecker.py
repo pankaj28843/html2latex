@@ -3,11 +3,23 @@
 import re
 
 # Third Party Stuff
-import enchant
+try:
+    import enchant
+except ImportError:  # pragma: no cover - handled at runtime when spellcheck is enabled
+    enchant = None
 import html2text
 
 DEFAULT_LANGUAGE = "en_UK"
 REGEX_FIND_ENGLISH_WORDS = re.compile(r"[a-zA-Z]+")
+
+
+def _require_enchant():
+    if enchant is None:
+        raise RuntimeError(
+            "Spellcheck requires pyenchant and the system enchant library. "
+            "Install html2latex with the 'spellcheck' extra and ensure "
+            "the enchant system package is available."
+        )
 
 
 def get_word_checker(language=DEFAULT_LANGUAGE):
@@ -15,6 +27,7 @@ def get_word_checker(language=DEFAULT_LANGUAGE):
     Returns a functions which will return True if word is not
     present in dictionary.
     """
+    _require_enchant()
     enchant_dictionary = enchant.Dict(language)
     spell_checker = lambda w: not enchant_dictionary.check(w)
     return spell_checker
