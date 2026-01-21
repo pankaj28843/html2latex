@@ -13,12 +13,19 @@ import uuid
 
 import jinja2
 
+from .diagnostics import DiagnosticEvent, emit_diagnostic
 from .helpers import capfirst
 from .html_adapter import is_comment, parse_html
 from .template_env import get_texenv
 from .utils.html import check_if_html_has_text
 from .utils.image import get_image_size
-from .utils.text import apply_inline_styles, clean, escape_latex, escape_tex_argument, parse_inline_style
+from .utils.text import (
+    apply_inline_styles,
+    clean,
+    escape_latex,
+    escape_tex_argument,
+    parse_inline_style,
+)
 from .utils.unpack_merged_cells_in_table import unpack_merged_cells_in_table
 
 _RE_MATH_SPLIT = re.compile(r"\r|\n")
@@ -84,7 +91,16 @@ def delegate(element, do_spellcheck: bool = False, **kwargs):
     elif element.tag == "img":
         try:
             my_element = IMG(element, do_spellcheck, **kwargs)
-        except IOError:
+        except IOError as exc:
+            emit_diagnostic(
+                DiagnosticEvent(
+                    code="asset/image-io-error",
+                    category="asset",
+                    severity="warn",
+                    message=str(exc) or "Failed to load image asset.",
+                    context={"src": element.attrib.get("src", "")},
+                )
+            )
             return ""
     elif element.tag == "a":
         my_element = A(element, do_spellcheck, **kwargs)
