@@ -12,7 +12,7 @@ import sys
 
 from .elements import H1, H2, H3, H4, IMG, TD, TH, TR, A, HTMLElement, Table, delegate
 from .helpers import capfirst, get_width_of_element_by_xpath
-from .pipeline import _html2latex, fix_encoding_of_html_using_lxml, html2latex
+from .pipeline import _html2latex, fix_encoding_of_html_using_lxml, html2latex, normalize_html
 from .template_env import get_texenv, loader, texenv
 from .utils.spellchecker import check_spelling
 
@@ -47,6 +47,7 @@ __all__ = [
     "get_width_of_element_by_xpath",
     "html2latex",
     "loader",
+    "normalize_html",
     "os",
     "subprocess",
     "texenv",

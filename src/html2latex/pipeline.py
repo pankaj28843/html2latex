@@ -22,8 +22,8 @@ _RE_TEXTSUB = re.compile(
 _RE_NOINDENT_PAR = re.compile(r"\\noindent\s*\\par")
 
 
-def fix_encoding_of_html_using_lxml(html: str) -> str:
-    # Legacy name retained for compatibility; uses justhtml now.
+def normalize_html(html: str) -> str:
+    """Normalize HTML using justhtml's serializer."""
     fixed_html = parse_html(html).root.to_html()
 
     if re.search(r"^<p>", html) is None:
@@ -34,12 +34,17 @@ def fix_encoding_of_html_using_lxml(html: str) -> str:
     return fixed_html
 
 
+def fix_encoding_of_html_using_lxml(html: str) -> str:
+    # Legacy name retained for compatibility; uses justhtml now.
+    return normalize_html(html)
+
+
 def html2latex(html: str, **kwargs):
     html = html.strip()
     if not html:
         return ""
 
-    html = fix_encoding_of_html_using_lxml(html)
+    html = normalize_html(html)
     return _html2latex(html, **kwargs)
 
 

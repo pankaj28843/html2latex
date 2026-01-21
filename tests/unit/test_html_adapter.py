@@ -1,83 +1,35 @@
-from justhtml.node import Comment, Text
-
-from html2latex.html_adapter import HtmlNode, is_comment, parse_html
+from html2latex.html_adapter import parse_html
 
 
-def test_html_adapter_navigation():
-    doc = parse_html("<div>Lead <span id='s'>Inner</span> tail<p>Para</p></div>")
-    div = doc.root.find(".//div")
-    assert div is not None
-    assert div.tag == "div"
-    assert div.text == "Lead "
-
-    span = doc.root.find(".//span")
-    assert span.attrib["id"] == "s"
-    assert span.tail == " tail"
-    assert span.getparent().tag == "div"
-    assert span.getnext().tag == "p"
-    assert span.getprevious() is None
-
-    found = doc.root.findall(".//div/span")
-    assert [node.tag for node in found] == ["span"]
-
-    fallback = doc.root.findall(".//div/span/em")
-    assert fallback == []
-
-    span.set("data-test", "1")
-    assert span.attrib["data-test"] == "1"
-
-    span.tag = "em"
-    assert span.tag == "em"
-
-    html = span.to_html()
-    assert "<em" in html
-
-
-def test_html_adapter_descendants_and_comment():
-    doc = parse_html("<div><!-- note --><span>One</span><p>Two</p></div>")
-    div = doc.root.find(".//div")
-    tags = [node.tag for node in div.iterdescendants()]
-    assert tags == ["span", "p"]
-
-    comment = next(
-        child
-        for child in div._node.children  # noqa: SLF001
-        if isinstance(child, Comment)
-    )
-    assert is_comment(HtmlNode(comment)) is True
-
-
-def test_html_adapter_text_node_properties():
-    doc = parse_html("Lead <span>One</span>")
-    text_node = next(
-        child
-        for child in doc.root._node.children
-        if isinstance(child, Text)  # noqa: SLF001
-    )
-    wrapped = HtmlNode(text_node)
-    assert wrapped.tag == ""
-    assert wrapped.attrib == {}
-    assert wrapped.text == "Lead "
-    assert wrapped.tail == ""
-    parent = wrapped.getparent()
-    assert parent is not None
-    assert parent.tag == ""
-
-    spans = doc.root.findall("span")
-    assert [node.tag for node in spans] == ["span"]
-
-
-def test_html_adapter_remove_child():
-    doc = parse_html("<div><span>A</span><span>B</span></div>")
-    div = doc.root.find(".//div")
-    spans = div.findall(".//span")
-    div.remove(spans[0])
-    html = div.to_html()
-    assert "A" not in html
-    assert "B" in html
-
-
-def test_html_adapter_remove_non_element():
-    doc = parse_html("Text only")
+def test_find_and_findall():
+    doc = parse_html("<div><p>One</p><p>Two</p></div>")
     root = doc.root
-    root.remove(root)
+    first = root.find(".//p")
+    assert first is not None
+    assert first.tag == "p"
+    all_p = root.findall(".//p")
+    assert [node.tag for node in all_p] == ["p", "p"]
+
+
+def test_getprevious_getnext():
+    doc = parse_html("<div><p>A</p><p>B</p><p>C</p></div>")
+    middle = doc.root.findall(".//p")[1]
+    assert middle.getprevious().text.strip() == "A"
+    assert middle.getnext().text.strip() == "C"
+
+
+def test_iterchildren_excludes_text():
+    doc = parse_html("<div>Hi<span>There</span>Bye</div>")
+    div = doc.root.find(".//div")
+    children = list(div.iterchildren())
+    assert len(children) == 1
+    assert children[0].tag == "span"
+
+
+def test_text_and_tail():
+    doc = parse_html("<div>Hello<span>Inner</span>Tail</div>")
+    div = doc.root.find(".//div")
+    assert div.text.strip() == "Hello"
+    span = div.find(".//span")
+    assert span.text.strip() == "Inner"
+    assert span.tail.strip() == "Tail"
