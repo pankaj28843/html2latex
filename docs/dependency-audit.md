@@ -14,7 +14,7 @@ Scope: html2latex modernization (Python 3 + justhtml)
 | html2text | 2015.6.12 | Very old. | Upgrade to latest compatible version. |
 | lxml | 3.4.1 | Heavy dep; to be removed. | Replace with justhtml. |
 | pyenchant | 1.6.6 | Old; needs system lib. | Upgrade; move to optional extra. |
-| xamcheck-utils | git master | Git dependency. | Inline/remove function(s). |
+| git utils (removed) | n/a | Legacy git dependency removed. | Inline/remove function(s). |
 
 ### Dev (requirements/dev.txt)
 | Package | Current Pin | Notes | Python 3 plan |
@@ -48,7 +48,7 @@ Scope: html2latex modernization (Python 3 + justhtml)
 ## Observations
 - The project is Python 2.7–era; many dependencies are obsolete or redundant in Python 3.
 - The `setup.py` install hook attempts to copy a script that does not exist in the repo and runs `bower install` with `sudo`.
-- `xamcheck-utils` is a git dependency; only one function is used (check_if_html_has_text).
+- A legacy git dependency was removed; only one function was used (check_if_html_has_text).
 
 ## Recommendations (priority)
 1. Remove lxml and adopt justhtml (MOD-06).
