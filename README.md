@@ -40,7 +40,7 @@ Content teams authored study materials in a web-based rich text editor (e.g., Ti
   - Custom handling of math equations wrapped in `<span class="math-tex">` or similar.
   - Handles table merges, cell spans, image scaling, etc.
   - Rudimentary caching (now delegated to the calling application).
-  - Allows some fancy replacements for `ü` → `\checkmark` and other domain-specific behavior.
+  - Handles basic special-character normalization for LaTeX output.
 
 - **Caveats**:
   1. Legacy Python 2.7 assumptions still exist, but modernization to Python 3 is in progress.

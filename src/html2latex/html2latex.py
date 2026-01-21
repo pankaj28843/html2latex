@@ -809,10 +809,6 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
     if not check_if_html_has_text(html):
         return ""
 
-    html = html.replace("&uuml;", "\\checkmark")
-    html = html.replace("&#252;", "\\checkmark")
-    html = html.replace("ü", "\\checkmark")
-
     parsed = parse_html(html)
     body = parsed.root.find(".//body")
     if body is None:
@@ -852,11 +848,9 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
         output = output.decode("utf-8")
 
     items = (
-        ("\u2713", " \checkmark "),
         ("\u009f", ""),
         ("\u2715", "\u00d7"),
         ("\u2613", "\u00d7"),
-        ("\u20b9", "\\rupee"),
         ("\u0086", "¶"),
         ("\u2012", "-"),
         ("\u25b3", "∆"),
