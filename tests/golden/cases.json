@@ -32,7 +32,7 @@
   {
     "name": "pre_block",
     "html": "<pre>print('hi')</pre>",
-    "expected": "\\begin{verbatim}\nprint('hi')\n\\end{verbatim}"
+    "expected": "\\begingroup\n\\ttfamily\n\\detokenize{print('hi')}\n\\par\n\\endgroup"
   },
   {
     "name": "inline_code",
