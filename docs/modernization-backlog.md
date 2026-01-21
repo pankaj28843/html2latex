@@ -185,7 +185,7 @@ Blocks: MOD-12, MOD-18
 Goal: Eliminate install-time `sudo` and obsolete tooling.
 Tasks:
 - Remove custom `setup.py` install command.
-- Replace phantomjs/bower path with optional feature flags.
+- Remove legacy phantomjs/bower path entirely.
 Acceptance:
 - Clean install with no global side effects.
 Depends on: MOD-04
