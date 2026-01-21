@@ -73,3 +73,6 @@ exclude = ["html2latex.tests*"]
 
 [tool.setuptools.package-data]
 html2latex = ["templates/*.tex", "templates/*.html", "templates/Readme"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
