@@ -27,10 +27,14 @@ classifiers = [
 ]
 
 dependencies = [
-  "Jinja2>=3.1",
-  "html2text",
-  "justhtml",
-  "pyenchant",
+  "Jinja2>=3.1.6",
+  "html2text>=2025.4.15",
+  "justhtml>=0.20.0",
+]
+
+[project.optional-dependencies]
+spellcheck = [
+  "pyenchant>=3.3.0",
 ]
 
 [project.urls]
@@ -43,21 +47,21 @@ Issues = "https://github.com/pankaj28843/html2latex/issues"
 # NOTE: demo app deps are in demo group
 
 dev = [
-  "ipdb",
-  "ipython",
+  "ipdb>=0.13.13",
+  "ipython>=8.0",
 ]
 
 test = [
-  "pytest",
+  "pytest>=9.0.2",
 ]
 
 lint = [
-  "ruff",
+  "ruff>=0.14.11",
 ]
 
 demo = [
-  "Flask",
-  "redis",
+  "Flask>=3.1.2",
+  "redis>=7.1.0",
 ]
 
 [tool.setuptools]

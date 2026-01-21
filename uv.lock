@@ -109,6 +109,10 @@ dependencies = [
     { name = "html2text" },
     { name = "jinja2" },
     { name = "justhtml" },
+]
+
+[package.optional-dependencies]
+spellcheck = [
     { name = "pyenchant" },
 ]
 
@@ -131,23 +135,24 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "html2text" },
-    { name = "jinja2", specifier = ">=3.1" },
-    { name = "justhtml" },
-    { name = "pyenchant" },
+    { name = "html2text", specifier = ">=2025.4.15" },
+    { name = "jinja2", specifier = ">=3.1.6" },
+    { name = "justhtml", specifier = ">=0.20.0" },
+    { name = "pyenchant", marker = "extra == 'spellcheck'", specifier = ">=3.3.0" },
 ]
+provides-extras = ["spellcheck"]
 
 [package.metadata.requires-dev]
 demo = [
-    { name = "flask" },
-    { name = "redis" },
+    { name = "flask", specifier = ">=3.1.2" },
+    { name = "redis", specifier = ">=7.1.0" },
 ]
 dev = [
-    { name = "ipdb" },
-    { name = "ipython" },
+    { name = "ipdb", specifier = ">=0.13.13" },
+    { name = "ipython", specifier = ">=8.0" },
 ]
-lint = [{ name = "ruff" }]
-test = [{ name = "pytest" }]
+lint = [{ name = "ruff", specifier = ">=0.14.11" }]
+test = [{ name = "pytest", specifier = ">=9.0.2" }]
 
 [[package]]
 name = "html2text"
