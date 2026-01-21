@@ -1,0 +1,21 @@
+cases.json: p_simple
+cases.json: h1_simple
+cases.json: br_in_p
+cases.json: ul_li
+cases.json: a_link
+cases.json: blockquote
+cases.json: pre_block
+cases.json: inline_code
+cases.json: h5_header
+cases.json: strike_text
+cases.json: span_bold
+cases.json: span_color
+wysiwyg.json: strong_em_u
+wysiwyg.json: ol_li
+wysiwyg.json: sub_sup
+wysiwyg.json: figure_caption
+wysiwyg.json: blockquote_nested
+wysiwyg.json: code_in_pre
+wysiwyg.json: hr_between_paragraphs
+
+TOTAL: 19
