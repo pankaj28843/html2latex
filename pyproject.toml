@@ -64,6 +64,10 @@ demo = [
   "redis>=7.1.0",
 ]
 
+e2e = [
+  "playwright>=1.51.0",
+]
+
 [tool.setuptools]
 include-package-data = true
 

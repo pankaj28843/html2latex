@@ -23,5 +23,40 @@
     "name": "a_link",
     "html": "<a href=\"https://example.com\">Example</a>",
     "expected": "\\href{https://example.com}{Example}"
+  },
+  {
+    "name": "blockquote",
+    "html": "<blockquote>Quoted text</blockquote>",
+    "expected": "\\begin{quote}\nQuoted text\n\\end{quote}"
+  },
+  {
+    "name": "pre_block",
+    "html": "<pre>print('hi')</pre>",
+    "expected": "\\begin{verbatim}\nprint('hi')\n\\end{verbatim}"
+  },
+  {
+    "name": "inline_code",
+    "html": "<p>Use <code>foo()</code></p>",
+    "expected": "\\noindent Use\\texttt{foo()}\\par"
+  },
+  {
+    "name": "h5_header",
+    "html": "<h5>Small</h5>",
+    "expected": "\\subparagraph{Small}"
+  },
+  {
+    "name": "strike_text",
+    "html": "<del>gone</del>",
+    "expected": "\\sout{gone}"
+  },
+  {
+    "name": "span_bold",
+    "html": "<span style=\"font-weight: bold;\">Bold</span>",
+    "expected": "\\textbf{Bold}"
+  },
+  {
+    "name": "span_color",
+    "html": "<span style=\"color: #ff0000;\">Red</span>",
+    "expected": "\\textcolor[HTML]{FF0000}{Red}"
   }
 ]

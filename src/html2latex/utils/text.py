@@ -99,7 +99,7 @@ def unescape(text):
                 pass
         return text  # leave as is
 
-    return re.sub("&#?\w+;", fixup, text)
+    return re.sub(r"&#?\w+;", fixup, text)
 
 
 def escape_latex(text):
@@ -339,25 +339,25 @@ def apply_inline_styles(text: str, styles: dict) -> str:
     text_decoration = styles.get("text-decoration", "")
 
     if font_weight in {"bold", "bolder", "600", "700", "800", "900"}:
-        text = f"\\\\textbf{{{text}}}"
+        text = f"\\textbf{{{text}}}"
     if font_style in {"italic", "oblique"}:
-        text = f"\\\\textit{{{text}}}"
+        text = f"\\textit{{{text}}}"
     if "underline" in text_decoration:
-        text = f"\\\\underline{{{text}}}"
+        text = f"\\underline{{{text}}}"
     if "line-through" in text_decoration:
-        text = f"\\\\sout{{{text}}}"
+        text = f"\\sout{{{text}}}"
 
     color_type, color_value = _format_color(styles.get("color", ""))
     if color_type == "HTML":
-        text = f"\\\\textcolor[HTML]{{{color_value}}}{{{text}}}"
+        text = f"\\textcolor[HTML]{{{color_value}}}{{{text}}}"
     elif color_type == "named":
-        text = f"\\\\textcolor{{{color_value}}}{{{text}}}"
+        text = f"\\textcolor{{{color_value}}}{{{text}}}"
 
     bg_type, bg_value = _format_color(styles.get("background-color", ""))
     if bg_type == "HTML":
-        text = f"\\\\colorbox[HTML]{{{bg_value}}}{{{text}}}"
+        text = f"\\colorbox[HTML]{{{bg_value}}}{{{text}}}"
     elif bg_type == "named":
-        text = f"\\\\colorbox{{{bg_value}}}{{{text}}}"
+        text = f"\\colorbox{{{bg_value}}}{{{text}}}"
 
     return text
 
