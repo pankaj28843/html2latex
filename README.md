@@ -55,7 +55,6 @@ At [ClassKlap](https://www.classklap.com/), we develop personalized learning sol
 - Dependencies managed via `uv` and `pyproject.toml`
 - Some system packages may still be required for optional features:
   - `enchant` (for spellcheck via `pyenchant`)
-  - `libxml2-dev`, `libxslt1-dev` (temporarily, until `lxml` removal in MOD-06)
 
 ---
 

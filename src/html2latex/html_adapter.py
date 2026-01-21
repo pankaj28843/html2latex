@@ -1,20 +1,12 @@
-"""
-justhtml adapter spike.
-
-This module is not wired into the main conversion flow yet. It provides a
-minimal wrapper to align justhtml-style nodes with the subset of lxml APIs
-used in the current codebase.
-"""
+"""justhtml adapter for a small lxml-like surface area."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Iterable, Optional
 
-try:
-    from justhtml import JustHTML
-except Exception:  # pragma: no cover - optional dependency in this spike
-    JustHTML = None
+from justhtml import JustHTML
+from justhtml.node import Comment, DocumentFragment, Element, Text
 
 
 @dataclass
@@ -22,104 +14,169 @@ class HtmlDocument:
     root: "HtmlNode"
 
 
-def parse_html(html: str) -> HtmlDocument:
-    if JustHTML is None:
-        raise ImportError("justhtml is not installed")
-    document = JustHTML(html)
-    return HtmlDocument(root=HtmlNode(document))
+def parse_html(html: str, *, fragment: bool = True) -> HtmlDocument:
+    document = JustHTML(html, fragment=fragment, safe=False)
+    return HtmlDocument(root=HtmlNode(document.root))
+
+
+def is_comment(node: "HtmlNode") -> bool:
+    return isinstance(node._node, Comment)
 
 
 class HtmlNode:
-    """Thin wrapper around a justhtml node (or document)."""
+    """Thin wrapper around a justhtml node (Element or DocumentFragment)."""
 
     def __init__(self, node):
         self._node = node
 
     @property
     def tag(self) -> str:
-        return getattr(self._node, "tag", getattr(self._node, "name", "")) or ""
+        if isinstance(self._node, Element):
+            return self._node.name or ""
+        return ""
+
+    @tag.setter
+    def tag(self, value: str) -> None:
+        if isinstance(self._node, Element):
+            self._node.name = value
 
     @property
     def attrib(self) -> dict:
-        attrs = getattr(self._node, "attrib", None)
-        if attrs is None:
-            attrs = getattr(self._node, "attrs", None)
-        if attrs is None:
-            attrs = getattr(self._node, "attributes", None)
-        return dict(attrs) if attrs else {}
+        if isinstance(self._node, Element):
+            return self._node.attrs
+        return {}
 
     @property
     def text(self) -> str:
-        text = getattr(self._node, "text", None)
-        if text is None and hasattr(self._node, "text_content"):
-            text = self._node.text_content()
-        return text or ""
+        if isinstance(self._node, Text):
+            return self._node.data or ""
+        if isinstance(self._node, Element):
+            return _leading_text(self._node)
+        return ""
 
     @property
     def tail(self) -> str:
-        # justhtml does not expose tail text; compute from siblings in MOD-06
+        if isinstance(self._node, Element):
+            return _tail_text(self._node)
         return ""
 
-    def parent(self) -> Optional["HtmlNode"]:
+    def getparent(self) -> Optional["HtmlNode"]:
         parent = getattr(self._node, "parent", None)
-        return HtmlNode(parent) if parent is not None else None
+        if parent is None:
+            return None
+        return HtmlNode(parent)
 
     def children(self) -> list["HtmlNode"]:
-        kids = getattr(self._node, "children", None)
-        if kids is None:
-            kids = getattr(self._node, "child_nodes", None)
-        if kids is None:
-            return []
-        return [HtmlNode(child) for child in kids]
+        return [HtmlNode(child) for child in _element_children(self._node)]
 
     def iterchildren(self) -> Iterable["HtmlNode"]:
         return iter(self.children())
 
+    def iterdescendants(self) -> Iterable["HtmlNode"]:
+        for child in _element_children(self._node):
+            yield HtmlNode(child)
+            for desc in HtmlNode(child).iterdescendants():
+                yield desc
+
     def find(self, selector: str) -> Optional["HtmlNode"]:
-        query = getattr(self._node, "query_selector", None)
-        if query is None:
-            return None
-        found = query(selector)
-        return HtmlNode(found) if found is not None else None
+        matches = self.findall(selector)
+        return matches[0] if matches else None
 
     def findall(self, selector: str) -> list["HtmlNode"]:
-        query_all = getattr(self._node, "query_selector_all", None)
-        if query_all is None:
+        path = selector.strip()
+        if path.startswith(".//"):
+            path = path[3:]
+        if path.startswith("//"):
+            path = path[2:]
+        parts = [p for p in path.split("/") if p]
+        if not parts:
             return []
-        return [HtmlNode(node) for node in query_all(selector)]
+        if len(parts) == 1:
+            return [HtmlNode(node) for node in _find_all(self._node, parts[0])]
+        if len(parts) == 2:
+            parent_tag, child_tag = parts
+            return [
+                HtmlNode(node)
+                for node in _find_all(self._node, child_tag)
+                if isinstance(node.parent, Element) and node.parent.name == parent_tag
+            ]
+        # Fallback: best-effort on last tag
+        return [HtmlNode(node) for node in _find_all(self._node, parts[-1])]
 
     def getprevious(self) -> Optional["HtmlNode"]:
-        siblings = self._sibling_nodes()
+        siblings = _element_siblings(self._node)
         for idx, node in enumerate(siblings):
             if node is self._node:
-                if idx == 0:
-                    return None
-                return HtmlNode(siblings[idx - 1])
+                return HtmlNode(siblings[idx - 1]) if idx > 0 else None
         return None
 
     def getnext(self) -> Optional["HtmlNode"]:
-        siblings = self._sibling_nodes()
+        siblings = _element_siblings(self._node)
         for idx, node in enumerate(siblings):
             if node is self._node:
-                if idx + 1 >= len(siblings):
-                    return None
-                return HtmlNode(siblings[idx + 1])
+                return HtmlNode(siblings[idx + 1]) if idx + 1 < len(siblings) else None
         return None
 
     def to_html(self) -> str:
-        html = getattr(self._node, "html", None)
-        if html is not None:
-            return html
-        outer = getattr(self._node, "outer_html", None)
-        if outer is not None:
-            return outer
+        if hasattr(self._node, "to_html"):
+            return self._node.to_html(pretty=False)
         return str(self._node)
 
-    def _sibling_nodes(self) -> list:
-        parent = getattr(self._node, "parent", None)
-        if parent is None:
-            return []
-        kids = getattr(parent, "children", None)
-        if kids is None:
-            kids = getattr(parent, "child_nodes", None)
-        return list(kids) if kids is not None else []
+    def set(self, key: str, value: str) -> None:
+        if isinstance(self._node, Element):
+            self._node.attrs[key] = value
+
+    def __iter__(self):
+        return self.iterchildren()
+
+
+def _element_children(node) -> list[Element]:
+    children = getattr(node, "children", None)
+    if not children:
+        return []
+    return [child for child in children if isinstance(child, Element)]
+
+
+def _element_siblings(node) -> list[Element]:
+    parent = getattr(node, "parent", None)
+    if parent is None:
+        return []
+    return _element_children(parent)
+
+
+def _leading_text(node: Element) -> str:
+    parts = []
+    for child in node.children:
+        if isinstance(child, Text):
+            parts.append(child.data or "")
+        else:
+            break
+    return "".join(parts)
+
+
+def _tail_text(node: Element) -> str:
+    parent = getattr(node, "parent", None)
+    if parent is None:
+        return ""
+    siblings = parent.children
+    try:
+        idx = siblings.index(node)
+    except ValueError:
+        return ""
+    parts = []
+    for sibling in siblings[idx + 1 :]:
+        if isinstance(sibling, Text):
+            parts.append(sibling.data or "")
+        else:
+            break
+    return "".join(parts)
+
+
+def _find_all(node, tag: str) -> list[Element]:
+    matches = []
+    for child in getattr(node, "children", []):
+        if isinstance(child, Element):
+            if child.name == tag:
+                matches.append(child)
+            matches.extend(_find_all(child, tag))
+    return matches
