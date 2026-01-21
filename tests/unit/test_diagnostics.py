@@ -27,8 +27,7 @@ def test_asset_warning_collects_diagnostic():
     )
     assert "Before" in output
     assert any(
-        event.code == "asset/image-io-error" and event.severity == "warn"
-        for event in diagnostics
+        event.code == "asset/image-io-error" and event.severity == "warn" for event in diagnostics
     )
 
 
