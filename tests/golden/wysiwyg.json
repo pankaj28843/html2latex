@@ -1,0 +1,37 @@
+[
+  {
+    "name": "strong_em_u",
+    "html": "<p><strong>Bold</strong> <em>Italic</em> <u>Under</u></p>",
+    "expected": "\\noindent \\textbf{Bold} \\textit{Italic} \\underline{Under}\\par"
+  },
+  {
+    "name": "ol_li",
+    "html": "<ol><li>First</li><li>Second</li></ol>",
+    "expected": "\\begin{enumerate}[label=\\roman*.,nolistsep,nosep]\\begin{item}First\\end{item}\\begin{item}Second\\end{item}\\end{enumerate}"
+  },
+  {
+    "name": "sub_sup",
+    "html": "<p>H<sub>2</sub>O and x<sup>2</sup></p>",
+    "expected": "\\noindent \\begin{math}H_{2}\\end{math}O and \\begin{math}x^{2}\\end{math}\\par"
+  },
+  {
+    "name": "figure_caption",
+    "html": "<figure><figcaption>Cap</figcaption></figure>",
+    "expected": "\\begin{figure}[h]\n\\centering\n\\caption{Cap}\n\\end{figure}"
+  },
+  {
+    "name": "blockquote_nested",
+    "html": "<blockquote><p>Quote</p></blockquote>",
+    "expected": "\\begin{quote}\n\\noindent Quote\\par\n\\end{quote}"
+  },
+  {
+    "name": "code_in_pre",
+    "html": "<pre><code>line1\nline2</code></pre>",
+    "expected": "\\begingroup\n\\ttfamily\n\\detokenize{line1\nline2}\n\\par\n\\endgroup"
+  },
+  {
+    "name": "hr_between_paragraphs",
+    "html": "<p>Above</p><hr/><p>Below</p>",
+    "expected": "\\noindent Above\\par\\vspace{-5pt}\\begin{center}\\hrule\\end{center}\\vspace{-5pt} \\noindent Below\\par"
+  }
+]
