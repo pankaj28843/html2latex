@@ -5,7 +5,8 @@ from html import entities as html_entities
 import re
 
 # Third Party Stuff
-from lxml import etree
+from justhtml import JustHTML
+from justhtml.node import Element
 
 REGEX_LATEX_SUBS = (
     (re.compile(r'\\'), r'\\textbackslash '),
@@ -314,11 +315,15 @@ def clean_paragraph_ending(html):
     """
 
     html = re.sub(r"\s*/>", "/>", html.rstrip())
-    root = etree.HTML(html)
-    body = root.find(".//body")
+    parsed = JustHTML(html, fragment=True, safe=False)
+    root = parsed.root
+    body_candidates = [node for node in root.children if isinstance(node, Element) and node.name == "body"]
+    body = body_candidates[0] if body_candidates else root
 
-    if (list(root.iterdescendants())[0].tag == "p" or
-            body.getchildren()[-1].tag != "p"):
+    first_desc = _first_descendant_tag(body)
+    last_child_tag = _last_element_child_tag(body)
+
+    if (first_desc == "p" or last_child_tag != "p"):
         """
         Don't clean if outermost tag is not a paragraph tag or if p is not the
         last descendant.
@@ -330,8 +335,29 @@ def clean_paragraph_ending(html):
         while pattern.search(html):
             html = pattern.sub(replacement, html)
 
-    for element in root.iterdescendants():
-        if element.tag == "u":
-            _html = etree.tostring(element, encoding="unicode")
-            html = html.replace(_html, re.sub(r"<br\s*/>", " ", _html))
+    for element in _iter_descendants(body):
+        if element.name == "u":
+            _html = element.to_html(pretty=False)
+            html = html.replace(_html, re.sub(r"<br\s*/?>", " ", _html))
     return html
+
+
+def _iter_descendants(node):
+    for child in getattr(node, "children", []):
+        if isinstance(child, Element):
+            yield child
+            for desc in _iter_descendants(child):
+                yield desc
+
+
+def _first_descendant_tag(node):
+    for child in _iter_descendants(node):
+        return child.name
+    return None
+
+
+def _last_element_child_tag(node):
+    for child in reversed(getattr(node, "children", [])):
+        if isinstance(child, Element):
+            return child.name
+    return None

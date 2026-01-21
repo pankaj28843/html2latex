@@ -15,8 +15,7 @@ import logging
 
 # Third Party Stuff
 import jinja2
-from lxml import etree
-from lxml.html import document_fromstring
+from .html_adapter import is_comment, parse_html
 from .utils.html import check_if_html_has_text
 
 from .setup_texenv import setup_texenv
@@ -58,11 +57,12 @@ def get_width_of_element_by_xpath(browser, xpath):
 
 def delegate(element, do_spellcheck=False, **kwargs):
     """
-    Takes html element in form of etree and converts it into string.
+    Takes html element and converts it into string.
     """
-    '''>>> from lxml import etree
-       >>> root = etree.HTML('<h1>Title</h1>')
-       >>> print delegate(root[0][0])
+    '''>>> html = '<h1>Title</h1>'
+       >>> # delegate is called internally after parsing
+       >>> # Example output:
+       >>> print delegate(...)  # doctest: +SKIP
        \chapter{Title}'''
     # delegate the work to classes handling special cases
 
@@ -130,7 +130,7 @@ def delegate(element, do_spellcheck=False, **kwargs):
         _latex_code = equation + ' ' + tail
         return _latex_code
 
-    elif isinstance(element, etree._Comment):
+    elif is_comment(element):
         my_element = None  # skip XML comments
     else:
         # no special handling required
@@ -152,7 +152,7 @@ class HTMLElement(object):
     def __init__(self, element, do_spellcheck=False, **kwargs):
         self.element = element
 
-        _html = etree.tounicode(self.element)
+        _html = self.element.to_html()
 
         self.has_content = check_if_html_has_text(_html)
 
@@ -355,13 +355,17 @@ class Table(HTMLElement):
         if not self.has_content:
             return
 
-        _old_html = etree.tounicode(self.element)
+        _old_html = self.element.to_html()
         _new_html = unpack_merged_cells_in_table(_old_html)
         # Optional: Remove <strong> tags if you desire
         # _new_html = re.sub(r"<strong>|</strong>", "", _new_html)
 
         # Re-parse the table HTML after unpack_merged_cells_in_table
-        self.element = element = etree.HTML(_new_html).findall('.//table')[0]
+        parsed = parse_html(_new_html)
+        tables = parsed.root.findall(".//table")
+        if not tables:
+            return
+        self.element = element = tables[0]
 
         # Identify the row with the largest number of columns
         row_with_max_td = None
@@ -372,14 +376,7 @@ class Table(HTMLElement):
                 row_with_max_td = row
                 max_td_count = col_count
 
-        tree = element.getroottree()
-        body_element = tree.find(".//table").getroottree().find(".//body")
-        complete_html_string = re.sub(
-            r'^<body>|</body>$',
-            '',
-            etree.tostring(body_element, encoding="unicode").strip()
-        ).strip()
-        rendered_html = render_html(complete_html_string)
+        rendered_html = render_html(_new_html)
 
         unique_id = str(uuid.uuid4())
         html_file = u"/tmp/html2latex_table_{0}.html".format(unique_id)
@@ -755,11 +752,8 @@ class IMG(HTMLElement):
 
 
 def fix_encoding_of_html_using_lxml(html):
-    fixed_html = re.sub(
-        r'^<body>|</body>$',
-        "",
-        etree.tostring(document_fromstring(html)[0], encoding="unicode")
-    ).strip()
+    # Legacy name retained for compatibility; uses justhtml now.
+    fixed_html = parse_html(html).root.to_html()
 
     if re.search(r'^<p>', html) is None:
         fixed_html = re.sub(
@@ -798,13 +792,16 @@ def _html2latex(html, do_spellcheck=False, **kwargs):
     html = html.replace("&#252;", "\\checkmark")
     html = html.replace(u"ü", "\\checkmark")
 
-    root = etree.HTML(html)
-    body = root.find('.//body')
+    parsed = parse_html(html)
+    body = parsed.root.find(".//body")
+    if body is None:
+        body = parsed.root
 
     line_separator = kwargs.get('LINE_SPERATOR', '')
 
-    content = line_separator.join([delegate(element, do_spellcheck=do_spellcheck, **kwargs)
-                       for element in body])
+    content = line_separator.join(
+        [delegate(element, do_spellcheck=do_spellcheck, **kwargs) for element in body]
+    )
 
     # main_template = texenv.get_template('doc.tex')
     # output = unicode(unescape(main_template.render(content=content))).encode(

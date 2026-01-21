@@ -1,19 +1,37 @@
 # -*- coding: utf-8 -*-
 
-from lxml import etree
+from justhtml import JustHTML
+from justhtml.node import Element
+
+
+def _parse_fragment(html):
+    return JustHTML(html, fragment=True, safe=False).root
+
+
+def _element_children(node):
+    return [child for child in getattr(node, "children", []) if isinstance(child, Element)]
+
+
+def _find_all(node, tag):
+    matches = []
+    for child in getattr(node, "children", []):
+        if isinstance(child, Element):
+            if child.name == tag:
+                matches.append(child)
+            matches.extend(_find_all(child, tag))
+    return matches
 
 
 def get_columns_count(html):
-    _root = etree.HTML(html)
+    root = _parse_fragment(html)
     max_td_count = 0
 
-    for row in _root.findall('.//tr'):
+    for row in _find_all(root, "tr"):
         col_count = 0
-
-        cells = row.findall('.//td') + row.findall('.//th')
+        cells = [c for c in _element_children(row) if c.name in {"td", "th"}]
 
         for td in cells:
-            colspan = td.attrib.get('colspan')
+            colspan = td.attrs.get("colspan")
             if colspan:
                 col_count += int(str(colspan))
             else:
@@ -25,52 +43,52 @@ def get_columns_count(html):
 
 
 def get_rows_count(html):
-    _root = etree.HTML(html)
-    return len(_root.findall('.//tr'))
+    root = _parse_fragment(html)
+    return len(_find_all(root, "tr"))
 
 
 def get_blank_tr():
-    return etree.HTML('<tr>\n</tr>').find('.//tr')
+    return Element("tr", {}, None)
 
 
 def get_blank_td():
-    td = etree.HTML('<td>\n</td>').find('.//td')
-    td.set('__bottom_line', '1')
+    td = Element("td", {}, None)
+    td.attrs["__bottom_line"] = "1"
     return td
 
 
 def create_blank_table(rows, cols):
-    blank_html = '''
-    <table>
-    <tbody></tbody>
-    </table>
-    '''
-    _root = etree.HTML(blank_html)
-    _table = _root.find('.//table')
-    _tbody = _table.find('.//tbody')
+    table = Element("table", {}, None)
+    tbody = Element("tbody", {}, None)
+    table.append_child(tbody)
 
     for _i in range(rows):
-        _tr = get_blank_tr()
-        _tbody.insert(_i, _tr)
-
+        tr = get_blank_tr()
+        tbody.append_child(tr)
         for _j in range(cols):
-            _td = get_blank_td()
-            _tr.insert(_j, _td)
+            tr.append_child(get_blank_td())
 
-    return _root.find('.//table')
-
-
-def find_next_untouched_td(_tr, col_index):
-    for _td in _tr.findall('.//td')[col_index:]:
-        if _td.attrib.get('__is_used') is None:
-            return _td
+    return table
 
 
-def replace_td(_tr, old_td, new_td):
-    _col_index = _tr.index(old_td)
-    _tr.insert(_col_index, new_td)
-    _tr.remove(old_td)
-    new_td.set('__is_used', '1')
+def find_next_untouched_td(tr, col_index):
+    tds = [c for c in _element_children(tr) if c.name == "td"]
+    for td in tds[col_index:]:
+        if td.attrs.get("__is_used") is None:
+            return td
+    return None
+
+
+def replace_td(tr, old_td, new_td):
+    children = _element_children(tr)
+    try:
+        idx = children.index(old_td)
+    except ValueError:
+        idx = len(children)
+    tr.remove_child(old_td)
+    ref = _element_children(tr)[idx] if idx < len(_element_children(tr)) else None
+    tr.insert_before(new_td, ref)
+    new_td.attrs["__is_used"] = "1"
 
 
 def unpack_merged_cells_in_table(html):
@@ -78,90 +96,78 @@ def unpack_merged_cells_in_table(html):
     columns_count = get_columns_count(html)
     new_table = create_blank_table(rows_count, columns_count)
 
-    root = etree.HTML(html)
+    root = _parse_fragment(html)
 
-    for _tbody in root.findall('.//tbody') + root.findall('.//thead'):
-        _tbody.tag = 'tbody'
+    for tbody in _find_all(root, "tbody") + _find_all(root, "thead"):
+        tbody.name = "tbody"
 
-    for _td in root.findall('.//td') + root.findall('.//th'):
-        _td.set('__bottom_line', '1')
-        _td.tag = 'td'
+    for td in _find_all(root, "td") + _find_all(root, "th"):
+        td.name = "td"
+        td.attrs["__bottom_line"] = "1"
+        td.attrs.pop("__is_used", None)
 
-        try:
-            _td.attrib.pop('__is_used')
-        except KeyError:
-            pass
+    rows = _find_all(root, "tr")
+    new_rows = _find_all(new_table, "tr")
 
-    root = etree.HTML(etree.tounicode(root))
+    for row_index, tr in enumerate(rows):
+        new_tr = new_rows[row_index]
+        new_tr.attrs.update(tr.attrs)
 
-    for row_index, tr in enumerate(root.findall('.//tr')):
-        new_tr = new_table.findall('.//tr')[row_index]
-
-        for k, v in tr.attrib.items():
-            new_tr.set(k, v)
-
-        all_cells = [x for x in tr.iterchildren()]
+        all_cells = [c for c in _element_children(tr) if c.name == "td"]
 
         col_index = 0
-        for td in tr.iterchildren():
-            if td.attrib.get('colspan') is None and td.attrib.get('rowspan') is None:
+        for td in all_cells:
+            if td.attrs.get("colspan") is None and td.attrs.get("rowspan") is None:
                 td_to_be_removed = find_next_untouched_td(new_tr, col_index)
+                if td_to_be_removed is None:
+                    continue
                 replace_td(new_tr, td_to_be_removed, td)
-
                 col_index += 1
+                continue
 
-            elif td.attrib.get('colspan'):
+            if td.attrs.get("colspan"):
                 col_index = all_cells.index(td)
-
-                colspan = int(td.attrib.get('colspan'))
+                colspan = int(td.attrs.get("colspan"))
                 td_to_be_removed = find_next_untouched_td(new_tr, col_index)
+                if td_to_be_removed is None:
+                    continue
                 replace_td(new_tr, td_to_be_removed, td)
 
-                td.attrib.pop('colspan')
-                td.set('_colspan', str(colspan))
+                td.attrs.pop("colspan", None)
+                td.attrs["_colspan"] = str(colspan)
 
                 for _col_index in range(col_index + 1, col_index + colspan):
-                    _td = new_tr.findall('.//td')[_col_index]
+                    _td = _element_children(new_tr)[_col_index]
+                    _td.attrs["__is_used"] = "1"
 
-                    _td.set('__is_used', '1')
-
-                # set next col_index
                 col_index = _col_index + 1
+                continue
 
-            elif td.attrib.get('rowspan'):
-                rowspan = int(td.attrib.get('rowspan'))
+            if td.attrs.get("rowspan"):
+                rowspan = int(td.attrs.get("rowspan"))
                 td_to_be_removed = find_next_untouched_td(new_tr, col_index)
+                if td_to_be_removed is None:
+                    continue
                 replace_td(new_tr, td_to_be_removed, td)
 
-                td.attrib.pop('rowspan')
-                td.set('_rowspan', str(rowspan))
-
-                try:
-                    td.attrib.pop('__bottom_line')
-                except KeyError:
-                    pass
+                td.attrs.pop("rowspan", None)
+                td.attrs["_rowspan"] = str(rowspan)
+                td.attrs.pop("__bottom_line", None)
 
                 for _row_index in range(row_index + 1, row_index + rowspan):
-                    _tr = new_table.findall('.//tr')[_row_index]
-                    _td = _tr.findall('.//td')[col_index]
-                    _td.set('__is_used', '1')
+                    _tr = new_rows[_row_index]
+                    _td = _element_children(_tr)[col_index]
+                    _td.attrs["__is_used"] = "1"
+                    _td.attrs.pop("__bottom_line", None)
 
-                    try:
-                        _td.attrib.pop('__bottom_line')
-                    except KeyError:
-                        pass
-
-                _td.set('__bottom_line', '1')
-
+                _td.attrs["__bottom_line"] = "1"
                 col_index += 1
 
-    for _td in new_table.findall('.//td') + new_table.findall('.//th'):
-        try:
-            _td.attrib.pop('__is_used')
-        except KeyError:
-            pass
+    for td in _find_all(new_table, "td"):
+        td.attrs.pop("__is_used", None)
 
-    return etree.tounicode(new_table)
+    return new_table.to_html(pretty=False)
+
 
 if __name__ == '__main__':
     html = r'''

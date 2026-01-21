@@ -26,11 +26,10 @@ classifiers = [
   "Topic :: Utilities",
 ]
 
-# NOTE: lxml remains until MOD-06 removes it. justhtml will replace it.
 dependencies = [
   "Jinja2>=3.1",
   "html2text",
-  "lxml",
+  "justhtml",
   "pyenchant",
 ]
 
