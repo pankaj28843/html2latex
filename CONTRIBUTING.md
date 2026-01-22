@@ -26,6 +26,7 @@ npx --yes prettier@3.3.3 --check "tests/fixtures/html2latex/**/*.html"
 ```
 
 Note: error fixtures under `tests/fixtures/html2latex/errors/` are intentionally invalid and are excluded from Prettier formatting.
+The Prettier config favors human readability (100-column width and CSS whitespace handling).
 
 ## Fixture LaTeX validation
 

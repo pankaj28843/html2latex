@@ -19,6 +19,7 @@ Fixtures are organized by feature area so they are easy to find and reuse.
 - Keep fixtures small and focused; prefer one behavior per case.
 - Names are semantic (what the case demonstrates), not numeric.
 - HTML fixtures are formatted with Prettier; error fixtures are excluded.
+- The Prettier config is tuned for readability (100-column width, CSS whitespace handling).
 - `.tex` fixtures should compile with Tectonic in isolation (see `CONTRIBUTING.md`).
 
 ## Adding a new case
