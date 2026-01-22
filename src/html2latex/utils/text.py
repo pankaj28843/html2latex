@@ -69,6 +69,26 @@ def escape_tex(value):
     return newval
 
 
+def escape_tex_argument(value: str) -> str:
+    """Escape LaTeX-sensitive characters for use in command arguments."""
+    if not value:
+        return value
+    replacements = (
+        ("\\", r"\\textbackslash "),
+        ("{", r"\{"),
+        ("}", r"\}"),
+        ("%", r"\%"),
+        ("#", r"\#"),
+        ("_", r"\_"),
+        ("&", r"\&"),
+        ("^", r"\^{}"),
+        ("~", r"\~{}"),
+    )
+    for old, new in replacements:
+        value = value.replace(old, new)
+    return value
+
+
 """
  Removes HTML or XML character references and entities from a text string.
 

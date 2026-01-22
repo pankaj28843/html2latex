@@ -7,12 +7,18 @@ import pytest
 
 from html2latex.html2latex import html2latex
 
-CASES_PATH = Path(__file__).parent / "golden" / "cases.json"
+CASES_DIR = Path(__file__).parent / "golden"
 
 
 def _load_cases():
-    with CASES_PATH.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
+    cases = []
+    for path in sorted(CASES_DIR.glob("*.json")):
+        with path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+        for case in data:
+            case["source"] = path.name
+            cases.append(case)
+    return cases
 
 
 def _normalize(value: str) -> str:
@@ -22,7 +28,11 @@ def _normalize(value: str) -> str:
     return "\n".join(line.rstrip() for line in stripped.splitlines())
 
 
-@pytest.mark.parametrize("case", _load_cases(), ids=lambda case: case.get("name", "case"))
+@pytest.mark.parametrize(
+    "case",
+    _load_cases(),
+    ids=lambda case: f"{case.get('source', 'cases.json')}::{case.get('name', 'case')}",
+)
 def test_golden_case(case):
     if case.get("skip"):
         pytest.skip(case["skip"])

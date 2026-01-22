@@ -1,6 +1,6 @@
 # justhtml Adapter Design (Spike)
 
-Status: Spike-only (not integrated)
+Status: Implemented (adapter integrated)
 
 ## Goals
 - Replace lxml with justhtml without rewriting the core transformation logic all at once.
@@ -15,7 +15,7 @@ The codebase relies on these behaviors:
 - Search: `find()`, `findall()`.
 - Serialization: `etree.tounicode(...)`, `etree.tostring(...)`.
 
-## Proposed Adapter Surface
+## Adapter Surface
 Minimal interface for a node wrapper (`HtmlNode`) and parser (`parse_html`).
 
 ```text
@@ -52,8 +52,8 @@ Notes:
 - `node.getnext()` -> `HtmlNode.getnext()` -> next sibling
 - `node.findall('.//tr')` -> `HtmlNode.findall('tr')`
 
-## Spike Implementation
-See `src/html2latex/html_adapter.py` for a minimal wrapper that exposes the interface above.
+## Implementation
+See `src/html2latex/html_adapter.py` for the wrapper that exposes the interface above.
 
 ## Next Steps (MOD-06)
 - Wire adapter into `html2latex.py` and `utils/unpack_merged_cells_in_table.py`.

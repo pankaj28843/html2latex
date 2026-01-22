@@ -28,8 +28,10 @@ def _build_document(body: str) -> str:
 def test_latex_fixtures_compile(tmp_path: Path) -> None:
     if not TECTONIC_BIN:
         pytest.fail("Tectonic is required for LaTeX validity checks; install `tectonic`.")
-    with open(Path("tests/golden/cases.json")) as handle:
-        cases = json.load(handle)
+    cases = []
+    for path in sorted(Path("tests/golden").glob("*.json")):
+        with path.open() as handle:
+            cases.extend(json.load(handle))
 
     fragments = []
     for case in cases:

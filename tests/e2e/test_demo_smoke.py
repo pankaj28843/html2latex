@@ -94,6 +94,16 @@ def test_demo_smoke() -> None:
             browser.close()
 
             assert "Smoke Test" in output
+            payload = json.dumps({"html_string": "<ul><li>List</li></ul>"}).encode("utf-8")
+            req = Request(
+                f"{url}convert",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+            )
+            with urlopen(req) as response:
+                data = json.loads(response.read().decode("utf-8"))
+            list_output = data.get("latex", "")
+            assert "\\begin{itemize}" in list_output
         assert "\\noindent" in output
     finally:
         os.environ.clear()

@@ -5,18 +5,34 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Optional
 
-from justhtml import JustHTML
+from justhtml import JustHTML, ParseError
 from justhtml.node import Comment, Element, Text
 
 
-@dataclass
+@dataclass(slots=True)
 class HtmlDocument:
     root: "HtmlNode"
+    errors: list[ParseError] | None = None
 
 
-def parse_html(html: str, *, fragment: bool = True) -> HtmlDocument:
-    document = JustHTML(html, fragment=fragment, safe=False)
-    return HtmlDocument(root=HtmlNode(document.root))
+def parse_html(
+    html: str,
+    *,
+    fragment: bool = True,
+    collect_errors: bool = False,
+    track_node_locations: bool = False,
+) -> HtmlDocument:
+    document = JustHTML(
+        html,
+        fragment=fragment,
+        safe=False,
+        collect_errors=collect_errors,
+        track_node_locations=track_node_locations,
+    )
+    return HtmlDocument(
+        root=HtmlNode(document.root),
+        errors=document.errors if collect_errors else None,
+    )
 
 
 def is_comment(node: "HtmlNode") -> bool:
@@ -25,6 +41,8 @@ def is_comment(node: "HtmlNode") -> bool:
 
 class HtmlNode:
     """Thin wrapper around a justhtml node (Element or DocumentFragment)."""
+
+    __slots__ = ("_node",)
 
     def __init__(self, node):
         self._node = node
