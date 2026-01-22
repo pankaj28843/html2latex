@@ -42,3 +42,23 @@ def test_convert_div_and_hr():
     assert latex.body[0].text == "Block"
     assert latex.body[1].name == "par"
     assert latex.body[2].name == "hrule"
+
+
+def test_convert_inline_code_sup_sub():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="p",
+                children=(
+                    HtmlElement(tag="code", children=(HtmlText(text="x"),)),
+                    HtmlElement(tag="sup", children=(HtmlText(text="2"),)),
+                    HtmlElement(tag="sub", children=(HtmlText(text="i"),)),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    assert latex.body[0].name == "texttt"
+    assert latex.body[1].name == "textsuperscript"
+    assert latex.body[2].name == "textsubscript"
+    assert latex.body[3].name == "par"

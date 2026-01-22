@@ -16,6 +16,9 @@ _INLINE_COMMANDS = {
     "em": "textit",
     "i": "textit",
     "u": "underline",
+    "code": "texttt",
+    "sup": "textsuperscript",
+    "sub": "textsubscript",
 }
 
 
