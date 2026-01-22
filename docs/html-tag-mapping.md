@@ -46,7 +46,7 @@ HTML2LaTeX.
 | `a` | `\href{url}{text}` or `\url{url}` | `hyperref` required. |
 | `img` | `\includegraphics{src}` | `graphicx` required. |
 | `span` (math) | `\( ... \)` or `\[ ... \]` | `class="math-tex"` or `data-latex`/`data-math`. |
-| `span`, `mark`, `abbr`, `time`, `del`, `s`, `strike` | content preserved | Inline semantic tags; children are rendered. |
+| `span`, `mark`, `abbr`, `time`, `del`, `s`, `strike`, `small`, `cite`, `dfn`, `kbd`, `samp`, `var` | content preserved | Inline semantic tags; children are rendered. |
 
 ## Notes
 - Text content is LaTeX-escaped during serialization.

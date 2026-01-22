@@ -32,12 +32,18 @@ _INLINE_COMMANDS = {
 
 _INLINE_PASSTHROUGH = {
     "abbr",
+    "cite",
     "del",
+    "dfn",
+    "kbd",
     "mark",
     "s",
+    "samp",
+    "small",
     "span",
     "strike",
     "time",
+    "var",
 }
 
 _BLOCK_PASSTHROUGH = {
