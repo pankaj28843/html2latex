@@ -6,7 +6,7 @@ from .ast import (
     LatexNode,
     LatexText,
 )
-from .serialize import LatexSerializer
+from .serialize import LatexSerializer, infer_packages, serialize_document
 
 __all__ = [
     "LatexCommand",
@@ -16,4 +16,6 @@ __all__ = [
     "LatexNode",
     "LatexSerializer",
     "LatexText",
+    "infer_packages",
+    "serialize_document",
 ]
