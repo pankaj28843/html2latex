@@ -73,6 +73,34 @@ def _convert_node(node: HtmlNode) -> list[LatexNode]:
         if tag == "hr":
             return [LatexCommand(name="hrule")]
 
+        if tag == "a":
+            href = node.attrs.get("href")
+            children = _convert_nodes(node.children)
+            if not href:
+                return list(children)
+            href_group = LatexGroup(children=(LatexText(text=href),))
+            if children:
+                label_group = LatexGroup(children=tuple(children))
+                return [
+                    LatexCommand(
+                        name="href",
+                        args=(href_group, label_group),
+                    )
+                ]
+            return [LatexCommand(name="url", args=(href_group,))]
+
+        if tag == "img":
+            src = node.attrs.get("src")
+            alt = node.attrs.get("alt")
+            if not src:
+                return [LatexText(text=alt)] if alt else []
+            return [
+                LatexCommand(
+                    name="includegraphics",
+                    args=(LatexGroup(children=(LatexText(text=src),)),),
+                )
+            ]
+
         if tag == "table":
             return _convert_table(node)
 

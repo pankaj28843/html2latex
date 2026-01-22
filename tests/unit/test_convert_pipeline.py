@@ -105,6 +105,50 @@ def test_convert_description_list():
     assert env.children[1].text == "Definition"
 
 
+def test_convert_link_and_image():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="p",
+                children=(
+                    HtmlElement(
+                        tag="a",
+                        attrs={"href": "https://example.com?q=1&v=2"},
+                        children=(HtmlText(text="Link"),),
+                    ),
+                    HtmlElement(tag="img", attrs={"src": "/img.png"}),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    link = latex.body[0]
+    assert isinstance(link, LatexCommand)
+    assert link.name == "href"
+    assert link.args[0].children[0].text == "https://example.com?q=1&v=2"
+    assert link.args[1].children[0].text == "Link"
+    image = latex.body[1]
+    assert image.name == "includegraphics"
+    assert image.args[0].children[0].text == "/img.png"
+    assert latex.body[2].name == "par"
+
+
+def test_convert_link_without_label_uses_url():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="a",
+                attrs={"href": "https://example.com"},
+                children=(),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    link = latex.body[0]
+    assert link.name == "url"
+    assert link.args[0].children[0].text == "https://example.com"
+
+
 def test_convert_table_basic():
     doc = HtmlDocument(
         children=(
