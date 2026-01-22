@@ -53,6 +53,8 @@ def _convert_node(node: HtmlNode) -> list[LatexNode]:
 
     if isinstance(node, HtmlElement):
         tag = node.tag.lower()
+        if _is_math_container(node):
+            return _convert_math(node)
         if tag in _INLINE_COMMANDS:
             children = _convert_nodes(node.children)
             group = LatexGroup(children=children)
@@ -170,6 +172,61 @@ def _extract_text(node: HtmlElement) -> str:
         elif isinstance(child, HtmlElement):
             parts.append(_extract_text(child))
     return "".join(parts)
+
+
+def _is_math_container(node: HtmlElement) -> bool:
+    if node.tag.lower() == "math":
+        return True
+    attrs = node.attrs
+    if "data-latex" in attrs or "data-math" in attrs:
+        return True
+    classes = _class_set(attrs.get("class"))
+    return bool(classes & {"math-tex", "math-tex-block", "math-display", "math-inline"})
+
+
+def _convert_math(node: HtmlElement) -> list[LatexNode]:
+    content = _extract_math_payload(node).strip()
+    if not content:
+        return []
+    content, display_override = _strip_math_delimiters(content)
+    display = display_override if display_override is not None else _is_display_math(node)
+    if display:
+        return [LatexRaw(value=f"\\[{content}\\]")]
+    return [LatexRaw(value=f"\\({content}\\)")]
+
+
+def _extract_math_payload(node: HtmlElement) -> str:
+    if "data-latex" in node.attrs:
+        return node.attrs["data-latex"]
+    if "data-math" in node.attrs:
+        return node.attrs["data-math"]
+    return _extract_text(node)
+
+
+def _strip_math_delimiters(text: str) -> tuple[str, bool | None]:
+    if text.startswith("\\[") and text.endswith("\\]"):
+        return text[2:-2].strip(), True
+    if text.startswith("\\(") and text.endswith("\\)"):
+        return text[2:-2].strip(), False
+    if text.startswith("$$") and text.endswith("$$") and len(text) >= 4:
+        return text[2:-2].strip(), True
+    if text.startswith("$") and text.endswith("$") and len(text) >= 2:
+        return text[1:-1].strip(), False
+    return text, None
+
+
+def _is_display_math(node: HtmlElement) -> bool:
+    tag = node.tag.lower()
+    if tag in {"div", "p"}:
+        return True
+    classes = _class_set(node.attrs.get("class"))
+    return bool(classes & {"math-tex-block", "math-display"})
+
+
+def _class_set(value: str | None) -> set[str]:
+    if not value:
+        return set()
+    return {part for part in value.split() if part}
 
 
 def _convert_table(table: HtmlElement) -> list[LatexNode]:

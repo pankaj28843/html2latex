@@ -175,6 +175,42 @@ def test_convert_preformatted_block():
     assert env.children[0].value == "line1\nline2"
 
 
+def test_convert_inline_math_tex():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="span",
+                attrs={"class": "math-tex"},
+                children=(HtmlText(text="\\(x+1\\)"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    assert latex.body[0].value == "\\(x+1\\)"
+
+
+def test_convert_display_math_tex():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="div",
+                attrs={"class": "math-tex"},
+                children=(HtmlText(text="x+1"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    assert latex.body[0].value == "\\[x+1\\]"
+
+
+def test_convert_math_from_data_attribute():
+    doc = HtmlDocument(
+        children=(HtmlElement(tag="span", attrs={"data-latex": "x^2"}, children=()),)
+    )
+    latex = convert_document(doc)
+    assert latex.body[0].value == "\\(x^2\\)"
+
+
 def test_convert_table_basic():
     doc = HtmlDocument(
         children=(
