@@ -9,7 +9,9 @@ import math
 from pathlib import Path
 from time import perf_counter
 
-from html2latex.html2latex import html2latex
+from html2latex.api import Converter
+
+_CONVERTER = Converter()
 
 
 def percentile(values: list[float], pct: float) -> float:
@@ -24,7 +26,7 @@ def measure_html(html: str, repeats: int) -> list[float]:
     timings = []
     for _ in range(repeats):
         start = perf_counter()
-        html2latex(html)
+        _CONVERTER.convert(html)
         timings.append((perf_counter() - start) * 1000)
     return timings
 
