@@ -62,3 +62,44 @@ def test_convert_inline_code_sup_sub():
     assert latex.body[1].name == "textsuperscript"
     assert latex.body[2].name == "textsubscript"
     assert latex.body[3].name == "par"
+
+
+def test_convert_unordered_list():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="ul",
+                children=(
+                    HtmlElement(tag="li", children=(HtmlText(text="A"),)),
+                    HtmlElement(tag="li", children=(HtmlText(text="B"),)),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    assert env.name == "itemize"
+    assert env.children[0].name == "item"
+    assert env.children[1].text == "A"
+    assert env.children[2].name == "item"
+    assert env.children[3].text == "B"
+
+
+def test_convert_description_list():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="dl",
+                children=(
+                    HtmlElement(tag="dt", children=(HtmlText(text="Term"),)),
+                    HtmlElement(tag="dd", children=(HtmlText(text="Definition"),)),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    assert env.name == "description"
+    assert env.children[0].name == "item"
+    assert env.children[0].options == ("Term",)
+    assert env.children[1].text == "Definition"
