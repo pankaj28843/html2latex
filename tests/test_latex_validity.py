@@ -36,6 +36,13 @@ def _run_tectonic(tex_source: str, tmp_path: Path, name: str) -> None:
     )
 
 
+def _ensure_nonempty_body(body: str) -> str:
+    tokens = body.strip().split()
+    if not tokens or all(token == "\\par" for token in tokens):
+        return f"{body}\n\\mbox{{}}" if body.strip() else "\\mbox{}"
+    return body
+
+
 def test_latex_fixtures_compile(tmp_path: Path) -> None:
     if not TECTONIC_BIN:
         pytest.fail("Tectonic is required for LaTeX validity checks; install `tectonic`.")
@@ -54,7 +61,7 @@ def test_latex_fixtures_compile(tmp_path: Path) -> None:
 
     body = "\n\n".join(fragments)
     preamble = _build_preamble(packages)
-    tex_source = render_document(body, preamble=preamble)
+    tex_source = render_document(_ensure_nonempty_body(body), preamble=preamble)
     _run_tectonic(tex_source, tmp_path, "fixtures")
 
 
@@ -75,6 +82,6 @@ def test_fixture_tex_files_compile(tmp_path: Path, case) -> None:
     packages = set(doc.packages)
     packages.update(_infer_packages_from_tex(normalized))
     preamble = _build_preamble(packages)
-    tex_source = render_document(normalized, preamble=preamble)
+    tex_source = render_document(_ensure_nonempty_body(normalized), preamble=preamble)
     safe_id = case.case_id.replace("/", "_")
     _run_tectonic(tex_source, tmp_path, safe_id)

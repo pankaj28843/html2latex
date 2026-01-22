@@ -1,6 +1,6 @@
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlText
 from html2latex.pipeline import normalize_document
-from html2latex.pipeline.normalize import _normalize_children
+from html2latex.pipeline.normalize import _normalize_children, _trim_boundary_breaks
 
 
 def test_normalize_merges_text_and_collapses_whitespace():
@@ -118,3 +118,22 @@ def test_normalize_trims_whitespace_in_body_container():
     normalized = normalize_document(HtmlDocument(children=(body,)))
     normalized_body = normalized.children[0]
     assert normalized_body.children[0].text == "Hello"
+
+
+def test_normalize_trims_boundary_breaks_in_blocks():
+    paragraph = HtmlElement(
+        tag="p",
+        children=(
+            HtmlElement(tag="br"),
+            HtmlText(text="Hello"),
+            HtmlElement(tag="br"),
+        ),
+    )
+    normalized = normalize_document(HtmlDocument(children=(paragraph,)))
+    normalized_paragraph = normalized.children[0]
+    assert len(normalized_paragraph.children) == 1
+    assert normalized_paragraph.children[0].text == "Hello"
+
+
+def test_trim_boundary_breaks_empty_children():
+    assert _trim_boundary_breaks(()) == ()

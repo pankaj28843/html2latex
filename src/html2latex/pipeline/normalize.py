@@ -117,7 +117,23 @@ def _trim_boundary_whitespace(
             text = text.rstrip()
         if text.strip():
             trimmed.append(HtmlText(text=text))
-    return tuple(trimmed)
+    return _trim_boundary_breaks(tuple(trimmed))
+
+
+def _trim_boundary_breaks(children: tuple[HtmlNode, ...]) -> tuple[HtmlNode, ...]:
+    if not children:
+        return children
+    start = 0
+    end = len(children)
+    while start < end and _is_line_break(children[start]):
+        start += 1
+    while end > start and _is_line_break(children[end - 1]):
+        end -= 1
+    return children[start:end]
+
+
+def _is_line_break(node: HtmlNode) -> bool:
+    return isinstance(node, HtmlElement) and node.tag.lower() == "br"
 
 
 def _is_block_element(node: HtmlNode) -> bool:
