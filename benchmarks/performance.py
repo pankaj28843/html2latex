@@ -33,8 +33,9 @@ def measure_html(html: str, repeats: int) -> list[float]:
 
 def load_cases(data_dir: Path) -> dict[str, str]:
     cases = {}
-    for path in sorted(data_dir.glob("*.html")):
-        cases[path.name] = path.read_text(encoding="utf-8")
+    for path in sorted(p for p in data_dir.rglob("*.html") if p.is_file()):
+        rel_name = path.relative_to(data_dir).as_posix()
+        cases[rel_name] = path.read_text(encoding="utf-8")
     return cases
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 FIXTURE_ROOT = Path(__file__).resolve().parent / "html2latex"
@@ -40,7 +41,8 @@ def _case_id_for(path: Path, root: Path) -> str:
     return rel.as_posix()
 
 
-def load_fixture_cases(filters: list[str] | None = None) -> list[FixtureCase]:
+@lru_cache(maxsize=1)
+def _load_all_cases() -> tuple[FixtureCase, ...]:
     if not FIXTURE_ROOT.exists():
         raise FileNotFoundError(f"Fixture root not found: {FIXTURE_ROOT}")
 
@@ -78,11 +80,18 @@ def load_fixture_cases(filters: list[str] | None = None) -> list[FixtureCase]:
             )
         )
 
-    if filters:
-        filtered = []
-        for case in cases:
-            if any(case.case_id.startswith(prefix) for prefix in filters):
-                filtered.append(case)
-        return filtered
+    return tuple(cases)
 
-    return cases
+
+def load_fixture_cases(filters: list[str] | None = None) -> list[FixtureCase]:
+    cases = list(_load_all_cases())
+    if not filters:
+        return cases
+    return [case for case in cases if any(case.case_id.startswith(prefix) for prefix in filters)]
+
+
+def get_fixture_case(case_id: str) -> FixtureCase:
+    for case in _load_all_cases():
+        if case.case_id == case_id:
+            return case
+    raise KeyError(f"Fixture not found: {case_id}")

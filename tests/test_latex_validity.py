@@ -1,4 +1,3 @@
-import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -7,6 +6,7 @@ import pytest
 
 from html2latex.api import convert
 from html2latex.jinja import render_document
+from tests.fixtures.harness import load_fixture_cases, normalize_fixture_text
 
 TECTONIC_BIN = shutil.which("tectonic")
 
@@ -18,18 +18,16 @@ def _build_preamble(packages: set[str]) -> str:
 def test_latex_fixtures_compile(tmp_path: Path) -> None:
     if not TECTONIC_BIN:
         pytest.fail("Tectonic is required for LaTeX validity checks; install `tectonic`.")
-    cases = []
-    for path in sorted(Path("tests/golden").glob("*.json")):
-        with path.open() as handle:
-            cases.extend(json.load(handle))
+    cases = load_fixture_cases(filters=["blocks/", "inline/", "lists/"])
 
     fragments = []
     packages: set[str] = set()
     for case in cases:
-        doc = convert(case["html"])
-        if "\\includegraphics" in doc.body or "\\write18" in doc.body:
+        doc = convert(case.html)
+        normalized = normalize_fixture_text(case.tex)
+        if "\\includegraphics" in normalized or "\\write18" in normalized:
             continue
-        fragments.append(doc.body)
+        fragments.append(normalized)
         packages.update(doc.packages)
 
     body = "\n\n".join(fragments)

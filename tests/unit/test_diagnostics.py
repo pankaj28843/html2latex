@@ -11,22 +11,26 @@ from html2latex.diagnostics import (
     extend_diagnostics,
 )
 from html2latex.models import ConvertOptions
+from tests.fixtures.harness import get_fixture_case
 
 
 def test_collects_diagnostics_parse_error():
     options = ConvertOptions(strict=False, fragment=False)
-    doc = convert("<div id=>Hi</div>", options=options)
+    fixture = get_fixture_case("errors/parse/invalid-attribute")
+    doc = convert(fixture.html, options=options)
     assert any(event.code == "missing-attribute-value" for event in doc.diagnostics)
 
 
 def test_strict_raises_on_parse_error():
     options = ConvertOptions(strict=True, fragment=False)
+    fixture = get_fixture_case("errors/parse/invalid-attribute")
     with pytest.raises(DiagnosticsError):
-        convert("<div id=>Hi</div>", options=options)
+        convert(fixture.html, options=options)
 
 
 def test_diagnostics_empty_for_valid_html():
-    doc = convert("<p>Ok</p>")
+    fixture = get_fixture_case("blocks/paragraph/basic")
+    doc = convert(fixture.html)
     assert doc.diagnostics == ()
 
 

@@ -6,6 +6,12 @@ Run the performance benchmark on the sample corpus:
 uv run python benchmarks/performance.py
 ```
 
+Run the benchmark against the golden fixture corpus:
+
+```bash
+uv run python benchmarks/performance.py --data-dir tests/fixtures/html2latex
+```
+
 To compare against a baseline:
 
 ```bash

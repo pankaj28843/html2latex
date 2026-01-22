@@ -8,6 +8,7 @@ Fixtures are organized by feature area so they are easy to find and reuse.
 - `blocks/` — block-level constructs (paragraphs, headings, blockquote, pre, hr, tables)
 - `inline/` — inline formatting and spans
 - `lists/` — list structures
+- `errors/` — invalid inputs used for diagnostics tests (not part of strict golden runs)
 
 ## Conventions
 

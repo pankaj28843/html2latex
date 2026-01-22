@@ -1,5 +1,6 @@
 from html2latex.api import Converter, convert
 from html2latex.models import ConvertOptions, LatexDocument
+from tests.fixtures.harness import get_fixture_case, normalize_fixture_text
 
 
 def test_convert_options_defaults():
@@ -27,11 +28,13 @@ def test_converter_with_options_is_immutable():
 
 def test_converter_convert_returns_document():
     converter = Converter()
-    doc = converter.convert("<p>hi</p>")
-    assert doc.body.rstrip() == "hi\\par"
+    fixture = get_fixture_case("blocks/paragraph/basic")
+    doc = converter.convert(fixture.html)
+    assert normalize_fixture_text(doc.body) == normalize_fixture_text(fixture.tex)
     assert converter.diagnostics == doc.diagnostics
 
 
 def test_convert_helper_returns_document():
-    doc = convert("<p>hi</p>")
-    assert doc.body.rstrip() == "hi\\par"
+    fixture = get_fixture_case("blocks/paragraph/basic")
+    doc = convert(fixture.html)
+    assert normalize_fixture_text(doc.body) == normalize_fixture_text(fixture.tex)
