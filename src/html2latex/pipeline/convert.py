@@ -358,9 +358,7 @@ def _extract_table_caption(
             continue
         nodes = _convert_nodes(child.children, list_level)
         nodes = tuple(
-            node
-            for node in nodes
-            if not (isinstance(node, LatexCommand) and node.name == "par")
+            node for node in nodes if not (isinstance(node, LatexCommand) and node.name == "par")
         )
         if not nodes:
             return None
