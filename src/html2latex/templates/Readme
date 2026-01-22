@@ -1,1 +1,0 @@
-These templates are all named according to their html tag names and for the moment will act as the master templates. They really should have the names of their destination LaTeX tags. Solving that with symbolic links for now.

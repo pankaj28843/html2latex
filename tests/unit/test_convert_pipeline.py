@@ -1,6 +1,6 @@
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlText
 from html2latex.latex import LatexCommand, LatexEnvironment, LatexRaw, LatexText
-from html2latex.rewrite_pipeline import convert_document
+from html2latex.pipeline import convert_document
 
 
 def test_convert_paragraph_and_inline():

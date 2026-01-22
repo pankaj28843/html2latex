@@ -6,7 +6,7 @@ from .adapters.justhtml_adapter import parse_html
 from .diagnostics import diagnostic_context, enforce_strict, extend_diagnostics
 from .latex import infer_packages, serialize_document
 from .models import ConvertOptions, LatexDocument
-from .rewrite_pipeline import convert_document, normalize_document
+from .pipeline import convert_document, normalize_document
 
 
 class Converter:

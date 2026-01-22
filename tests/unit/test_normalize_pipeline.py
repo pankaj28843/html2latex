@@ -1,5 +1,5 @@
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlText
-from html2latex.rewrite_pipeline import normalize_document
+from html2latex.pipeline import normalize_document
 
 
 def test_normalize_merges_text_and_collapses_whitespace():

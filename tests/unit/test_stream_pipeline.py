@@ -1,6 +1,6 @@
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlText
 from html2latex.latex import serialize_document
-from html2latex.rewrite_pipeline import convert_document, stream_convert
+from html2latex.pipeline import convert_document, stream_convert
 
 
 def test_stream_convert_matches_serialized_output():
