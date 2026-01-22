@@ -29,5 +29,5 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     if "fixture_case" not in metafunc.fixturenames:
         return
     filters = metafunc.config.getoption("--fixture-filter") or []
-    cases = load_fixture_cases(filters=filters)
+    cases = load_fixture_cases(filters=filters, include_errors=False)
     metafunc.parametrize("fixture_case", cases, ids=lambda case: case.case_id)

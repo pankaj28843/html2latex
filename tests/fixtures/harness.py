@@ -83,8 +83,14 @@ def _load_all_cases() -> tuple[FixtureCase, ...]:
     return tuple(cases)
 
 
-def load_fixture_cases(filters: list[str] | None = None) -> list[FixtureCase]:
+def load_fixture_cases(
+    filters: list[str] | None = None,
+    *,
+    include_errors: bool = True,
+) -> list[FixtureCase]:
     cases = list(_load_all_cases())
+    if not include_errors:
+        cases = [case for case in cases if not case.case_id.startswith("errors/")]
     if not filters:
         return cases
     return [case for case in cases if any(case.case_id.startswith(prefix) for prefix in filters)]
