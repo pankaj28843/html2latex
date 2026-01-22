@@ -104,7 +104,7 @@ def test_demo_smoke() -> None:
                 data = json.loads(response.read().decode("utf-8"))
             list_output = data.get("latex", "")
             assert "\\begin{itemize}" in list_output
-        assert "\\noindent" in output
+        assert "\\par" in output
     finally:
         os.environ.clear()
         os.environ.update(original_env)

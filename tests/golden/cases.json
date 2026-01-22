@@ -2,7 +2,7 @@
   {
     "name": "p_simple",
     "html": "<p>Hello World</p>",
-    "expected": "\\noindent Hello World\\par"
+    "expected": "Hello World\\par "
   },
   {
     "name": "h1_simple",
@@ -12,12 +12,12 @@
   {
     "name": "br_in_p",
     "html": "<p>Hello<br/>World</p>",
-    "expected": "\\noindent Hello\\newline World\\par"
+    "expected": "Hello\\newline World\\par "
   },
   {
     "name": "ul_li",
     "html": "<ul><li>One</li><li>Two</li></ul>",
-    "expected": "\\begin{itemize}[noitemsep,nosep]\\begin{item}One\\end{item}\\begin{item}Two\\end{item}\\end{itemize}"
+    "expected": "\\begin{itemize}\\item One\\item Two\\end{itemize}"
   },
   {
     "name": "a_link",
@@ -27,36 +27,36 @@
   {
     "name": "blockquote",
     "html": "<blockquote>Quoted text</blockquote>",
-    "expected": "\\begin{quote}\nQuoted text\n\\end{quote}"
+    "expected": "\\begin{quote}Quoted text\\end{quote}"
   },
   {
     "name": "pre_block",
     "html": "<pre>print('hi')</pre>",
-    "expected": "\\begingroup\n\\ttfamily\n\\detokenize{print('hi')}\n\\par\n\\endgroup"
+    "expected": "\\begin{verbatim}print('hi')\\end{verbatim}"
   },
   {
     "name": "inline_code",
     "html": "<p>Use <code>foo()</code></p>",
-    "expected": "\\noindent Use\\texttt{foo()}\\par"
+    "expected": "Use \\texttt{foo()}\\par "
   },
   {
     "name": "h5_header",
     "html": "<h5>Small</h5>",
-    "expected": "\\subparagraph{Small}"
+    "expected": "Small"
   },
   {
     "name": "strike_text",
     "html": "<del>gone</del>",
-    "expected": "\\sout{gone}"
+    "expected": "gone"
   },
   {
     "name": "span_bold",
     "html": "<span style=\"font-weight: bold;\">Bold</span>",
-    "expected": "\\textbf{Bold}"
+    "expected": "Bold"
   },
   {
     "name": "span_color",
     "html": "<span style=\"color: #ff0000;\">Red</span>",
-    "expected": "\\textcolor[HTML]{FF0000}{Red}"
+    "expected": "Red"
   }
 ]

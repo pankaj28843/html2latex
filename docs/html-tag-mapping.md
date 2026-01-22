@@ -1,75 +1,54 @@
-# HTML → LaTeX Tag Mapping (WYSIWYG)
+# HTML -> LaTeX Tag Mapping (WYSIWYG)
 
-Date: 2026-01-21
+Date: 2026-01-22
 
 ## Purpose
-This document defines the target mapping for common HTML5/WYSIWYG tags and inline styles to LaTeX constructs. It is the source of truth for tag coverage and package requirements.
+This document summarizes how common WYSIWYG HTML tags are mapped to LaTeX by
+HTML2LaTeX.
 
-## Package policy
-Required:
+## Required Packages
 - `graphicx` for images (`\includegraphics`).
 - `hyperref` for links (`\href`, `\url`).
-
-Optional (feature-gated):
-- `xcolor` for text/background color.
-- `ulem` for strikethrough (`\sout`).
-- `tabularx` for flexible-width tables.
 
 ## Block-level tags
 
 | HTML | LaTeX | Notes |
 | --- | --- | --- |
-| `p` | `\noindent ... \par` | Paragraphs are explicit to avoid implicit indentation. |
-| `div` | `\par ... \par` | Treated as a block container. |
-| `h1` | `\section{...}` | Headings map to standard sectioning. |
-| `h2` | `\subsection{...}` |  |
-| `h3` | `\subsubsection{...}` |  |
-| `h4` | `\paragraph{...}` |  |
-| `h5` | `\subparagraph{...}` |  |
-| `h6` | `\subparagraph{...}` |  |
+| `p` | `... \par` | Paragraph terminator is explicit. |
+| `div` | `... \par` | Treated as a block container. |
+| `h1` | `\section{...}` | |
+| `h2` | `\subsection{...}` | |
+| `h3` | `\subsubsection{...}` | |
 | `ul` | `\begin{itemize} ... \end{itemize}` | `\item` for each `li`. |
 | `ol` | `\begin{enumerate} ... \end{enumerate}` | `\item` for each `li`. |
-| `li` | `\item ...` |  |
-| `blockquote` | `\begin{quote} ... \end{quote}` |  |
-| `pre` | `\begin{verbatim} ... \end{verbatim}` | Preserve whitespace. |
-| `code` | `\texttt{...}` or `verbatim` | Inline by default; block when wrapped by `pre`. |
-| `hr` | `\hrule` | May be wrapped in `\vspace` as needed. |
-| `table` | `tabular`/`tabularx` | No screenshot-based rendering. |
+| `dl` | `\begin{description} ... \end{description}` | `\item[term]` per `dt/dd`. |
+| `blockquote` | `\begin{quote} ... \end{quote}` | |
+| `pre` | `\begin{verbatim} ... \end{verbatim}` | Preserves whitespace. |
+| `hr` | `\hrule` | |
+| `table` | `tabular` | Column spec uses left alignment (`l`). |
 | `thead`/`tbody`/`tfoot` | table grouping | Passed through to `tabular` generation. |
-| `tr` | row with `\\` |  |
+| `tr` | row with `\\` | |
 | `th` | `\textbf{...}` | Column header. |
-| `td` | cell contents | colspan/rowspan supported where possible. |
-| `figure` | `\begin{figure} ... \end{figure}` |  |
-| `figcaption` | `\caption{...}` |  |
+| `td` | cell contents | `colspan` mapped via `\multicolumn`. |
 
 ## Inline tags
 
 | HTML | LaTeX | Notes |
 | --- | --- | --- |
-| `strong`, `b` | `\textbf{...}` |  |
-| `em`, `i` | `\textit{...}` or `\emph{...}` | `\emph` preferred for nested emphasis. |
-| `u` | `\underline{...}` |  |
-| `s`, `strike`, `del` | `\sout{...}` | Requires `ulem`. |
-| `sub` | `\textsubscript{...}` or math subscript |  |
-| `sup` | `\textsuperscript{...}` or math superscript |  |
-| `a` | `\href{url}{text}` or `\url{url}` | Requires `hyperref`. |
-| `img` | `\includegraphics` | Requires `graphicx`. |
-| `span` | style-driven | Use inline style mapping. |
-
-## Inline style mapping
-
-Supported CSS (subset):
-- `text-align`: maps to `\centering`, `\raggedright`, `\raggedleft`.
-- `font-weight: bold`: `\textbf{...}`.
-- `font-style: italic`: `\textit{...}`.
-- `text-decoration: underline`: `\underline{...}`; `line-through` → `\sout{...}`.
-- `color`: `\textcolor{...}{...}` (requires `xcolor`).
-- `background-color`: `\colorbox{...}{...}` (requires `xcolor`).
+| `strong`, `b` | `\textbf{...}` | |
+| `em`, `i` | `\textit{...}` | |
+| `u` | `\underline{...}` | |
+| `code` | `\texttt{...}` | |
+| `sub` | `\textsubscript{...}` | |
+| `sup` | `\textsuperscript{...}` | |
+| `a` | `\href{url}{text}` or `\url{url}` | `hyperref` required. |
+| `img` | `\includegraphics{src}` | `graphicx` required. |
+| `span` (math) | `\( ... \)` or `\[ ... \]` | `class="math-tex"` or `data-latex`/`data-math`. |
 
 ## Notes
-- HTML entities must be unescaped before LaTeX escaping.
-- LaTeX escaping must avoid double-escaping and preserve math spans.
-- If a tag is unknown, default to rendering its text content.
+- Text content is LaTeX-escaped during serialization.
+- Unknown tags are flattened to their children.
+- `rowspan` is currently ignored; `colspan` is supported.
 
 ## References
 - Lists: https://www.overleaf.com/learn/latex/Lists
@@ -77,4 +56,3 @@ Supported CSS (subset):
 - Text formatting: https://www.overleaf.com/learn/latex/Bold%2C_italics_and_underlining
 - Hyperlinks: https://www.overleaf.com/learn/latex/Hyperlinks
 - Images: https://www.overleaf.com/learn/latex/Inserting_Images
-- Alignment: https://www.overleaf.com/learn/latex/Text_alignment

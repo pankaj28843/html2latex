@@ -21,7 +21,6 @@ cache = redis.Redis(
     decode_responses=True,
 )
 
-capfirst_enabled = os.environ.get("CAPFIRST_ENABLED", "False").lower().strip() == "true"
 cache_enabled = os.environ.get("CACHE_ENABLED", "False").lower().strip() == "true"
 
 ENV = os.environ.get("ENV", "production").lower().strip()
@@ -32,7 +31,7 @@ CACHE_KEY_SECRET = os.environ.get("CACHE_KEY_SECRET", "html2latex-demo")
 
 def cache_key_for_html(html_string):
     """Generate a cache key for the given HTML string."""
-    key_source = f"{html_string}__capfirst_{capfirst_enabled}"
+    key_source = html_string
     digest = hmac.new(
         CACHE_KEY_SECRET.encode("utf-8"),
         key_source.encode("utf-8"),
@@ -72,7 +71,7 @@ def convert_html():
 
     if not cache_enabled:
         try:
-            latex_result = html2latex(html_string, CAPFIRST_ENABLED=capfirst_enabled)
+            latex_result = html2latex(html_string)
         except Exception:
             return jsonify({"error": "Error converting HTML to LaTeX"}), 500
         return jsonify({"latex": latex_result})
@@ -86,7 +85,7 @@ def convert_html():
     # If not in cache, call the library (which no longer does its own caching)
     # Pass any env-based config (e.g. CAPFIRST_ENABLED) if relevant
     try:
-        latex_result = html2latex(html_string, CAPFIRST_ENABLED=capfirst_enabled)
+        latex_result = html2latex(html_string)
     except Exception:
         return jsonify({"error": "Error converting HTML to LaTeX"}), 500
 

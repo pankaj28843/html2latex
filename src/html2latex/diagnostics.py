@@ -83,3 +83,13 @@ def from_parse_error(error: ParseError) -> DiagnosticEvent:
         message=error.message,
         location=location,
     )
+
+
+def collect_errors(events: Iterable[DiagnosticEvent]) -> list[DiagnosticEvent]:
+    return [event for event in events if event.severity == "error"]
+
+
+def enforce_strict(events: Iterable[DiagnosticEvent]) -> None:
+    errors = collect_errors(events)
+    if errors:
+        raise DiagnosticsError(errors)

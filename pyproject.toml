@@ -28,13 +28,8 @@ classifiers = [
 
 dependencies = [
   "Jinja2>=3.1.6",
-  "html2text>=2025.4.15",
   "justhtml>=0.20.0",
-]
-
-[project.optional-dependencies]
-spellcheck = [
-  "pyenchant>=3.3.0",
+  "pydantic>=2.10.0",
 ]
 
 [project.urls]
@@ -76,8 +71,6 @@ include-package-data = true
 where = ["src"]
 exclude = ["html2latex.tests*"]
 
-[tool.setuptools.package-data]
-html2latex = ["templates/*.tex", "templates/*.html", "templates/Readme"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

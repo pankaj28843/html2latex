@@ -5,24 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from html2latex.html2latex import html2latex
+from html2latex.api import convert
+from html2latex.jinja import render_document
 
 TECTONIC_BIN = shutil.which("tectonic")
 
 
-def _build_document(body: str) -> str:
-    preamble = """\\documentclass{article}
-\\usepackage[table]{xcolor}
-\\usepackage[normalem]{ulem}
-\\usepackage{hyperref}
-\\usepackage{enumitem}
-\\usepackage{multirow}
-\\usepackage{tabularx}
-\\usepackage{array}
-\\usepackage{graphicx}
-\\begin{document}
-"""
-    return f"{preamble}\n{body}\n\\end{{document}}\n"
+def _build_preamble(packages: set[str]) -> str:
+    return "\n".join(f"\\usepackage{{{package}}}" for package in sorted(packages))
 
 
 def test_latex_fixtures_compile(tmp_path: Path) -> None:
@@ -34,14 +24,17 @@ def test_latex_fixtures_compile(tmp_path: Path) -> None:
             cases.extend(json.load(handle))
 
     fragments = []
+    packages: set[str] = set()
     for case in cases:
-        output = html2latex(case["html"])
-        if "\\includegraphics" in output or "\\write18" in output:
+        doc = convert(case["html"])
+        if "\\includegraphics" in doc.body or "\\write18" in doc.body:
             continue
-        fragments.append(output)
+        fragments.append(doc.body)
+        packages.update(doc.packages)
 
     body = "\n\n".join(fragments)
-    tex_source = _build_document(body)
+    preamble = _build_preamble(packages)
+    tex_source = render_document(body, preamble=preamble)
     tex_path = tmp_path / "fixtures.tex"
     tex_path.write_text(tex_source)
 

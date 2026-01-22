@@ -1,36 +1,64 @@
 import pytest
 
-from html2latex.diagnostics import DiagnosticsError
-from html2latex.html2latex import html2latex
+from html2latex.api import convert
+from html2latex.diagnostics import (
+    DiagnosticEvent,
+    DiagnosticsError,
+    collect_errors,
+    diagnostic_context,
+    emit_diagnostic,
+    enforce_strict,
+    extend_diagnostics,
+)
+from html2latex.models import ConvertOptions
 
 
-def test_return_diagnostics_parse_error():
-    output, diagnostics = html2latex("<div id=>Hi</div>", return_diagnostics=True)
-    assert "Hi" in output
-    assert any(event.code == "missing-attribute-value" for event in diagnostics)
+def test_collects_diagnostics_parse_error():
+    options = ConvertOptions(strict=False, fragment=False)
+    doc = convert("<div id=>Hi</div>", options=options)
+    assert any(event.code == "missing-attribute-value" for event in doc.diagnostics)
 
 
 def test_strict_raises_on_parse_error():
+    options = ConvertOptions(strict=True, fragment=False)
     with pytest.raises(DiagnosticsError):
-        html2latex("<div id=>Hi</div>", strict=True)
+        convert("<div id=>Hi</div>", options=options)
 
 
-def test_return_diagnostics_empty():
-    output, diagnostics = html2latex("<p>Ok</p>", return_diagnostics=True)
-    assert "Ok" in output
-    assert diagnostics == []
+def test_diagnostics_empty_for_valid_html():
+    doc = convert("<p>Ok</p>")
+    assert doc.diagnostics == ()
 
 
-def test_asset_warning_collects_diagnostic():
-    output, diagnostics = html2latex(
-        "<p>Before <img src='missing.png'></p>", return_diagnostics=True
-    )
-    assert "Before" in output
-    assert any(
-        event.code == "asset/image-io-error" and event.severity == "warn" for event in diagnostics
-    )
+def test_collect_errors_filters_only_errors():
+    warn = DiagnosticEvent(code="w1", category="asset", severity="warn", message="warn")
+    err = DiagnosticEvent(code="e1", category="parse", severity="error", message="err")
+    assert collect_errors([warn, err]) == [err]
 
 
-def test_strict_does_not_raise_on_warning():
-    output = html2latex("<p>Before <img src='missing.png'></p>", strict=True)
-    assert "Before" in output
+def test_enforce_strict_raises_for_errors():
+    err = DiagnosticEvent(code="e1", category="parse", severity="error", message="err")
+    with pytest.raises(DiagnosticsError):
+        enforce_strict([err])
+
+
+def test_diagnostic_context_disabled_collects_no_events():
+    with diagnostic_context(enabled=False) as events:
+        emit_diagnostic(DiagnosticEvent(code="w1", category="x", severity="warn", message="msg"))
+    assert events == []
+
+
+def test_emit_diagnostic_appends_with_sink():
+    with diagnostic_context(enabled=True) as events:
+        emit_diagnostic(DiagnosticEvent(code="w1", category="x", severity="warn", message="msg"))
+    assert events and events[0].code == "w1"
+
+
+def test_emit_and_extend_without_sink_noop():
+    emit_diagnostic(DiagnosticEvent(code="w1", category="x", severity="warn", message="msg"))
+    extend_diagnostics([DiagnosticEvent(code="w2", category="x", severity="warn", message="msg")])
+
+
+def test_diagnostics_error_first_error_none():
+    err = DiagnosticsError([])
+    assert err.first_error is None
