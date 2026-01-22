@@ -11,13 +11,16 @@ _BLOCK_TAGS = {
     "aside",
     "blockquote",
     "caption",
+    "dd",
     "div",
     "dl",
+    "dt",
     "figure",
     "figcaption",
     "footer",
     "header",
     "hr",
+    "li",
     "main",
     "nav",
     "ol",
@@ -26,7 +29,9 @@ _BLOCK_TAGS = {
     "section",
     "table",
     "tbody",
+    "td",
     "tfoot",
+    "th",
     "thead",
     "tr",
     "ul",
@@ -39,13 +44,14 @@ def normalize_document(
     preserve_whitespace_tags: set[str] | None = None,
 ) -> HtmlDocument:
     preserve = {tag.lower() for tag in preserve_whitespace_tags or set()}
-    children = _normalize_children(document.children, preserve)
+    children = _normalize_children(document.children, preserve, parent_is_block=True)
     return HtmlDocument(children=children, doctype=document.doctype)
 
 
 def _normalize_children(
     children: tuple[HtmlNode, ...],
     preserve: set[str],
+    parent_is_block: bool,
 ) -> tuple[HtmlNode, ...]:
     normalized: list[HtmlNode] = []
     buffer: list[str] = []
@@ -73,7 +79,11 @@ def _normalize_children(
 
         if isinstance(child, HtmlElement):
             flush_text()
-            normalized_children = _normalize_children(child.children, preserve)
+            normalized_children = _normalize_children(
+                child.children,
+                preserve,
+                parent_is_block=_is_block_tag(child.tag),
+            )
             normalized.append(
                 HtmlElement(tag=child.tag, attrs=child.attrs, children=normalized_children)
             )
@@ -83,11 +93,14 @@ def _normalize_children(
         normalized.append(child)
 
     flush_text()
-    return _trim_boundary_whitespace(tuple(normalized))
+    return _trim_boundary_whitespace(tuple(normalized), parent_is_block)
 
 
-def _trim_boundary_whitespace(children: tuple[HtmlNode, ...]) -> tuple[HtmlNode, ...]:
-    if not children:
+def _trim_boundary_whitespace(
+    children: tuple[HtmlNode, ...],
+    parent_is_block: bool,
+) -> tuple[HtmlNode, ...]:
+    if not children or not parent_is_block:
         return children
     trimmed: list[HtmlNode] = []
     last_index = len(children) - 1
@@ -107,6 +120,10 @@ def _trim_boundary_whitespace(children: tuple[HtmlNode, ...]) -> tuple[HtmlNode,
 
 def _is_block_element(node: HtmlNode) -> bool:
     return isinstance(node, HtmlElement) and node.tag.lower() in _BLOCK_TAGS
+
+
+def _is_block_tag(tag: str) -> bool:
+    return tag.lower() in _BLOCK_TAGS
 
 
 def _collapse_whitespace(text: str) -> str:

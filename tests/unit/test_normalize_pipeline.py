@@ -33,7 +33,7 @@ def test_normalize_preserves_whitespace_tags():
 
 def test_normalize_keeps_unknown_nodes():
     sentinel = object()
-    normalized = _normalize_children((sentinel,), set())
+    normalized = _normalize_children((sentinel,), set(), parent_is_block=True)
     assert normalized == (sentinel,)
 
 
@@ -91,3 +91,17 @@ def test_normalize_trims_trailing_whitespace_in_block():
     normalized_paragraph = normalized.children[0]
     assert len(normalized_paragraph.children) == 2
     assert normalized_paragraph.children[0].text == "Hello "
+
+
+def test_normalize_preserves_leading_space_inside_inline_element():
+    paragraph = HtmlElement(
+        tag="p",
+        children=(
+            HtmlText(text="Hi"),
+            HtmlElement(tag="span", children=(HtmlText(text=" there"),)),
+        ),
+    )
+    normalized = normalize_document(HtmlDocument(children=(paragraph,)))
+    normalized_paragraph = normalized.children[0]
+    inline_child = normalized_paragraph.children[1]
+    assert inline_child.children[0].text == " there"
