@@ -31,7 +31,7 @@ def parse_html(
     )
     return HtmlDocument(
         root=HtmlNode(document.root),
-        errors=document.errors if collect_errors else [],
+        errors=document.errors if collect_errors else None,
     )
 
 

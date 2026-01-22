@@ -12,11 +12,11 @@ To compare against a baseline:
 uv run python benchmarks/performance.py --baseline benchmarks/baseline.json
 ```
 
-Baseline JSON format:
+Baseline JSON format (threshold is a ratio; 0.2 == 20% regression):
 
 ```json
 {
-  "threshold_percent": 0.2,
+  "threshold_ratio": 0.2,
   "cases": {
     "wysiwyg.html": {"mean_ms": 3.2}
   }

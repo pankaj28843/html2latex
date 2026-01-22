@@ -53,7 +53,13 @@ def main() -> int:
     cases = load_cases(args.data_dir)
     baseline = load_baseline(args.baseline)
     base_cases = baseline.get("cases", {})
-    threshold = baseline.get("threshold_percent", args.max_regression)
+    threshold = baseline.get("threshold_ratio")
+    if threshold is None:
+        threshold_percent = baseline.get("threshold_percent")
+        if threshold_percent is not None:
+            threshold = threshold_percent / 100 if threshold_percent > 1 else threshold_percent
+    if threshold is None:
+        threshold = args.max_regression
 
     regressions = []
 
