@@ -649,7 +649,8 @@ class IMG(HTMLElement):
                 output_filename = hashlib.sha512(output_filename).hexdigest()
             output_filepath = os.path.normpath(os.path.join(REMOTE_IMAGE_ROOT, output_filename))
 
-            if not os.path.splitext(output_filepath):
+            _, ext = os.path.splitext(output_filepath)
+            if not ext:
                 output_filepath = output_filepath + ".png"
 
             if not os.path.isfile(output_filepath):
@@ -678,8 +679,6 @@ class IMG(HTMLElement):
                     + "_grayscaled.jpg",
                 )
             )
-            jpg_filepath = "/tmp/{}.jpg".format(str(uuid.uuid4()))
-
             # if not os.path.isfile(jpg_filepath):
             tmp_filepath_1 = "/tmp/{}.jpg".format(str(uuid.uuid4()))
             p = subprocess.Popen(
