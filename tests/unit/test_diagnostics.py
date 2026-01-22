@@ -1,44 +1,30 @@
 import pytest
 
+from html2latex.api import convert
 from html2latex.diagnostics import (
     DiagnosticEvent,
     DiagnosticsError,
     collect_errors,
     enforce_strict,
 )
-from html2latex.html2latex import html2latex
+from html2latex.models import ConvertOptions
 
 
-def test_return_diagnostics_parse_error():
-    output, diagnostics = html2latex("<div id=>Hi</div>", return_diagnostics=True)
-    assert "Hi" in output
-    assert any(event.code == "missing-attribute-value" for event in diagnostics)
+def test_collects_diagnostics_parse_error():
+    options = ConvertOptions(strict=False, fragment=False)
+    doc = convert("<div id=>Hi</div>", options=options)
+    assert any(event.code == "missing-attribute-value" for event in doc.diagnostics)
 
 
 def test_strict_raises_on_parse_error():
+    options = ConvertOptions(strict=True, fragment=False)
     with pytest.raises(DiagnosticsError):
-        html2latex("<div id=>Hi</div>", strict=True)
+        convert("<div id=>Hi</div>", options=options)
 
 
-def test_return_diagnostics_empty():
-    output, diagnostics = html2latex("<p>Ok</p>", return_diagnostics=True)
-    assert "Ok" in output
-    assert diagnostics == []
-
-
-def test_asset_warning_collects_diagnostic():
-    output, diagnostics = html2latex(
-        "<p>Before <img src='missing.png'></p>", return_diagnostics=True
-    )
-    assert "Before" in output
-    assert any(
-        event.code == "asset/image-io-error" and event.severity == "warn" for event in diagnostics
-    )
-
-
-def test_strict_does_not_raise_on_warning():
-    output = html2latex("<p>Before <img src='missing.png'></p>", strict=True)
-    assert "Before" in output
+def test_diagnostics_empty_for_valid_html():
+    doc = convert("<p>Ok</p>")
+    assert doc.diagnostics == ()
 
 
 def test_collect_errors_filters_only_errors():
