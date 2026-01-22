@@ -156,10 +156,12 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
 
         if tag in {"ul", "ol"}:
             ordered = tag == "ol"
+            reversed_list = False
             env = "itemize" if tag == "ul" else "enumerate"
             current_level = list_level + 1
             items: list[LatexNode] = []
             if ordered:
+                reversed_list = "reversed" in node.attrs
                 list_type = _parse_list_type(node.attrs.get("type"))
                 if list_type is not None:
                     label_name = _list_label_name(current_level)
@@ -181,8 +183,23 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
                             ),
                         )
                     )
-                start = _parse_list_start(node.attrs.get("start"))
-                if start > 1:
+                raw_start = node.attrs.get("start")
+                start = _parse_list_start(raw_start) if raw_start is not None else 1
+                if reversed_list:
+                    if raw_start is None:
+                        start = _count_list_items(node)
+                    if start >= 1:
+                        counter_name = _list_counter_name(current_level)
+                        items.append(
+                            LatexCommand(
+                                name="setcounter",
+                                args=(
+                                    LatexGroup(children=(LatexText(text=counter_name),)),
+                                    LatexGroup(children=(LatexText(text=str(start + 1)),)),
+                                ),
+                            )
+                        )
+                elif start > 1:
                     counter_name = _list_counter_name(current_level)
                     items.append(
                         LatexCommand(
@@ -195,7 +212,7 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
                     )
             for child in node.children:
                 if isinstance(child, HtmlElement) and child.tag.lower() == "li":
-                    items.extend(_convert_list_item(child, current_level, ordered))
+                    items.extend(_convert_list_item(child, current_level, ordered, reversed_list))
             return [LatexEnvironment(name=env, children=tuple(items))]
 
         if tag == "dl":
@@ -216,9 +233,21 @@ def _convert_list_item(
     node: HtmlElement,
     list_level: int,
     ordered: bool,
+    reversed_list: bool,
 ) -> list[LatexNode]:
     prefix: list[LatexNode] = []
-    if ordered:
+    if ordered and reversed_list:
+        counter_name = _list_counter_name(list_level)
+        prefix.append(
+            LatexCommand(
+                name="addtocounter",
+                args=(
+                    LatexGroup(children=(LatexText(text=counter_name),)),
+                    LatexGroup(children=(LatexText(text="-2"),)),
+                ),
+            )
+        )
+    if ordered and not reversed_list:
         value = _parse_list_value(node.attrs.get("value"))
         if value is not None and value != 1:
             counter_name = _list_counter_name(list_level)
@@ -260,9 +289,7 @@ def _convert_description_list(
     return items
 
 
-def _parse_list_start(value: str | None) -> int:
-    if value is None:
-        return 1
+def _parse_list_start(value: str) -> int:
     try:
         parsed = int(value)
     except ValueError:
@@ -291,6 +318,12 @@ def _parse_list_type(value: str | None) -> str | None:
         "I": "Roman",
     }
     return mapping.get(value)
+
+
+def _count_list_items(node: HtmlElement) -> int:
+    return sum(
+        1 for child in node.children if isinstance(child, HtmlElement) and child.tag.lower() == "li"
+    )
 
 
 def _list_counter_name(level: int) -> str:
