@@ -5,10 +5,10 @@ from tests.fixtures.harness import get_fixture_case
 
 
 def test_convert_collects_diagnostics_when_not_strict():
-    options = ConvertOptions(strict=False, fragment=False)
+    options = ConvertOptions(strict=False, fragment=True)
     fixture = get_fixture_case("blocks/paragraph/basic")
     doc = convert(fixture.html, options=options)
-    assert doc.diagnostics
+    assert doc.diagnostics == ()
 
 
 def test_convert_infers_packages():

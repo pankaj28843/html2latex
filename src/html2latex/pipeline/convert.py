@@ -457,9 +457,19 @@ def _extract_table_caption(
         if child.tag.lower() != "caption":
             continue
         nodes = _convert_nodes(child.children, list_level)
-        nodes = tuple(
-            node for node in nodes if not (isinstance(node, LatexCommand) and node.name == "par")
-        )
+        # Replace \par with separating space to avoid word concatenation when
+        # caption contains multiple block children (e.g., multiple <p> tags)
+        new_nodes: list[LatexNode] = []
+        for node in nodes:
+            if isinstance(node, LatexCommand) and node.name == "par":
+                if new_nodes:
+                    new_nodes.append(LatexText(text=" "))
+            else:
+                new_nodes.append(node)
+        # Strip any trailing space added from final \par
+        while new_nodes and isinstance(new_nodes[-1], LatexText) and new_nodes[-1].text == " ":
+            new_nodes.pop()
+        nodes = tuple(new_nodes)
         if not nodes:
             return None
         group = LatexGroup(children=nodes)

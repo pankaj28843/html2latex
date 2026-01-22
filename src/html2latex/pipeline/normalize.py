@@ -6,6 +6,12 @@ from html2latex.ast import HtmlDocument, HtmlElement, HtmlNode, HtmlText
 
 _WHITESPACE_RE = re.compile(r"\s+")
 
+# Centralized classification of HTML block-level tags used by the normalization
+# pipeline. This set must stay consistent with:
+#   * block passthrough / block-handling logic in `convert.py`, and
+#   * any documented mappings that describe which tags are treated as block-level.
+# When adding or removing block-like tags, update all of these in lockstep to
+# avoid subtle drift between pipeline stages.
 _BLOCK_TAGS = {
     "article",
     "aside",
@@ -111,9 +117,11 @@ def _trim_boundary_whitespace(
             trimmed.append(child)
             continue
         text = child.text
-        if index == 0 or _is_block_element(children[index - 1]):
+        prev_child = children[index - 1] if index > 0 else None
+        next_child = children[index + 1] if index < last_index else None
+        if index == 0 or (prev_child is not None and _is_block_element(prev_child)):
             text = text.lstrip()
-        if index == last_index or _is_block_element(children[index + 1]):
+        if index == last_index or (next_child is not None and _is_block_element(next_child)):
             text = text.rstrip()
         if text.strip():
             trimmed.append(HtmlText(text=text))
