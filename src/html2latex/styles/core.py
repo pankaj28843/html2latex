@@ -6,7 +6,6 @@ from typing import Literal
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-
 TextAlign = Literal["left", "right", "center", "justify"]
 
 
