@@ -1,6 +1,11 @@
 import pytest
 
-from html2latex.diagnostics import DiagnosticsError
+from html2latex.diagnostics import (
+    DiagnosticEvent,
+    DiagnosticsError,
+    collect_errors,
+    enforce_strict,
+)
 from html2latex.html2latex import html2latex
 
 
@@ -34,3 +39,15 @@ def test_asset_warning_collects_diagnostic():
 def test_strict_does_not_raise_on_warning():
     output = html2latex("<p>Before <img src='missing.png'></p>", strict=True)
     assert "Before" in output
+
+
+def test_collect_errors_filters_only_errors():
+    warn = DiagnosticEvent(code="w1", category="asset", severity="warn", message="warn")
+    err = DiagnosticEvent(code="e1", category="parse", severity="error", message="err")
+    assert collect_errors([warn, err]) == [err]
+
+
+def test_enforce_strict_raises_for_errors():
+    err = DiagnosticEvent(code="e1", category="parse", severity="error", message="err")
+    with pytest.raises(DiagnosticsError):
+        enforce_strict([err])
