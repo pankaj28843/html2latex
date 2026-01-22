@@ -149,6 +149,32 @@ def test_convert_link_without_label_uses_url():
     assert link.args[0].children[0].text == "https://example.com"
 
 
+def test_convert_blockquote():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="blockquote",
+                children=(HtmlElement(tag="p", children=(HtmlText(text="Quote"),)),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    assert env.name == "quote"
+    assert env.children[0].text == "Quote"
+    assert env.children[1].name == "par"
+
+
+def test_convert_preformatted_block():
+    doc = HtmlDocument(
+        children=(HtmlElement(tag="pre", children=(HtmlText(text="line1\nline2"),)),)
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    assert env.name == "verbatim"
+    assert env.children[0].value == "line1\nline2"
+
+
 def test_convert_table_basic():
     doc = HtmlDocument(
         children=(

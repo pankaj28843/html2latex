@@ -101,6 +101,19 @@ def _convert_node(node: HtmlNode) -> list[LatexNode]:
                 )
             ]
 
+        if tag == "blockquote":
+            children = _convert_nodes(node.children)
+            return [LatexEnvironment(name="quote", children=tuple(children))]
+
+        if tag == "pre":
+            content = _extract_text(node)
+            return [
+                LatexEnvironment(
+                    name="verbatim",
+                    children=(LatexRaw(value=content),),
+                )
+            ]
+
         if tag == "table":
             return _convert_table(node)
 
