@@ -54,9 +54,12 @@ def _convert_node(node: HtmlNode) -> list[LatexNode]:
         if tag == "br":
             return [LatexCommand(name="newline")]
 
-        if tag == "p":
+        if tag in {"p", "div"}:
             children = _convert_nodes(node.children)
             return [*children, LatexCommand(name="par")]
+
+        if tag == "hr":
+            return [LatexCommand(name="hrule")]
 
         children = _convert_nodes(node.children)
         return list(children)

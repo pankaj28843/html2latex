@@ -29,3 +29,16 @@ def test_convert_heading():
     latex = convert_document(doc)
     assert isinstance(latex.body[0], LatexCommand)
     assert latex.body[0].name == "section"
+
+
+def test_convert_div_and_hr():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(tag="div", children=(HtmlText(text="Block"),)),
+            HtmlElement(tag="hr"),
+        )
+    )
+    latex = convert_document(doc)
+    assert latex.body[0].text == "Block"
+    assert latex.body[1].name == "par"
+    assert latex.body[2].name == "hrule"
