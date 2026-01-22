@@ -38,7 +38,7 @@ jobs:
         run: uv run ruff format --check .
 
       - name: Pytest
-        run: uv run pytest --cov=html2latex --cov-report=term-missing --cov-fail-under=90
+        run: uv run pytest --cov=html2latex --cov-report=term-missing --cov-fail-under=100
 
   latex-validity:
     runs-on: ubuntu-latest

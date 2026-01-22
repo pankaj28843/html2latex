@@ -1,5 +1,6 @@
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlText
 from html2latex.pipeline import normalize_document
+from html2latex.pipeline.normalize import _normalize_children
 
 
 def test_normalize_merges_text_and_collapses_whitespace():
@@ -28,3 +29,9 @@ def test_normalize_preserves_whitespace_tags():
     normalized = normalize_document(doc, preserve_whitespace_tags={"pre"})
     preserved = normalized.children[0].children[0]
     assert preserved.text == "a\n   b"
+
+
+def test_normalize_keeps_unknown_nodes():
+    sentinel = object()
+    normalized = _normalize_children((sentinel,), set())
+    assert normalized == (sentinel,)

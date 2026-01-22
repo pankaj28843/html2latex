@@ -2,4 +2,3 @@ include AUTHORS.txt
 include INSTALL.md
 include LICENSE
 include README.md
-include scripts/*.py

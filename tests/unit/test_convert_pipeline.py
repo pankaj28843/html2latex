@@ -1,6 +1,7 @@
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlText
 from html2latex.latex import LatexCommand, LatexEnvironment, LatexRaw, LatexText
 from html2latex.pipeline import convert_document
+from html2latex.pipeline.convert import _convert_node
 
 
 def test_convert_paragraph_and_inline():
@@ -105,6 +106,24 @@ def test_convert_description_list():
     assert env.children[1].text == "Definition"
 
 
+def test_convert_description_list_keeps_pending_label():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="dl",
+                children=(
+                    HtmlText(text="ignored"),
+                    HtmlElement(tag="dt", children=(HtmlText(text="Lonely"),)),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    assert env.children[0].name == "item"
+    assert env.children[0].options == ("Lonely",)
+
+
 def test_convert_link_and_image():
     doc = HtmlDocument(
         children=(
@@ -147,6 +166,25 @@ def test_convert_link_without_label_uses_url():
     link = latex.body[0]
     assert link.name == "url"
     assert link.args[0].children[0].text == "https://example.com"
+
+
+def test_convert_anchor_without_href_flattens_children():
+    doc = HtmlDocument(children=(HtmlElement(tag="a", children=(HtmlText(text="Plain"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].text == "Plain"
+
+
+def test_convert_image_without_src_uses_alt_text():
+    doc = HtmlDocument(children=(HtmlElement(tag="img", attrs={"alt": "Alt text"}, children=()),))
+    latex = convert_document(doc)
+    assert isinstance(latex.body[0], LatexText)
+    assert latex.body[0].text == "Alt text"
+
+
+def test_convert_unknown_tag_flattens_children():
+    doc = HtmlDocument(children=(HtmlElement(tag="custom", children=(HtmlText(text="Inside"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].text == "Inside"
 
 
 def test_convert_blockquote():
@@ -209,6 +247,38 @@ def test_convert_math_from_data_attribute():
     )
     latex = convert_document(doc)
     assert latex.body[0].value == "\\(x^2\\)"
+
+
+def test_convert_empty_math_returns_nothing():
+    doc = HtmlDocument(children=(HtmlElement(tag="span", attrs={"class": "math-tex"}),))
+    latex = convert_document(doc)
+    assert latex.body == ()
+
+
+def test_convert_math_tag_inline():
+    doc = HtmlDocument(children=(HtmlElement(tag="math", children=(HtmlText(text="x+1"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].value == "\\(x+1\\)"
+
+
+def test_convert_math_block_delimiters():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(tag="span", attrs={"data-latex": "$$x$$"}, children=()),
+            HtmlElement(tag="span", attrs={"data-latex": "$y$"}, children=()),
+            HtmlElement(tag="span", attrs={"data-latex": "\\[z\\]"}, children=()),
+        )
+    )
+    latex = convert_document(doc)
+    assert latex.body[0].value == "\\[x\\]"
+    assert latex.body[1].value == "\\(y\\)"
+    assert latex.body[2].value == "\\[z\\]"
+
+
+def test_convert_math_data_attribute_branch():
+    doc = HtmlDocument(children=(HtmlElement(tag="span", attrs={"data-math": "z"}, children=()),))
+    latex = convert_document(doc)
+    assert latex.body[0].value == "\\(z\\)"
 
 
 def test_convert_table_basic():
@@ -278,3 +348,53 @@ def test_convert_table_with_colspan_and_headers():
     assert env.args[0].children[0].text == "lll"
     assert env.children[0].value == "\\textbf{Head} & \\textbf{Right} & \\\\"
     assert env.children[1].value == "\\multicolumn{2}{l}{Wide} & Tail \\\\"
+
+
+def test_convert_table_skips_non_rows():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="table",
+                children=(HtmlText(text="ignore"), HtmlElement(tag="tr", children=())),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    assert latex.body == ()
+
+
+def test_convert_table_with_invalid_colspan_defaults_to_one():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="table",
+                children=(
+                    HtmlElement(
+                        tag="tr",
+                        children=(
+                            HtmlElement(
+                                tag="td",
+                                attrs={"colspan": "bad"},
+                                children=(HtmlText(text="A"),),
+                            ),
+                            HtmlElement(tag="td", children=(HtmlText(text="B"),)),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    assert env.args[0].children[0].text == "ll"
+    assert env.children[0].value == "A & B \\\\"
+
+
+def test_convert_table_without_rows_returns_empty():
+    doc = HtmlDocument(children=(HtmlElement(tag="table", children=()),))
+    latex = convert_document(doc)
+    assert latex.body == ()
+
+
+def test_convert_node_ignores_unknown_type():
+    assert _convert_node(object()) == []

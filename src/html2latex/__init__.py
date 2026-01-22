@@ -1,8 +1,14 @@
-try:
-    import pkg_resources
+from __future__ import annotations
 
-    pkg_resources.declare_namespace(__name__)
-except ImportError:
-    import pkgutil
+from .api import Converter, convert
+from .html2latex import html2latex, render
+from .models import ConvertOptions, LatexDocument
 
-    __path__ = pkgutil.extend_path(__path__, __name__)
+__all__ = [
+    "Converter",
+    "ConvertOptions",
+    "LatexDocument",
+    "convert",
+    "html2latex",
+    "render",
+]
