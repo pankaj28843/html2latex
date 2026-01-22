@@ -18,6 +18,8 @@ Fixtures are organized by feature area so they are easy to find and reuse.
 - No tabs; keep indentation minimal and readable.
 - Keep fixtures small and focused; prefer one behavior per case.
 - Names are semantic (what the case demonstrates), not numeric.
+- HTML fixtures are formatted with Prettier; error fixtures are excluded.
+- `.tex` fixtures should compile with Tectonic in isolation (see `CONTRIBUTING.md`).
 
 ## Adding a new case
 
