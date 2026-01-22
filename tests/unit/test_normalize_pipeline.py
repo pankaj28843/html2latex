@@ -61,3 +61,33 @@ def test_normalize_preserves_space_before_inline_children():
     normalized = normalize_document(HtmlDocument(children=(paragraph,)))
     normalized_paragraph = normalized.children[0]
     assert normalized_paragraph.children[0].text == "Hello "
+
+
+def test_normalize_preserves_space_between_inline_nodes():
+    paragraph = HtmlElement(
+        tag="p",
+        children=(
+            HtmlText(text="Hello"),
+            HtmlElement(tag="em", children=(HtmlText(text="world"),)),
+            HtmlText(text=" again"),
+        ),
+    )
+    normalized = normalize_document(HtmlDocument(children=(paragraph,)))
+    normalized_paragraph = normalized.children[0]
+    assert normalized_paragraph.children[0].text == "Hello"
+    assert normalized_paragraph.children[2].text == " again"
+
+
+def test_normalize_trims_trailing_whitespace_in_block():
+    paragraph = HtmlElement(
+        tag="p",
+        children=(
+            HtmlText(text="Hello "),
+            HtmlElement(tag="em", children=(HtmlText(text="world"),)),
+            HtmlText(text="   "),
+        ),
+    )
+    normalized = normalize_document(HtmlDocument(children=(paragraph,)))
+    normalized_paragraph = normalized.children[0]
+    assert len(normalized_paragraph.children) == 2
+    assert normalized_paragraph.children[0].text == "Hello "

@@ -22,6 +22,21 @@ Fixtures are organized by feature area so they are easy to find and reuse.
 - The Prettier config is tuned for readability (100-column width, CSS whitespace handling).
 - `.tex` fixtures should compile with Tectonic in isolation (see `CONTRIBUTING.md`).
 
+## Formatting example
+
+Prefer clean, readable structure that reflects nesting:
+
+```html
+<ol>
+  <li>
+    Outer
+    <ul>
+      <li>Inner</li>
+    </ul>
+  </li>
+</ol>
+```
+
 ## Adding a new case
 
 1. Create a new `case-name.html` file in the right feature folder.
