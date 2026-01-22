@@ -21,6 +21,7 @@ Fixtures are organized by feature area so they are easy to find and reuse.
 - HTML fixtures are formatted with Prettier; error fixtures are excluded.
 - The Prettier config is tuned for readability (100-column width, CSS whitespace handling).
 - `.tex` fixtures should compile with Tectonic in isolation (see `CONTRIBUTING.md`).
+- All non-error fixture pairs are exercised in `tests/integration/test_fixture_corpus.py`.
 
 ## Formatting example
 
