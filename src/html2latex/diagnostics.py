@@ -22,6 +22,7 @@ class DiagnosticEvent:
     category: str
     severity: str
     message: str
+    source_html: str | None = None
     location: DiagnosticLocation | None = None
     context: dict[str, Any] = field(default_factory=dict)
 

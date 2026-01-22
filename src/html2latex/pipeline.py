@@ -20,7 +20,7 @@ from .utils.text import escape_latex
 
 _RE_E_G = re.compile(r"(?i)e\. g\.")
 _RE_I_E = re.compile(r"(?i)i\. e\.")
-_RE_UNDERSCORES = re.compile(r"s+_+|\s*_{2,}")
+_RE_UNDERSCORES = re.compile(r"\s+_+|\s*_{2,}")
 _RE_TEXTSUP = re.compile(
     r"([a-zA-Z0-9]+)\s*\\begin\{textsupscript\}\s*(\w+)\s*\\end\{textsupscript\}"
 )
