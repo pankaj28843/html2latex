@@ -71,7 +71,9 @@ def _serialize_node(node: LatexNode) -> str:
 def _serialize_command(command: LatexCommand) -> str:
     options = _format_options(command.options)
     args = "".join(_serialize_group(group) for group in command.args)
-    return f"\\{command.name}{options}{args}"
+    if args:
+        return f"\\{command.name}{options}{args}"
+    return f"\\{command.name}{options} "
 
 
 def _serialize_environment(env: LatexEnvironment) -> str:

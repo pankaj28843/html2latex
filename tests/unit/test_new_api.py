@@ -28,10 +28,10 @@ def test_converter_with_options_is_immutable():
 def test_converter_convert_returns_document():
     converter = Converter()
     doc = converter.convert("<p>hi</p>")
-    assert doc.body == "hi\\par"
+    assert doc.body.rstrip() == "hi\\par"
     assert converter.diagnostics == doc.diagnostics
 
 
 def test_convert_helper_returns_document():
     doc = convert("<p>hi</p>")
-    assert doc.body == "hi\\par"
+    assert doc.body.rstrip() == "hi\\par"

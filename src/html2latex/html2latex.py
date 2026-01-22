@@ -1,54 +1,35 @@
-# -*- coding: utf-8 -*-
 """
-Convert HTML generated from CKEditor to LaTeX environment.
+HTML → LaTeX conversion entry points.
 """
 
 from __future__ import annotations
 
-import logging
-import os
-import subprocess
-import sys
-
-from .elements import H1, H2, H3, H4, IMG, TD, TH, TR, A, HTMLElement, Table, delegate
-from .helpers import capfirst, get_width_of_element_by_xpath
-from .pipeline import _html2latex, fix_encoding_of_html_using_lxml, html2latex, normalize_html
-from .template_env import get_texenv, loader, texenv
-from .utils.spellchecker import check_spelling
-
-logging.basicConfig(
-    level=logging.INFO,
-    handlers=[logging.StreamHandler(sys.stdout)],
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-)
-logger = logging.getLogger(__name__)
-
-VERSION = "0.0.63"
-CAPFIRST_ENABLED = False
+from .api import Converter, convert
+from .jinja import render_document
+from .models import ConvertOptions, LatexDocument
 
 __all__ = [
-    "A",
-    "H1",
-    "H2",
-    "H3",
-    "H4",
-    "IMG",
-    "TD",
-    "TH",
-    "TR",
-    "Table",
-    "HTMLElement",
-    "_html2latex",
-    "capfirst",
-    "check_spelling",
-    "delegate",
-    "fix_encoding_of_html_using_lxml",
-    "get_texenv",
-    "get_width_of_element_by_xpath",
+    "Converter",
+    "ConvertOptions",
+    "LatexDocument",
+    "convert",
     "html2latex",
-    "loader",
-    "normalize_html",
-    "os",
-    "subprocess",
-    "texenv",
+    "render",
 ]
+
+
+def html2latex(html: str | bytes, *, options: ConvertOptions | None = None) -> str:
+    """Convert HTML to a LaTeX body fragment."""
+    return convert(html, options=options).body
+
+
+def render(
+    html: str | bytes,
+    *,
+    options: ConvertOptions | None = None,
+    template: str | None = None,
+) -> str:
+    """Render a full LaTeX document using the configured template."""
+    doc = convert(html, options=options)
+    tmpl = template or (options.template if options else None)
+    return render_document(doc.body, preamble=doc.preamble, template=tmpl)

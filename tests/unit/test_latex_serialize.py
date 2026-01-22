@@ -29,7 +29,7 @@ def test_serialize_environment():
         children=(LatexCommand(name="item"), LatexText(text="A")),
     )
     doc = LatexDocumentAst(body=(env,))
-    assert serialize_document(doc) == "\\begin{itemize}\\itemA\\end{itemize}"
+    assert serialize_document(doc) == "\\begin{itemize}\\item A\\end{itemize}"
 
 
 def test_serialize_raw_passthrough():
