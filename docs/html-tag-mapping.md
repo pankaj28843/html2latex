@@ -21,7 +21,7 @@ HTML2LaTeX.
 | `h3` | `\subsubsection{...}` | |
 | `h4`–`h6` | content preserved | No heading commands emitted. |
 | `ul` | `\begin{itemize} ... \end{itemize}` | `\item` for each `li`. |
-| `ol` | `\begin{enumerate} ... \end{enumerate}` | `\item` for each `li`; `start` uses `\setcounter{enumi}{start-1}` (nested uses `enumii`, `enumiii`, ...). |
+| `ol` | `\begin{enumerate} ... \end{enumerate}` | `\item` for each `li`; `start` uses `\setcounter{enumi}{start-1}` (nested uses `enumii`, `enumiii`, ...); `li value` uses `\setcounter` before the item. |
 | `dl` | `\begin{description} ... \end{description}` | `\item[term]` per `dt/dd`. |
 | `blockquote` | `\begin{quote} ... \end{quote}` | |
 | `pre` | `\begin{verbatim} ... \end{verbatim}` | Preserves whitespace. |

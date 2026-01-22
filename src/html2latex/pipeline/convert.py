@@ -155,10 +155,11 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
             return _convert_table(node, list_level)
 
         if tag in {"ul", "ol"}:
+            ordered = tag == "ol"
             env = "itemize" if tag == "ul" else "enumerate"
             current_level = list_level + 1
             items: list[LatexNode] = []
-            if tag == "ol":
+            if ordered:
                 start = _parse_list_start(node.attrs.get("start"))
                 if start > 1:
                     counter_name = _list_counter_name(current_level)
@@ -173,7 +174,7 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
                     )
             for child in node.children:
                 if isinstance(child, HtmlElement) and child.tag.lower() == "li":
-                    items.extend(_convert_list_item(child, current_level))
+                    items.extend(_convert_list_item(child, current_level, ordered))
             return [LatexEnvironment(name=env, children=tuple(items))]
 
         if tag == "dl":
@@ -190,9 +191,27 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
     return []
 
 
-def _convert_list_item(node: HtmlElement, list_level: int) -> list[LatexNode]:
+def _convert_list_item(
+    node: HtmlElement,
+    list_level: int,
+    ordered: bool,
+) -> list[LatexNode]:
+    prefix: list[LatexNode] = []
+    if ordered:
+        value = _parse_list_value(node.attrs.get("value"))
+        if value is not None and value != 1:
+            counter_name = _list_counter_name(list_level)
+            prefix.append(
+                LatexCommand(
+                    name="setcounter",
+                    args=(
+                        LatexGroup(children=(LatexText(text=counter_name),)),
+                        LatexGroup(children=(LatexText(text=str(value - 1)),)),
+                    ),
+                )
+            )
     children = _convert_nodes(node.children, list_level)
-    return [LatexCommand(name="item"), *children]
+    return [*prefix, LatexCommand(name="item"), *children]
 
 
 def _convert_description_list(
@@ -228,6 +247,16 @@ def _parse_list_start(value: str | None) -> int:
     except ValueError:
         return 1
     return parsed if parsed > 1 else 1
+
+
+def _parse_list_value(value: str | None) -> int | None:
+    if value is None:
+        return None
+    try:
+        parsed = int(value)
+    except ValueError:
+        return None
+    return parsed if parsed >= 1 else None
 
 
 def _list_counter_name(level: int) -> str:
