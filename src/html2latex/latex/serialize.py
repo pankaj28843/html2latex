@@ -15,6 +15,11 @@ def serialize_document(document: LatexDocumentAst) -> str:
     return "".join(_serialize_node(node) for node in document.body)
 
 
+def serialize_nodes(nodes: Iterable[LatexNode]) -> Iterable[str]:
+    for node in nodes:
+        yield _serialize_node(node)
+
+
 def infer_packages(document: LatexDocumentAst) -> set[str]:
     packages: set[str] = set()
     for node in _walk_nodes(document.body):
