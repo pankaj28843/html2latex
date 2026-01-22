@@ -1,5 +1,3 @@
-import pytest
-
 from html2latex.api import Converter, convert
 from html2latex.models import ConvertOptions, LatexDocument
 
@@ -7,8 +5,8 @@ from html2latex.models import ConvertOptions, LatexDocument
 def test_convert_options_defaults():
     options = ConvertOptions()
     assert options.strict is True
-    assert options.fragment is False
-    assert options.template_name is None
+    assert options.fragment is True
+    assert options.template is None
     assert options.metadata == {}
 
 
@@ -27,12 +25,13 @@ def test_converter_with_options_is_immutable():
     assert updated.options.strict is False
 
 
-def test_converter_convert_not_implemented():
+def test_converter_convert_returns_document():
     converter = Converter()
-    with pytest.raises(NotImplementedError):
-        converter.convert("<p>hi</p>")
+    doc = converter.convert("<p>hi</p>")
+    assert doc.body == "hi\\par"
+    assert converter.diagnostics == doc.diagnostics
 
 
-def test_convert_helper_not_implemented():
-    with pytest.raises(NotImplementedError):
-        convert("<p>hi</p>")
+def test_convert_helper_returns_document():
+    doc = convert("<p>hi</p>")
+    assert doc.body == "hi\\par"

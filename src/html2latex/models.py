@@ -10,8 +10,8 @@ from pydantic.dataclasses import dataclass
 @dataclass(config=ConfigDict(frozen=True))
 class ConvertOptions:
     strict: bool = True
-    fragment: bool = False
-    template_name: str | None = None
+    fragment: bool = True
+    template: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
