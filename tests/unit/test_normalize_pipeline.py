@@ -105,3 +105,16 @@ def test_normalize_preserves_leading_space_inside_inline_element():
     normalized_paragraph = normalized.children[0]
     inline_child = normalized_paragraph.children[1]
     assert inline_child.children[0].text == " there"
+
+
+def test_normalize_trims_whitespace_in_body_container():
+    body = HtmlElement(
+        tag="body",
+        children=(
+            HtmlText(text="  Hello "),
+            HtmlElement(tag="p", children=(HtmlText(text="World"),)),
+        ),
+    )
+    normalized = normalize_document(HtmlDocument(children=(body,)))
+    normalized_body = normalized.children[0]
+    assert normalized_body.children[0].text == "Hello"
