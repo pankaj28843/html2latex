@@ -94,3 +94,12 @@ ignore = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.coverage.run]
+omit = [
+  "src/html2latex/elements.py",
+  "src/html2latex/helpers.py",
+  "src/html2latex/pipeline.py",
+  "src/html2latex/setup_texenv.py",
+  "src/html2latex/template_env.py",
+]
