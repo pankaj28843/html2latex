@@ -1,0 +1,38 @@
+import pytest
+
+from html2latex.api import Converter, convert
+from html2latex.models import ConvertOptions, LatexDocument
+
+
+def test_convert_options_defaults():
+    options = ConvertOptions()
+    assert options.strict is True
+    assert options.fragment is False
+    assert options.template_name is None
+    assert options.metadata == {}
+
+
+def test_latex_document_defaults():
+    doc = LatexDocument(body="hello")
+    assert doc.body == "hello"
+    assert doc.preamble == ""
+    assert doc.packages == ()
+    assert doc.diagnostics == ()
+
+
+def test_converter_with_options_is_immutable():
+    converter = Converter()
+    updated = converter.with_options(strict=False)
+    assert converter.options.strict is True
+    assert updated.options.strict is False
+
+
+def test_converter_convert_not_implemented():
+    converter = Converter()
+    with pytest.raises(NotImplementedError):
+        converter.convert("<p>hi</p>")
+
+
+def test_convert_helper_not_implemented():
+    with pytest.raises(NotImplementedError):
+        convert("<p>hi</p>")
