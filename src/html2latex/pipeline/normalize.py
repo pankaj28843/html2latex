@@ -6,6 +6,32 @@ from html2latex.ast import HtmlDocument, HtmlElement, HtmlNode, HtmlText
 
 _WHITESPACE_RE = re.compile(r"\s+")
 
+_BLOCK_TAGS = {
+    "article",
+    "aside",
+    "blockquote",
+    "caption",
+    "div",
+    "dl",
+    "figure",
+    "figcaption",
+    "footer",
+    "header",
+    "hr",
+    "main",
+    "nav",
+    "ol",
+    "p",
+    "pre",
+    "section",
+    "table",
+    "tbody",
+    "tfoot",
+    "thead",
+    "tr",
+    "ul",
+}
+
 
 def normalize_document(
     document: HtmlDocument,
@@ -57,7 +83,30 @@ def _normalize_children(
         normalized.append(child)
 
     flush_text()
-    return tuple(normalized)
+    return _trim_boundary_whitespace(tuple(normalized))
+
+
+def _trim_boundary_whitespace(children: tuple[HtmlNode, ...]) -> tuple[HtmlNode, ...]:
+    if not children:
+        return children
+    trimmed: list[HtmlNode] = []
+    last_index = len(children) - 1
+    for index, child in enumerate(children):
+        if not isinstance(child, HtmlText):
+            trimmed.append(child)
+            continue
+        text = child.text
+        if index == 0 or _is_block_element(children[index - 1]):
+            text = text.lstrip()
+        if index == last_index or _is_block_element(children[index + 1]):
+            text = text.rstrip()
+        if text.strip():
+            trimmed.append(HtmlText(text=text))
+    return tuple(trimmed)
+
+
+def _is_block_element(node: HtmlNode) -> bool:
+    return isinstance(node, HtmlElement) and node.tag.lower() in _BLOCK_TAGS
 
 
 def _collapse_whitespace(text: str) -> str:

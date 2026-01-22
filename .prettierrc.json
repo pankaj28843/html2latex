@@ -1,8 +1,8 @@
 {
-  "printWidth": 80,
+  "printWidth": 100,
   "tabWidth": 2,
   "useTabs": false,
-  "singleQuote": false,
-  "proseWrap": "preserve",
-  "htmlWhitespaceSensitivity": "strict"
+  "htmlWhitespaceSensitivity": "css",
+  "bracketSameLine": true,
+  "singleAttributePerLine": false
 }
