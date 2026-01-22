@@ -114,9 +114,8 @@ Visit <http://127.0.0.1:15005/>.
 ## History
 
 The original implementation (2014-2016) powered the
-[ClassKlap](https://www.classklap.com) publishing workflow. The codebase has
-since been rewritten for Python 3 and general-purpose use; the Xamcheck brand
-has been retired.
+[ClassKlap](https://www.classklap.com) publishing workflow. The library targets
+Python 3 and general-purpose use; the Xamcheck brand has been retired.
 
 ## CI
 
