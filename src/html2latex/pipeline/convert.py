@@ -35,6 +35,7 @@ _INLINE_PASSTHROUGH = {
     "cite",
     "del",
     "dfn",
+    "ins",
     "kbd",
     "mark",
     "s",
