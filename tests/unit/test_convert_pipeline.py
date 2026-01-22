@@ -390,6 +390,30 @@ def test_convert_table_with_invalid_colspan_defaults_to_one():
     assert env.children[0].value == "A & B \\\\"
 
 
+def test_convert_table_caption_skips_non_element_children():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="table",
+                children=(
+                    HtmlText(text="note"),
+                    HtmlElement(tag="caption", children=(HtmlText(text="Title"),)),
+                    HtmlElement(
+                        tag="tr",
+                        children=(HtmlElement(tag="td", children=(HtmlText(text="Cell"),)),),
+                    ),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    assert isinstance(env, LatexEnvironment)
+    assert env.name == "table"
+    assert isinstance(env.children[0], LatexCommand)
+    assert env.children[0].name == "caption"
+
+
 def test_convert_table_without_rows_returns_empty():
     doc = HtmlDocument(children=(HtmlElement(tag="table", children=()),))
     latex = convert_document(doc)
