@@ -8,7 +8,7 @@ Scope: Error taxonomy, structured diagnostics, and strict-mode behavior
 - Enable optional strict mode to fail fast on unsafe or invalid outputs.
 - Keep default behavior backward compatible (best-effort rendering).
 
-## Proposed error model
+## Error model
 ### DiagnosticEvent (dataclass)
 Fields:
 - `code`: short string (kebab-case), stable identifier.
@@ -70,7 +70,7 @@ Fields:
 - Use a per-call diagnostics collector (no global mutable lists).
 - If collection is disabled, emit nothing to avoid overhead.
 
-## Proposed API additions
+## API additions
 - `html2latex(html: str, *, strict: bool = False, return_diagnostics: bool = False, collect_diagnostics: bool | None = None) -> str | tuple[str, list[DiagnosticEvent]]`
 - `DiagnosticsError(Exception)` with:
   - `.events` list
@@ -86,4 +86,3 @@ Fields:
 ## Open questions
 - Should strict mode default to `error` only or `error` + `warn`?
 - Should we expose a logger handler for diagnostics in addition to return values?
-

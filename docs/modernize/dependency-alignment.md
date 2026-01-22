@@ -32,7 +32,7 @@ Scope: Python 3, uv, Ruff, pytest, Jinja, Playwright, LaTeX tooling
 - CI uses `tectonic` exclusively for validity checks.
 - Actionable: document `tectonic` installation in `INSTALL.md` (already present); consider verifying local checks before PRs.
 
-## Gaps / Proposed fixes
+## Gaps / Follow-ups
 - Optional: add Ruff `force-exclude` and `lint.per-file-ignores` if needed for generated files.
 - Optional: add `pytest` markers for e2e/latex/perf and configure `-m` defaults.
 - Optional: add a short `docs/modernize/tooling.md` to consolidate uv/ruff/pytest/Jinja usage.

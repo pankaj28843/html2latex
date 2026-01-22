@@ -192,6 +192,7 @@ class HTMLElement(object):
                 re.IGNORECASE,
             )[-1]
         except IndexError:
+            # No text-align rule found in inline CSS; fall back to other sources.
             pass
         if not text_alignment and style_map.get("text-align"):
             text_alignment = style_map["text-align"]
@@ -220,11 +221,6 @@ class HTMLElement(object):
         self.spell_check()
         self.apply_inline_styles()
 
-        def fix_spaces(self, match):
-            group = match.groups()[0] or ""
-            group = group.replace(" ", "\\,")
-            return " " + group + " "
-
         self.content["text"] = _RE_MULTI_SPACE.sub(" ", self.content["text"]).rstrip()
 
     def get_template(self):
@@ -237,7 +233,8 @@ class HTMLElement(object):
 
     def cap_first(self):
         """Capitalize first alphabet of the element"""
-        return
+        if not getattr(self, "CAPFIRST_ENABLED", False):
+            return
         CAPFIRST_TAGS = (
             "li",
             "p",
@@ -661,7 +658,7 @@ class IMG(HTMLElement):
                 )
                 p.wait()
                 if not os.path.isfile(output_filepath):
-                    raise Exception("Count not download the image file: {}.".format(self.src))
+                    raise Exception("Could not download the image file: {}.".format(self.src))
 
             self.src = self.element.attrib["src"] = output_filepath
 

@@ -92,6 +92,8 @@ def _html2latex(
     """
     # If html string has no text then don't need to do anything
     if not check_if_html_has_text(html):
+        if return_diagnostics:
+            return "", []
         return ""
 
     collect = (

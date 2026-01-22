@@ -8,7 +8,7 @@ Scope: Performance + memory benchmarking for html2latex
 - Detect regressions when refactoring core pipeline.
 - Keep benchmarks opt-in for CI (run locally or nightly).
 
-## Proposed benchmark layout
+## Benchmark layout
 ```
 benchmarks/
   data/
@@ -70,4 +70,3 @@ benchmarks/
 ## Open questions
 - Should we commit baseline benchmark JSON or keep it in artifacts?
 - Do we want to run a small benchmark subset in PR CI?
-

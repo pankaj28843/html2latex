@@ -4,11 +4,11 @@ Date: 2026-01-21
 Scope: Map JustHTML harness/bench patterns to html2latex tests and benchmarks
 
 ## Summary
-JustHTML separates concerns into: (1) data-driven fixtures + harness runner, (2) a compact regression summary file, and (3) standalone benchmark scripts. This mapping proposes a similar structure for html2latex, adapted to LaTeX output validation and WYSIWYG HTML coverage.
+JustHTML separates concerns into: (1) data-driven fixtures + harness runner, (2) a compact regression summary file, and (3) standalone benchmark scripts. This mapping outlines a similar structure for html2latex, adapted to LaTeX output validation and WYSIWYG HTML coverage.
 
 ## JustHTML patterns worth adopting
 - External fixtures (html5lib-tests) kept out of repo, symlinked locally.
-- Harness runner that aggregates per-file stats and writes a `test-summary.txt` baseline.
+- Harness runner that aggregates per-file stats and writes a `test-summary.txt` baseline (kept under `tests/golden/`).
 - Regression checker that diffs current failures vs the baseline and exits non-zero.
 - Data-driven fixtures for correctness and coverage hot spots.
 - Benchmarks separated by intent: `performance.py` (dataset throughput), `profile.py` (cProfile), `correctness.py` (suite compliance).
@@ -21,7 +21,7 @@ JustHTML separates concerns into: (1) data-driven fixtures + harness runner, (2)
   - Optionally diffs against baseline summary to detect regressions.
 - Keep pytest as the runner; add a dedicated `tests/harness/` with:
   - `reporter.py` (summary + pattern output)
-  - `regressions.py` (baseline diff against `test-summary.txt`)
+  - `regressions.py` (baseline diff against `tests/golden/test-summary.txt`)
   - `runner.py` (fixture loader + result collection)
 
 ### 2) Regression summary format
@@ -29,7 +29,7 @@ JustHTML separates concerns into: (1) data-driven fixtures + harness runner, (2)
   - `.` = pass
   - `x` = fail
   - `s` = skip
-- Keep baseline at repo root: `test-summary.txt` (git-tracked).
+- Keep baseline at `tests/golden/test-summary.txt` (git-tracked).
 - Add `python -m tests.harness.regressions` (or pytest hook) to fail CI on new regressions.
 
 ### 3) Benchmarks layout
@@ -40,7 +40,7 @@ JustHTML separates concerns into: (1) data-driven fixtures + harness runner, (2)
 - Prefer a small, versioned fixture corpus (no large datasets in repo). If needed, allow optional external corpora with environment variables.
 
 ### 4) WYSIWYG tag coverage fixtures
-Create a fixture matrix for common editor outputs (HTML subset). Proposed tags/constructs:
+Create a fixture matrix for common editor outputs (HTML subset). Tags/constructs to cover:
 - Text + inline: `p`, `br`, `span`, `strong`, `em`, `u`, `s`, `sub`, `sup`, `code`, `kbd`.
 - Structure: `div`, `blockquote`, `hr`, headings `h1`-`h6`.
 - Lists: `ul/ol/li`, nested lists, checklists (data attributes).
@@ -60,7 +60,7 @@ Mirror JustHTML's targeted edge tests by adding a `tests/unit/hotspots/` suite f
 - Escaping and LaTeX injection prevention
 - Line separator normalization
 
-## Proposed file layout
+## File layout
 ```
 benchmarks/
   performance.py
@@ -89,7 +89,7 @@ tests/
 
 ## CI integration ideas
 - Add a regression check step that runs only on full test runs.
-- Store `test-summary.txt` in repo root; update intentionally when behavior changes.
+- Store `tests/golden/test-summary.txt`; update intentionally when behavior changes.
 - Allow `pytest -m regression` to run only summary-diff checks.
 
 ## Open decisions
