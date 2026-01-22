@@ -142,9 +142,7 @@ def _convert_table(table: HtmlElement) -> list[LatexNode]:
         return []
 
     column_spec = LatexGroup(children=(LatexText(text="l" * max_columns),))
-    rendered_rows = [
-        LatexRaw(value=_render_row(cells, max_columns)) for cells in row_cells
-    ]
+    rendered_rows = [LatexRaw(value=_render_row(cells, max_columns)) for cells in row_cells]
     return [
         LatexEnvironment(
             name="tabular",
