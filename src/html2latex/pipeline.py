@@ -96,9 +96,7 @@ def _html2latex(
             return "", []
         return ""
 
-    collect = (
-        collect_diagnostics if collect_diagnostics is not None else (return_diagnostics or strict)
-    )
+    collect = strict or return_diagnostics or bool(collect_diagnostics)
     with diagnostic_context(collect) as events:
         parsed = parse_html(html, collect_errors=collect and parse_errors is None)
         if collect:
