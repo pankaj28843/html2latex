@@ -35,3 +35,29 @@ def test_normalize_keeps_unknown_nodes():
     sentinel = object()
     normalized = _normalize_children((sentinel,), set())
     assert normalized == (sentinel,)
+
+
+def test_normalize_trims_whitespace_around_block_children():
+    li = HtmlElement(
+        tag="li",
+        children=(
+            HtmlText(text="  Outer "),
+            HtmlElement(tag="ol", children=()),
+        ),
+    )
+    normalized = normalize_document(HtmlDocument(children=(li,)))
+    normalized_li = normalized.children[0]
+    assert normalized_li.children[0].text == "Outer"
+
+
+def test_normalize_preserves_space_before_inline_children():
+    paragraph = HtmlElement(
+        tag="p",
+        children=(
+            HtmlText(text="Hello "),
+            HtmlElement(tag="em", children=(HtmlText(text="world"),)),
+        ),
+    )
+    normalized = normalize_document(HtmlDocument(children=(paragraph,)))
+    normalized_paragraph = normalized.children[0]
+    assert normalized_paragraph.children[0].text == "Hello "
