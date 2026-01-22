@@ -160,6 +160,27 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
             current_level = list_level + 1
             items: list[LatexNode] = []
             if ordered:
+                list_type = _parse_list_type(node.attrs.get("type"))
+                if list_type is not None:
+                    label_name = _list_label_name(current_level)
+                    counter_name = _list_counter_name(current_level)
+                    label_spec = LatexCommand(
+                        name=list_type,
+                        args=(LatexGroup(children=(LatexText(text=counter_name),)),),
+                    )
+                    items.append(
+                        LatexCommand(
+                            name="renewcommand",
+                            args=(
+                                LatexGroup(
+                                    children=(LatexRaw(value=f"\\{label_name}"),),
+                                ),
+                                LatexGroup(
+                                    children=(label_spec, LatexText(text=".")),
+                                ),
+                            ),
+                        )
+                    )
                 start = _parse_list_start(node.attrs.get("start"))
                 if start > 1:
                     counter_name = _list_counter_name(current_level)
@@ -259,10 +280,27 @@ def _parse_list_value(value: str | None) -> int | None:
     return parsed if parsed >= 1 else None
 
 
+def _parse_list_type(value: str | None) -> str | None:
+    if value is None:
+        return None
+    mapping = {
+        "1": "arabic",
+        "a": "alph",
+        "A": "Alph",
+        "i": "roman",
+        "I": "Roman",
+    }
+    return mapping.get(value)
+
+
 def _list_counter_name(level: int) -> str:
     counters = ("enumi", "enumii", "enumiii", "enumiv")
     index = min(max(level, 1), len(counters)) - 1
     return counters[index]
+
+
+def _list_label_name(level: int) -> str:
+    return f"label{_list_counter_name(level)}"
 
 
 def _extract_text(node: HtmlElement) -> str:
