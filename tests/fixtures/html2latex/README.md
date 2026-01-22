@@ -1,0 +1,23 @@
+# HTML2LaTeX fixture corpus
+
+Each fixture lives as a paired `.html` and `.tex` file with the same name.
+Fixtures are organized by feature area so they are easy to find and reuse.
+
+## Layout
+
+- `blocks/` — block-level constructs (paragraphs, headings, blockquote, pre, hr, tables)
+- `inline/` — inline formatting and spans
+- `lists/` — list structures
+
+## Conventions
+
+- Files are UTF-8, LF endings, and end with a trailing newline.
+- No tabs; keep indentation minimal and readable.
+- Keep fixtures small and focused; prefer one behavior per case.
+- Names are semantic (what the case demonstrates), not numeric.
+
+## Adding a new case
+
+1. Create a new `case-name.html` file in the right feature folder.
+2. Create a matching `case-name.tex` with expected LaTeX output.
+3. Ensure both files are formatted and include a trailing newline.
