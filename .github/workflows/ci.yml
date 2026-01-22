@@ -6,8 +6,23 @@ on:
   pull_request:
 
 jobs:
+  fixtures-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Prettier check (HTML fixtures)
+        run: npx --yes prettier@3.3.3 --check "tests/fixtures/html2latex/**/*.html"
+
   test:
     runs-on: ubuntu-latest
+    needs: fixtures-format
     strategy:
       fail-fast: false
       matrix:
@@ -42,6 +57,7 @@ jobs:
 
   latex-validity:
     runs-on: ubuntu-latest
+    needs: fixtures-format
 
     steps:
       - uses: actions/checkout@v5
@@ -62,10 +78,11 @@ jobs:
           echo "$PWD" >> $GITHUB_PATH
 
       - name: LaTeX validity
-        run: uv run pytest tests/test_latex_validity.py -q
+        run: HTML2LATEX_TEX_FIXTURES=1 uv run pytest tests/test_latex_validity.py -q
 
   e2e:
     runs-on: ubuntu-latest
+    needs: fixtures-format
 
     steps:
       - uses: actions/checkout@v5
