@@ -3,7 +3,15 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Protocol
 
-from .ast import LatexCommand, LatexDocumentAst, LatexEnvironment, LatexGroup, LatexNode, LatexText
+from .ast import (
+    LatexCommand,
+    LatexDocumentAst,
+    LatexEnvironment,
+    LatexGroup,
+    LatexNode,
+    LatexRaw,
+    LatexText,
+)
 
 
 class LatexSerializer(Protocol):
@@ -42,15 +50,21 @@ def _walk_nodes(nodes: Iterable[LatexNode]) -> Iterable[LatexNode]:
             yield from _walk_nodes(node.children)
             for group in node.args:
                 yield from _walk_nodes(group.children)
+        if isinstance(node, LatexGroup):
+            yield from _walk_nodes(node.children)
 
 
 def _serialize_node(node: LatexNode) -> str:
     if isinstance(node, LatexText):
         return _escape_text(node.text)
+    if isinstance(node, LatexRaw):
+        return node.value
     if isinstance(node, LatexCommand):
         return _serialize_command(node)
     if isinstance(node, LatexEnvironment):
         return _serialize_environment(node)
+    if isinstance(node, LatexGroup):
+        return _serialize_group(node)
     return ""
 
 

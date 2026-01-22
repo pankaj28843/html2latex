@@ -1,5 +1,5 @@
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlText
-from html2latex.latex import LatexCommand, LatexText
+from html2latex.latex import LatexCommand, LatexEnvironment, LatexRaw, LatexText
 from html2latex.rewrite_pipeline import convert_document
 
 
@@ -103,3 +103,72 @@ def test_convert_description_list():
     assert env.children[0].name == "item"
     assert env.children[0].options == ("Term",)
     assert env.children[1].text == "Definition"
+
+
+def test_convert_table_basic():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="table",
+                children=(
+                    HtmlElement(
+                        tag="tr",
+                        children=(
+                            HtmlElement(tag="td", children=(HtmlText(text="A"),)),
+                            HtmlElement(tag="td", children=(HtmlText(text="B"),)),
+                        ),
+                    ),
+                    HtmlElement(
+                        tag="tr",
+                        children=(
+                            HtmlElement(tag="td", children=(HtmlText(text="C"),)),
+                            HtmlElement(tag="td", children=(HtmlText(text="D"),)),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    assert isinstance(env, LatexEnvironment)
+    assert env.name == "tabular"
+    assert env.args[0].children[0].text == "ll"
+    assert isinstance(env.children[0], LatexRaw)
+    assert env.children[0].value == "A & B \\\\"
+    assert env.children[1].value == "C & D \\\\"
+
+
+def test_convert_table_with_colspan_and_headers():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="table",
+                children=(
+                    HtmlElement(
+                        tag="tr",
+                        children=(
+                            HtmlElement(tag="th", children=(HtmlText(text="Head"),)),
+                            HtmlElement(tag="th", children=(HtmlText(text="Right"),)),
+                        ),
+                    ),
+                    HtmlElement(
+                        tag="tr",
+                        children=(
+                            HtmlElement(
+                                tag="td",
+                                attrs={"colspan": "2"},
+                                children=(HtmlText(text="Wide"),),
+                            ),
+                            HtmlElement(tag="td", children=(HtmlText(text="Tail"),)),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    assert env.args[0].children[0].text == "lll"
+    assert env.children[0].value == "\\textbf{Head} & \\textbf{Right} & \\\\"
+    assert env.children[1].value == "\\multicolumn{2}{l}{Wide} & Tail \\\\"

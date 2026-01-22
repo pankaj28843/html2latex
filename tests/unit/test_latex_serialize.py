@@ -3,6 +3,7 @@ from html2latex.latex import (
     LatexDocumentAst,
     LatexEnvironment,
     LatexGroup,
+    LatexRaw,
     LatexText,
     infer_packages,
     serialize_document,
@@ -29,6 +30,11 @@ def test_serialize_environment():
     )
     doc = LatexDocumentAst(body=(env,))
     assert serialize_document(doc) == "\\begin{itemize}\\itemA\\end{itemize}"
+
+
+def test_serialize_raw_passthrough():
+    doc = LatexDocumentAst(body=(LatexRaw(value="A & B \\\\"),))
+    assert serialize_document(doc) == "A & B \\\\"
 
 
 def test_infer_packages_from_ast():

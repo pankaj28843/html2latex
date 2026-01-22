@@ -7,7 +7,9 @@ from html2latex.latex import (
     LatexEnvironment,
     LatexGroup,
     LatexNode,
+    LatexRaw,
     LatexText,
+    serialize_nodes,
 )
 from html2latex.styles import StyleConfig
 
@@ -71,6 +73,9 @@ def _convert_node(node: HtmlNode) -> list[LatexNode]:
         if tag == "hr":
             return [LatexCommand(name="hrule")]
 
+        if tag == "table":
+            return _convert_table(node)
+
         if tag in {"ul", "ol"}:
             env = "itemize" if tag == "ul" else "enumerate"
             items: list[LatexNode] = []
@@ -124,3 +129,91 @@ def _extract_text(node: HtmlElement) -> str:
         elif isinstance(child, HtmlElement):
             parts.append(_extract_text(child))
     return "".join(parts)
+
+
+def _convert_table(table: HtmlElement) -> list[LatexNode]:
+    rows = _collect_table_rows(table)
+    if not rows:
+        return []
+
+    row_cells = [_extract_row_cells(row) for row in rows]
+    max_columns = max((_row_colspan(cells) for cells in row_cells), default=0)
+    if max_columns <= 0:
+        return []
+
+    column_spec = LatexGroup(children=(LatexText(text="l" * max_columns),))
+    rendered_rows = [
+        LatexRaw(value=_render_row(cells, max_columns)) for cells in row_cells
+    ]
+    return [
+        LatexEnvironment(
+            name="tabular",
+            args=(column_spec,),
+            children=tuple(rendered_rows),
+        )
+    ]
+
+
+def _collect_table_rows(table: HtmlElement) -> list[HtmlElement]:
+    rows: list[HtmlElement] = []
+    for child in table.children:
+        if not isinstance(child, HtmlElement):
+            continue
+        tag = child.tag.lower()
+        if tag in {"thead", "tbody", "tfoot"}:
+            for grandchild in child.children:
+                if isinstance(grandchild, HtmlElement) and grandchild.tag.lower() == "tr":
+                    rows.append(grandchild)
+        elif tag == "tr":
+            rows.append(child)
+    return rows
+
+
+def _extract_row_cells(row: HtmlElement) -> list[HtmlElement]:
+    cells: list[HtmlElement] = []
+    for child in row.children:
+        if isinstance(child, HtmlElement) and child.tag.lower() in {"td", "th"}:
+            cells.append(child)
+    return cells
+
+
+def _row_colspan(cells: list[HtmlElement]) -> int:
+    return sum(_parse_span(cell.attrs.get("colspan")) for cell in cells)
+
+
+def _parse_span(value: str | None) -> int:
+    if value is None:
+        return 1
+    try:
+        parsed = int(value)
+    except ValueError:
+        return 1
+    return parsed if parsed > 0 else 1
+
+
+def _render_row(cells: list[HtmlElement], max_columns: int) -> str:
+    rendered: list[str] = []
+    used_columns = 0
+    for cell in cells:
+        span = _parse_span(cell.attrs.get("colspan"))
+        rendered.append(_render_cell(cell, span))
+        used_columns += span
+
+    while used_columns < max_columns:
+        rendered.append("")
+        used_columns += 1
+
+    row = " & ".join(rendered).rstrip()
+    return f"{row} \\\\"
+
+
+def _render_cell(cell: HtmlElement, span: int) -> str:
+    children = _convert_nodes(cell.children)
+    tag = cell.tag.lower()
+    if tag == "th":
+        group = LatexGroup(children=tuple(children))
+        children = [LatexCommand(name="textbf", args=(group,))]
+    content = "".join(serialize_nodes(children))
+    if span > 1:
+        return f"\\multicolumn{{{span}}}{{l}}{{{content}}}"
+    return content

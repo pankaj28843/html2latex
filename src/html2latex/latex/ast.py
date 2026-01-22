@@ -12,6 +12,11 @@ class LatexText:
 
 
 @dataclass(config=ConfigDict(frozen=True))
+class LatexRaw:
+    value: str
+
+
+@dataclass(config=ConfigDict(frozen=True))
 class LatexGroup:
     children: tuple["LatexNode", ...] = ()
 
@@ -38,4 +43,4 @@ class LatexDocumentAst:
     metadata: dict[str, str] = field(default_factory=dict)
 
 
-LatexNode = LatexText | LatexCommand | LatexEnvironment
+LatexNode = LatexText | LatexRaw | LatexGroup | LatexCommand | LatexEnvironment
