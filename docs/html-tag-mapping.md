@@ -19,6 +19,7 @@ HTML2LaTeX.
 | `h1` | `\section{...}` | |
 | `h2` | `\subsection{...}` | |
 | `h3` | `\subsubsection{...}` | |
+| `h4`–`h6` | content preserved | No heading commands emitted. |
 | `ul` | `\begin{itemize} ... \end{itemize}` | `\item` for each `li`. |
 | `ol` | `\begin{enumerate} ... \end{enumerate}` | `\item` for each `li`. |
 | `dl` | `\begin{description} ... \end{description}` | `\item[term]` per `dt/dd`. |
@@ -30,6 +31,7 @@ HTML2LaTeX.
 | `tr` | row with `\\` | |
 | `th` | `\textbf{...}` | Column header. |
 | `td` | cell contents | `colspan` mapped via `\multicolumn`. |
+| `section`, `article`, `aside`, `header`, `footer`, `nav`, `main`, `figure`, `figcaption` | content preserved | Container tags; children are rendered. |
 
 ## Inline tags
 
@@ -44,10 +46,11 @@ HTML2LaTeX.
 | `a` | `\href{url}{text}` or `\url{url}` | `hyperref` required. |
 | `img` | `\includegraphics{src}` | `graphicx` required. |
 | `span` (math) | `\( ... \)` or `\[ ... \]` | `class="math-tex"` or `data-latex`/`data-math`. |
+| `span`, `mark`, `abbr`, `time`, `del`, `s`, `strike` | content preserved | Inline semantic tags; children are rendered. |
 
 ## Notes
 - Text content is LaTeX-escaped during serialization.
-- Unknown tags are flattened to their children.
+- Unlisted tags are flattened to their children.
 - `rowspan` is currently ignored; `colspan` is supported.
 
 ## References

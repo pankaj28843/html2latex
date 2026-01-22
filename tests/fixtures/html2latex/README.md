@@ -9,6 +9,8 @@ Fixtures are organized by feature area so they are easy to find and reuse.
 - `inline/` — inline formatting and spans
 - `lists/` — list structures
 - `errors/` — invalid inputs used for diagnostics tests (not part of strict golden runs)
+- `inline/semantic/` — inline semantic tags that preserve content
+- `blocks/semantic/` — block containers that preserve child content
 
 ## Conventions
 

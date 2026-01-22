@@ -30,6 +30,28 @@ _INLINE_COMMANDS = {
     "sub": "textsubscript",
 }
 
+_INLINE_PASSTHROUGH = {
+    "abbr",
+    "del",
+    "mark",
+    "s",
+    "span",
+    "strike",
+    "time",
+}
+
+_BLOCK_PASSTHROUGH = {
+    "article",
+    "aside",
+    "figure",
+    "figcaption",
+    "footer",
+    "header",
+    "main",
+    "nav",
+    "section",
+}
+
 
 def convert_document(
     document: HtmlDocument,
@@ -59,6 +81,9 @@ def _convert_node(node: HtmlNode) -> list[LatexNode]:
             children = _convert_nodes(node.children)
             group = LatexGroup(children=children)
             return [LatexCommand(name=_INLINE_COMMANDS[tag], args=(group,))]
+
+        if tag in _INLINE_PASSTHROUGH:
+            return list(_convert_nodes(node.children))
 
         if tag in _HEADING_COMMANDS:
             children = _convert_nodes(node.children)
@@ -130,6 +155,10 @@ def _convert_node(node: HtmlNode) -> list[LatexNode]:
         if tag == "dl":
             items = _convert_description_list(node.children)
             return [LatexEnvironment(name="description", children=tuple(items))]
+
+        if tag in _BLOCK_PASSTHROUGH:
+            children = _convert_nodes(node.children)
+            return list(children)
 
         children = _convert_nodes(node.children)
         return list(children)
