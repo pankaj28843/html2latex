@@ -30,6 +30,7 @@ dependencies = [
   "Jinja2>=3.1.6",
   "html2text>=2025.4.15",
   "justhtml>=0.20.0",
+  "pydantic>=2.10.0",
 ]
 
 [project.optional-dependencies]
