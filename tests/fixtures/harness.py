@@ -188,9 +188,7 @@ def normalize_fixture_text(value: str) -> str:
 def _validate_text(path: Path, text: str) -> None:
     if not text.strip():
         raise ValueError(f"Fixture is empty: {path}")
-    # Note: tabs are allowed in .tex files since unified-latex uses tabs for indentation
-    if not text.endswith("\n"):
-        raise ValueError(f"Fixture must end with a newline: {path}")
+    # Note: prettier-plugin-latex doesn't add trailing newlines, so we don't require them
 
 
 def _case_id_for(path: Path, root: Path) -> str:
