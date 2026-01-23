@@ -557,7 +557,9 @@ def test_convert_semantic_inline_elements():
 
 
 def test_convert_mark_tag():
-    doc = HtmlDocument(children=(HtmlElement(tag="mark", children=(HtmlText(text="highlighted"),)),))
+    doc = HtmlDocument(
+        children=(HtmlElement(tag="mark", children=(HtmlText(text="highlighted"),)),)
+    )
     latex = convert_document(doc)
     assert latex.body[0].name == "colorbox"
     # First arg is color (yellow)
