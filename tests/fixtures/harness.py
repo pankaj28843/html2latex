@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -23,8 +22,48 @@ def _normalize_text(value: str) -> str:
     return "\n".join(line.rstrip() for line in stripped.splitlines())
 
 
+def _normalize_latex_whitespace(tex: str) -> str:
+    """Normalize LaTeX whitespace for comparison.
+
+    In LaTeX, source whitespace (newlines, leading spaces) does not affect
+    rendered output in most contexts. This function normalizes formatting
+    differences so that semantically identical LaTeX compares equal.
+    """
+    # Preserve verbatim environments exactly
+    verbatim_pattern = r"(\\begin\{verbatim\}.*?\\end\{verbatim\})"
+    verbatim_blocks: list[str] = []
+
+    def save_verbatim(match: re.Match[str]) -> str:
+        verbatim_blocks.append(match.group(1))
+        return f"__VERBATIM_{len(verbatim_blocks) - 1}__"
+
+    tex = re.sub(verbatim_pattern, save_verbatim, tex, flags=re.DOTALL)
+
+    # Normalize whitespace: collapse multiple spaces/newlines to single space
+    tex = re.sub(r"\s+", " ", tex)
+
+    # Remove spaces before and after \end{...}
+    tex = re.sub(r"\s*(\\end\{[^}]+\})\s*", r"\1", tex)
+
+    # Remove spaces before and after \begin{...}[...]{...}
+    tex = re.sub(r"\s*(\\begin\{[^}]+\}(?:\[[^\]]*\])?(?:\{[^}]*\})*)\s*", r"\1", tex)
+
+    # Remove spaces before \item
+    tex = re.sub(r"\s+(\\item)", r"\1", tex)
+
+    # Normalize \item whitespace to single space (item needs space before its content)
+    tex = re.sub(r"(\\item)\s+", r"\1 ", tex)
+
+    # Restore verbatim blocks
+    for i, block in enumerate(verbatim_blocks):
+        tex = tex.replace(f"__VERBATIM_{i}__", block)
+
+    return tex.strip()
+
+
 def normalize_fixture_text(value: str) -> str:
-    return _normalize_text(value)
+    """Normalize LaTeX text for comparison, accounting for formatting differences."""
+    return _normalize_latex_whitespace(value)
 
 
 def _validate_text(path: Path, text: str) -> None:

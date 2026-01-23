@@ -20,6 +20,16 @@ jobs:
       - name: Prettier check (HTML fixtures)
         run: npx --yes prettier@3.3.3 --check "tests/fixtures/html2latex/**/*.html"
 
+      - name: Install tex-fmt
+        run: |
+          curl -fsSL https://github.com/WGUNDERWOOD/tex-fmt/releases/download/v0.5.6/tex-fmt-x86_64-linux.tar.gz -o /tmp/tex-fmt.tar.gz
+          tar -xzf /tmp/tex-fmt.tar.gz -C /tmp
+          chmod +x /tmp/tex-fmt
+          echo "/tmp" >> $GITHUB_PATH
+
+      - name: tex-fmt check (LaTeX fixtures)
+        run: find tests/fixtures/html2latex -name "*.tex" -exec tex-fmt --check --config tex-fmt.toml {} +
+
   test:
     runs-on: ubuntu-latest
     needs: fixtures-format
