@@ -422,3 +422,46 @@ def test_convert_table_without_rows_returns_empty():
 
 def test_convert_node_ignores_unknown_type():
     assert _convert_node(object()) == []
+
+
+def test_convert_empty_figure():
+    doc = HtmlDocument(children=(HtmlElement(tag="figure", children=()),))
+    latex = convert_document(doc)
+    assert latex.body == ()
+
+
+def test_convert_figure_text_only():
+    doc = HtmlDocument(children=(HtmlElement(tag="figure", children=(HtmlText(text="text"),)),))
+    latex = convert_document(doc)
+    assert latex.body == ()
+
+
+def test_convert_orphan_figcaption():
+    doc = HtmlDocument(
+        children=(HtmlElement(tag="figcaption", children=(HtmlText(text="Caption"),)),)
+    )
+    latex = convert_document(doc)
+    assert latex.body[0].text == "Caption"
+
+
+def test_convert_figure_caption_multi_para():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="figure",
+                children=(
+                    HtmlElement(
+                        tag="figcaption",
+                        children=(
+                            HtmlElement(tag="p", children=(HtmlText(text="Para 1"),)),
+                            HtmlElement(tag="p", children=(HtmlText(text="Para 2"),)),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    # Should produce figure environment with caption, and \par replaced by space
+    assert isinstance(latex.body[0], LatexEnvironment)
+    assert latex.body[0].name == "figure"
