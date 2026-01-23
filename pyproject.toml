@@ -7,7 +7,7 @@ name = "html2latex"
 version = "0.0.63"
 description = "Convert HTML to LaTeX"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
 requires-python = ">=3.10"
 authors = [
   { name = "Pankaj Singh", email = "pankaj28843@gmail.com" }
@@ -15,7 +15,6 @@ authors = [
 keywords = ["html", "latex", "converter"]
 classifiers = [
   "Development Status :: 3 - Alpha",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
