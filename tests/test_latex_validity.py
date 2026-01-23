@@ -50,7 +50,7 @@ def _ensure_nonempty_body(body: str) -> str:
 def test_latex_fixtures_compile(tmp_path: Path) -> None:
     if not TECTONIC_BIN:
         pytest.fail("Tectonic is required for LaTeX validity checks; install `tectonic`.")
-    cases = load_fixture_cases(filters=["blocks/", "inline/", "lists/"])
+    cases = load_fixture_cases(filters=["blocks/", "inline/", "lists/", "e2e-wysiwyg/"])
 
     fragments = []
     packages: set[str] = set()
@@ -71,7 +71,7 @@ def test_latex_fixtures_compile(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize(
     "case",
-    load_fixture_cases(filters=["blocks/", "inline/", "lists/"]),
+    load_fixture_cases(filters=["blocks/", "inline/", "lists/", "e2e-wysiwyg/"]),
     ids=lambda case: case.case_id,
 )
 def test_fixture_tex_files_compile(tmp_path: Path, case) -> None:

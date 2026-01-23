@@ -1,0 +1,42 @@
+<article class="trix-content">
+  <h1>Welcome to Trix</h1>
+  <p>
+    <a href="https://trix-editor.org/">Trix</a> is a rich text editor for everyday writing. It's the
+    editor that powers <a href="https://basecamp.com">Basecamp</a> and
+    <a href="https://hey.com">HEY</a>.
+  </p>
+  <h2>What Makes Trix Different</h2>
+  <p>
+    Most WYSIWYG editors are wrappers around HTML's
+    <code>contenteditable</code> and <code>execCommand</code> APIs, designed by Microsoft to support
+    live editing of web pages in Internet Explorer 5.5.
+  </p>
+  <blockquote>
+    <p>
+      Trix sidesteps these inconsistencies by treating contenteditable as an I/O device: when input
+      makes its way to the editor, Trix converts that input into an editing operation on its
+      internal document model, then re-renders that document back into the editor.
+    </p>
+  </blockquote>
+  <h2>Features</h2>
+  <ul>
+    <li>A <strong>document model</strong> that handles text and attachments</li>
+    <li><em>Undo and redo</em> that keeps your changes safe</li>
+    <li>Native <u>drag and drop</u> for images and files</li>
+  </ul>
+  <h2>Code Example</h2>
+  <pre><code>&lt;trix-editor input="content"&gt;&lt;/trix-editor&gt;
+&lt;input id="content" type="hidden" name="content"&gt;</code></pre>
+  <h2>Browser Support</h2>
+  <p>Trix works in all modern browsers including:</p>
+  <ol>
+    <li>Chrome and Chromium-based browsers</li>
+    <li>Firefox</li>
+    <li>Safari on macOS and iOS</li>
+    <li>Microsoft Edge</li>
+  </ol>
+  <p>
+    For more details, see the
+    <a href="https://github.com/basecamp/trix">GitHub repository</a>.
+  </p>
+</article>
