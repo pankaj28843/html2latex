@@ -6,6 +6,12 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 
+[manifest]
+members = [
+    "html2latex",
+    "html2latex-demo",
+]
+
 [[package]]
 name = "annotated-types"
 version = "0.7.0"
@@ -280,10 +286,6 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
-demo = [
-    { name = "flask" },
-    { name = "redis" },
-]
 dev = [
     { name = "ipdb" },
     { name = "ipython", version = "8.38.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -308,10 +310,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-demo = [
-    { name = "flask", specifier = ">=3.1.2" },
-    { name = "redis", specifier = ">=7.1.0" },
-]
+demo = []
 dev = [
     { name = "ipdb", specifier = ">=0.13.13" },
     { name = "ipython", specifier = ">=8.0" },
@@ -321,6 +320,23 @@ lint = [{ name = "ruff", specifier = ">=0.14.11" }]
 test = [
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-cov", specifier = ">=6.0.0" },
+]
+
+[[package]]
+name = "html2latex-demo"
+version = "0.0.1"
+source = { virtual = "demo-app" }
+dependencies = [
+    { name = "flask" },
+    { name = "html2latex" },
+    { name = "redis" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flask", specifier = ">=3.1.2" },
+    { name = "html2latex", editable = "." },
+    { name = "redis", specifier = ">=7.1.0" },
 ]
 
 [[package]]

@@ -11,6 +11,36 @@ Thanks for helping improve HTML2LaTeX!
 - Node.js (required for formatting):
   - Node 20+ recommended.
 
+## Project structure
+
+This project uses a **uv workspace** with two members:
+
+- **html2latex** (root): The main library
+- **html2latex-demo** (`demo-app/`): Demo web application
+
+## Demo app development
+
+The demo app has its own `pyproject.toml` in `demo-app/` and is a workspace member.
+
+### Running with Docker
+
+```bash
+# Build and run
+docker compose build
+docker compose up -d
+
+# Access at http://localhost:15005
+
+# Development mode with hot reload (watches file changes)
+docker compose watch
+```
+
+### Running locally (without Docker)
+
+```bash
+uv run --package html2latex-demo python demo-app/app.py
+```
+
 ## File formatting
 
 All HTML and LaTeX files in the project are formatted with Prettier for consistency and readability.

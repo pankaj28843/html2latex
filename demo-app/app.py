@@ -3,7 +3,7 @@ import hmac
 import os
 
 import redis
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 
 from html2latex.html2latex import html2latex
 
