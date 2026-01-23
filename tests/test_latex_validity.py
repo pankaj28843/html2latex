@@ -23,6 +23,8 @@ def _infer_packages_from_tex(tex: str) -> set[str]:
         packages.add("hyperref")
     if "\\includegraphics" in tex:
         packages.add("graphicx")
+    if "\\sout" in tex:
+        packages.add("ulem")
     return packages
 
 

@@ -17,6 +17,8 @@ _HEADING_COMMANDS = {
     "h1": "section",
     "h2": "subsection",
     "h3": "subsubsection",
+    "h4": "paragraph",
+    "h5": "subparagraph",
 }
 
 _INLINE_COMMANDS = {
@@ -28,21 +30,21 @@ _INLINE_COMMANDS = {
     "code": "texttt",
     "sup": "textsuperscript",
     "sub": "textsubscript",
+    "del": "sout",
+    "s": "sout",
+    "strike": "sout",
 }
 
 _INLINE_PASSTHROUGH = {
     "abbr",
     "cite",
-    "del",
     "dfn",
     "ins",
     "kbd",
     "mark",
-    "s",
     "samp",
     "small",
     "span",
-    "strike",
     "time",
     "var",
 }
@@ -50,8 +52,6 @@ _INLINE_PASSTHROUGH = {
 _BLOCK_PASSTHROUGH = {
     "article",
     "aside",
-    "figure",
-    "figcaption",
     "footer",
     "header",
     "main",
@@ -218,6 +218,14 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
         if tag == "dl":
             items = _convert_description_list(node.children, list_level)
             return [LatexEnvironment(name="description", children=tuple(items))]
+
+        if tag == "figure":
+            return _convert_figure(node, list_level)
+
+        if tag == "figcaption":
+            # figcaption outside figure - just render content
+            children = _convert_nodes(node.children, list_level)
+            return list(children)
 
         if tag in _BLOCK_PASSTHROUGH:
             children = _convert_nodes(node.children, list_level)
@@ -399,6 +407,44 @@ def _class_set(value: str | None) -> set[str]:
     if not value:
         return set()
     return {part for part in value.split() if part}
+
+
+def _convert_figure(figure: HtmlElement, list_level: int) -> list[LatexNode]:
+    """Convert HTML <figure> to LaTeX figure environment."""
+    content: list[LatexNode] = []
+    caption: LatexCommand | None = None
+
+    for child in figure.children:
+        if not isinstance(child, HtmlElement):
+            continue
+        tag = child.tag.lower()
+        if tag == "figcaption":
+            nodes = _convert_nodes(child.children, list_level)
+            # Remove \par from caption content
+            filtered: list[LatexNode] = []
+            for node in nodes:
+                if isinstance(node, LatexCommand) and node.name == "par":
+                    if filtered:
+                        filtered.append(LatexText(text=" "))
+                else:
+                    filtered.append(node)
+            while filtered and isinstance(filtered[-1], LatexText) and filtered[-1].text == " ":
+                filtered.pop()
+            if filtered:
+                caption = LatexCommand(name="caption", args=(LatexGroup(children=tuple(filtered)),))
+        else:
+            content.extend(_convert_node(child, list_level))
+
+    if not content and caption is None:
+        return []
+
+    # Add centering and caption to figure environment
+    figure_content: list[LatexNode] = [LatexCommand(name="centering")]
+    figure_content.extend(content)
+    if caption:
+        figure_content.append(caption)
+
+    return [LatexEnvironment(name="figure", children=tuple(figure_content))]
 
 
 def _convert_table(table: HtmlElement, list_level: int) -> list[LatexNode]:

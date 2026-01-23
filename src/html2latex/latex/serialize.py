@@ -35,6 +35,8 @@ def infer_packages(document: LatexDocumentAst) -> set[str]:
             packages.add("hyperref")
         if isinstance(node, LatexCommand) and node.name == "includegraphics":
             packages.add("graphicx")
+        if isinstance(node, LatexCommand) and node.name == "sout":
+            packages.add("ulem")
         if isinstance(node, LatexEnvironment) and node.name == "tabularx":
             packages.add("tabularx")
     return packages
