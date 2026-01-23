@@ -24,7 +24,7 @@ class Converter:
             extend_diagnostics(parse_events)
             normalized = normalize_document(document, preserve_whitespace_tags={"pre"})
             latex_ast = convert_document(normalized)
-            body = serialize_document(latex_ast)
+            body = serialize_document(latex_ast, formatted=self.options.formatted)
             packages = tuple(sorted(infer_packages(latex_ast)))
             preamble = _build_preamble(packages, self.options.metadata)
             if self.options.strict:

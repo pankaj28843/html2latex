@@ -11,6 +11,7 @@ from pydantic.dataclasses import dataclass
 class ConvertOptions:
     strict: bool = True
     fragment: bool = True
+    formatted: bool = True
     template: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 

@@ -170,3 +170,4 @@ $RECYCLE.BIN/
 # SublimeText
 *.sublime-workspace
 node_modules/
+.env
