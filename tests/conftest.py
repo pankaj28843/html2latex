@@ -31,3 +31,26 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     filters = metafunc.config.getoption("--fixture-filter") or []
     cases = load_fixture_cases(filters=filters, include_errors=False)
     metafunc.parametrize("fixture_case", cases, ids=lambda case: case.case_id)
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Apply markers to tests based on their directory location."""
+    for item in items:
+        # Get the path relative to tests/
+        test_path = Path(item.fspath)
+        parts = test_path.parts
+
+        # Apply markers based on directory
+        if "unit" in parts:
+            item.add_marker(pytest.mark.unit)
+        elif "integration" in parts:
+            item.add_marker(pytest.mark.integration)
+        elif "e2e" in parts:
+            item.add_marker(pytest.mark.e2e)
+        elif "performance" in parts:
+            item.add_marker(pytest.mark.slow)
+
+        # Mark LaTeX validity tests as slow (requires LaTeX compilation)
+        if "test_latex_validity" in test_path.name:
+            item.add_marker(pytest.mark.slow)
+            item.add_marker(pytest.mark.e2e)

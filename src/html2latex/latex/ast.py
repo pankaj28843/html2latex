@@ -18,7 +18,7 @@ class LatexRaw:
 
 @dataclass(config=ConfigDict(frozen=True))
 class LatexGroup:
-    children: tuple["LatexNode", ...] = ()
+    children: tuple[LatexNode, ...] = ()
 
 
 @dataclass(config=ConfigDict(frozen=True))
@@ -31,15 +31,15 @@ class LatexCommand:
 @dataclass(config=ConfigDict(frozen=True))
 class LatexEnvironment:
     name: str
-    children: tuple["LatexNode", ...] = ()
+    children: tuple[LatexNode, ...] = ()
     args: tuple[LatexGroup, ...] = ()
     options: tuple[str, ...] = ()
 
 
 @dataclass(config=ConfigDict(frozen=True))
 class LatexDocumentAst:
-    preamble: tuple["LatexNode", ...] = ()
-    body: tuple["LatexNode", ...] = ()
+    preamble: tuple[LatexNode, ...] = ()
+    body: tuple[LatexNode, ...] = ()
     metadata: dict[str, str] = field(default_factory=dict)
 
 

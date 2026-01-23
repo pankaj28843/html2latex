@@ -3,47 +3,9 @@ from __future__ import annotations
 import re
 
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlNode, HtmlText
+from html2latex.tags import BLOCK_TAGS
 
 _WHITESPACE_RE = re.compile(r"\s+")
-
-# Centralized classification of HTML block-level tags used by the normalization
-# pipeline. This set must stay consistent with:
-#   * block passthrough / block-handling logic in `convert.py`, and
-#   * any documented mappings that describe which tags are treated as block-level.
-# When adding or removing block-like tags, update all of these in lockstep to
-# avoid subtle drift between pipeline stages.
-_BLOCK_TAGS = {
-    "article",
-    "aside",
-    "blockquote",
-    "body",
-    "caption",
-    "dd",
-    "div",
-    "dl",
-    "dt",
-    "figure",
-    "figcaption",
-    "footer",
-    "header",
-    "html",
-    "hr",
-    "li",
-    "main",
-    "nav",
-    "ol",
-    "p",
-    "pre",
-    "section",
-    "table",
-    "tbody",
-    "td",
-    "tfoot",
-    "th",
-    "thead",
-    "tr",
-    "ul",
-}
 
 
 def normalize_document(
@@ -183,11 +145,11 @@ def _is_line_break(node: HtmlNode) -> bool:
 
 
 def _is_block_element(node: HtmlNode) -> bool:
-    return isinstance(node, HtmlElement) and node.tag.lower() in _BLOCK_TAGS
+    return isinstance(node, HtmlElement) and node.tag.lower() in BLOCK_TAGS
 
 
 def _is_block_tag(tag: str) -> bool:
-    return tag.lower() in _BLOCK_TAGS
+    return tag.lower() in BLOCK_TAGS
 
 
 def _collapse_whitespace(text: str) -> str:

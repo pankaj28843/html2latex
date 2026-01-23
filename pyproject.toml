@@ -68,13 +68,26 @@ exclude = ["html2latex.tests*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "unit: Fast, isolated unit tests",
+    "integration: Tests that integrate multiple components",
+    "e2e: End-to-end tests requiring external services (browser, LaTeX)",
+    "slow: Tests that take significant time to run",
+]
 
 [tool.ruff]
 target-version = "py310"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "I"]
+select = [
+    "E4", "E7", "E9",  # pycodestyle errors
+    "F",               # pyflakes
+    "I",               # isort
+    "UP",              # pyupgrade
+    "B",               # flake8-bugbear
+    "SIM",             # flake8-simplify
+]
 ignore = ["E501"]
 
 [tool.ruff.format]
