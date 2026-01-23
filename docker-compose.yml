@@ -1,4 +1,3 @@
-version: '3'
 services:
   redis:
     image: "redis:5.0-alpine"
@@ -21,10 +20,6 @@ services:
       - ENV=${ENV:-production}
     ports:
       - "15005:15005"
-    links:
-      - "redis"
     volumes:
       - .:/app
-    working_dir: /app
-    env_file:
-      - .env
+      - /app/.venv  # Preserve container's venv (don't mount from host)
