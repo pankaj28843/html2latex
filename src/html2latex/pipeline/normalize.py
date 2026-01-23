@@ -91,14 +91,12 @@ def _normalize_children(
                     buffer.append(collapsed)
                 elif collapsed and normalized and index < len(children) - 1:
                     # Check if between two inline elements
-                    prev_is_inline = (
-                        isinstance(normalized[-1], HtmlElement)
-                        and not _is_block_tag(normalized[-1].tag)
+                    prev_is_inline = isinstance(normalized[-1], HtmlElement) and not _is_block_tag(
+                        normalized[-1].tag
                     )
                     next_child = children[index + 1]
-                    next_is_inline = (
-                        isinstance(next_child, HtmlElement)
-                        and not _is_block_tag(next_child.tag)
+                    next_is_inline = isinstance(next_child, HtmlElement) and not _is_block_tag(
+                        next_child.tag
                     )
                     if prev_is_inline and next_is_inline:
                         buffer.append(collapsed)
@@ -157,8 +155,12 @@ def _trim_boundary_whitespace(
             trimmed.append(HtmlText(text=text))
         elif text and prev_child is not None and next_child is not None:
             # Whitespace between two elements - check if both are inline
-            prev_is_inline = isinstance(prev_child, HtmlElement) and not _is_block_tag(prev_child.tag)
-            next_is_inline = isinstance(next_child, HtmlElement) and not _is_block_tag(next_child.tag)
+            prev_is_inline = isinstance(prev_child, HtmlElement) and not _is_block_tag(
+                prev_child.tag
+            )
+            next_is_inline = isinstance(next_child, HtmlElement) and not _is_block_tag(
+                next_child.tag
+            )
             if prev_is_inline and next_is_inline:
                 trimmed.append(HtmlText(text=text))
     return _trim_boundary_breaks(tuple(trimmed))
