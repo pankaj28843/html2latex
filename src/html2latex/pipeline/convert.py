@@ -33,20 +33,21 @@ _INLINE_COMMANDS = {
     "del": "sout",
     "s": "sout",
     "strike": "sout",
+    # Semantic elements with LaTeX equivalents
+    "ins": "underline",  # Inserted text
+    "kbd": "texttt",  # Keyboard input
+    "samp": "texttt",  # Sample output
+    "var": "textit",  # Variable
+    "cite": "textit",  # Citation/title
 }
 
 _INLINE_PASSTHROUGH = {
     "abbr",
-    "cite",
     "dfn",
-    "ins",
-    "kbd",
-    "mark",
-    "samp",
-    "small",
+    "mark",  # Would need xcolor for colorbox, keep as passthrough for now
+    "small",  # Handled separately with font size command
     "span",
     "time",
-    "var",
 }
 
 _BLOCK_PASSTHROUGH = {
@@ -92,6 +93,11 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
             group = LatexGroup(children=children)
             return [LatexCommand(name=_INLINE_COMMANDS[tag], args=(group,))]
 
+        if tag == "small":
+            # Font size switch: {\small ...}
+            children = _convert_nodes(node.children, list_level)
+            return [LatexRaw(value=r"{\small "), *children, LatexRaw(value="}")]
+
         if tag in _INLINE_PASSTHROUGH:
             return list(_convert_nodes(node.children, list_level))
 
@@ -103,8 +109,22 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
         if tag == "br":
             return [LatexCommand(name="newline")]
 
-        if tag in {"p", "div"}:
+        if tag == "center":
+            # Deprecated <center> tag → center environment
             children = _convert_nodes(node.children, list_level)
+            return [LatexEnvironment(name="center", children=tuple(children))]
+
+        if tag in {"p", "div"}:
+            # Check for text-align style
+            style = node.attrs.get("style", "")
+            align = _parse_text_align(style)
+            children = _convert_nodes(node.children, list_level)
+            if align == "center":
+                return [LatexEnvironment(name="center", children=tuple(children))]
+            if align == "left":
+                return [LatexEnvironment(name="flushleft", children=tuple(children))]
+            if align == "right":
+                return [LatexEnvironment(name="flushright", children=tuple(children))]
             return [*children, LatexCommand(name="par")]
 
         if tag == "hr":
@@ -326,6 +346,16 @@ def _parse_list_type(value: str | None) -> str | None:
         "I": "Roman",
     }
     return mapping.get(value)
+
+
+def _parse_text_align(style: str) -> str | None:
+    """Extract text-align value from CSS style string."""
+    import re
+
+    match = re.search(r"text-align\s*:\s*(left|center|right|justify)", style, re.IGNORECASE)
+    if match:
+        return match.group(1).lower()
+    return None
 
 
 def _count_list_items(node: HtmlElement) -> int:

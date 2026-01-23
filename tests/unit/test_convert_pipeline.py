@@ -465,3 +465,92 @@ def test_convert_figure_caption_multi_para():
     # Should produce figure environment with caption, and \par replaced by space
     assert isinstance(latex.body[0], LatexEnvironment)
     assert latex.body[0].name == "figure"
+
+
+def test_convert_small_tag():
+    doc = HtmlDocument(children=(HtmlElement(tag="small", children=(HtmlText(text="small"),)),))
+    latex = convert_document(doc)
+    assert len(latex.body) == 3
+    assert latex.body[0].value == r"{\small "
+    assert latex.body[1].text == "small"
+    assert latex.body[2].value == "}"
+
+
+def test_convert_center_tag():
+    doc = HtmlDocument(children=(HtmlElement(tag="center", children=(HtmlText(text="centered"),)),))
+    latex = convert_document(doc)
+    assert isinstance(latex.body[0], LatexEnvironment)
+    assert latex.body[0].name == "center"
+    assert latex.body[0].children[0].text == "centered"
+
+
+def test_convert_p_text_align_center():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="p",
+                attrs={"style": "text-align: center"},
+                children=(HtmlText(text="centered"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    assert isinstance(latex.body[0], LatexEnvironment)
+    assert latex.body[0].name == "center"
+
+
+def test_convert_p_text_align_right():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="p",
+                attrs={"style": "text-align: right"},
+                children=(HtmlText(text="right"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    assert isinstance(latex.body[0], LatexEnvironment)
+    assert latex.body[0].name == "flushright"
+
+
+def test_convert_p_text_align_left():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="p",
+                attrs={"style": "text-align:left"},
+                children=(HtmlText(text="left"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    assert isinstance(latex.body[0], LatexEnvironment)
+    assert latex.body[0].name == "flushleft"
+
+
+def test_convert_semantic_inline_elements():
+    # ins -> underline
+    doc = HtmlDocument(children=(HtmlElement(tag="ins", children=(HtmlText(text="inserted"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].name == "underline"
+
+    # kbd -> texttt
+    doc = HtmlDocument(children=(HtmlElement(tag="kbd", children=(HtmlText(text="key"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].name == "texttt"
+
+    # samp -> texttt
+    doc = HtmlDocument(children=(HtmlElement(tag="samp", children=(HtmlText(text="sample"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].name == "texttt"
+
+    # var -> textit
+    doc = HtmlDocument(children=(HtmlElement(tag="var", children=(HtmlText(text="variable"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].name == "textit"
+
+    # cite -> textit
+    doc = HtmlDocument(children=(HtmlElement(tag="cite", children=(HtmlText(text="citation"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].name == "textit"
