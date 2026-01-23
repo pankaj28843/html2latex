@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlNode, HtmlText
 from html2latex.latex import (
     LatexCommand,
@@ -358,11 +360,12 @@ def _parse_list_type(value: str | None) -> str | None:
     return mapping.get(value)
 
 
+_TEXT_ALIGN_RE = re.compile(r"text-align\s*:\s*(left|center|right)", re.IGNORECASE)
+
+
 def _parse_text_align(style: str) -> str | None:
     """Extract text-align value from CSS style string."""
-    import re
-
-    match = re.search(r"text-align\s*:\s*(left|center|right|justify)", style, re.IGNORECASE)
+    match = _TEXT_ALIGN_RE.search(style)
     if match:
         return match.group(1).lower()
     return None

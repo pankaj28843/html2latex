@@ -72,21 +72,50 @@ def _normalize_children(
             normalized.append(HtmlText(text=text))
         buffer.clear()
 
-    for child in children:
+    def flush_text_with_whitespace() -> None:
+        """Flush buffer preserving significant whitespace between inline elements."""
+        if not buffer:
+            return
+        text = "".join(buffer)
+        if text:
+            normalized.append(HtmlText(text=text))
+        buffer.clear()
+
+    for index, child in enumerate(children):
         if isinstance(child, HtmlText):
             collapsed = _collapse_whitespace(child.text)
             if not collapsed.strip():
+                # Whitespace-only text: preserve if between inline elements
+                if collapsed and not parent_is_block:
+                    # Inside inline context, keep whitespace
+                    buffer.append(collapsed)
+                elif collapsed and normalized and index < len(children) - 1:
+                    # Check if between two inline elements
+                    prev_is_inline = (
+                        isinstance(normalized[-1], HtmlElement)
+                        and not _is_block_tag(normalized[-1].tag)
+                    )
+                    next_child = children[index + 1]
+                    next_is_inline = (
+                        isinstance(next_child, HtmlElement)
+                        and not _is_block_tag(next_child.tag)
+                    )
+                    if prev_is_inline and next_is_inline:
+                        buffer.append(collapsed)
                 continue
             buffer.append(collapsed)
             continue
 
         if isinstance(child, HtmlElement) and child.tag.lower() in preserve:
-            flush_text()
+            flush_text_with_whitespace()
             normalized.append(child)
             continue
 
         if isinstance(child, HtmlElement):
-            flush_text()
+            if _is_block_tag(child.tag):
+                flush_text()  # Strip whitespace before block
+            else:
+                flush_text_with_whitespace()  # Keep whitespace before inline
             normalized_children = _normalize_children(
                 child.children,
                 preserve,
@@ -123,8 +152,15 @@ def _trim_boundary_whitespace(
             text = text.lstrip()
         if index == last_index or (next_child is not None and _is_block_element(next_child)):
             text = text.rstrip()
+        # Keep whitespace-only text if between two inline elements
         if text.strip():
             trimmed.append(HtmlText(text=text))
+        elif text and prev_child is not None and next_child is not None:
+            # Whitespace between two elements - check if both are inline
+            prev_is_inline = isinstance(prev_child, HtmlElement) and not _is_block_tag(prev_child.tag)
+            next_is_inline = isinstance(next_child, HtmlElement) and not _is_block_tag(next_child.tag)
+            if prev_is_inline and next_is_inline:
+                trimmed.append(HtmlText(text=text))
     return _trim_boundary_breaks(tuple(trimmed))
 
 
