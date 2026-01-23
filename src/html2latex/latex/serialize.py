@@ -102,14 +102,18 @@ class IndentedSerializer:
     def _serialize_command(self, cmd: LatexCommand, siblings: list[LatexNode], index: int) -> str:
         options = _format_options(cmd.options)
         args = "".join(self._serialize_group(group) for group in cmd.args)
+        needs_newline = cmd.name in _NEWLINE_AFTER_COMMANDS
 
         if args:
             base = f"\\{cmd.name}{options}{args}"
         else:
-            base = f"\\{cmd.name}{options} "
+            # Only add trailing space for commands without args when not followed by newline
+            if needs_newline:
+                base = f"\\{cmd.name}{options}"
+            else:
+                base = f"\\{cmd.name}{options} "
 
-        # Check if we need a newline after this command
-        if cmd.name in _NEWLINE_AFTER_COMMANDS:
+        if needs_newline:
             return base + "\n"
         return base
 
@@ -164,7 +168,7 @@ class IndentedSerializer:
                 lines.extend(item_lines)
             elif isinstance(child, LatexCommand) and child.name in _NEWLINE_AFTER_COMMANDS:
                 # Commands like \setcounter, \renewcommand, etc.
-                line = self._serialize_standalone_command(child)
+                line = self._serialize_command_without_newline(child)
                 lines.append(f"{self._indent()}{line}")
             elif isinstance(child, LatexEnvironment):
                 env_text = self._serialize_environment(child, children, i)
@@ -235,11 +239,10 @@ class IndentedSerializer:
 
         return lines, consumed
 
-    def _serialize_standalone_command(self, cmd: LatexCommand) -> str:
-        """Serialize a standalone command without context-aware newlines."""
+    def _serialize_command_without_newline(self, cmd: LatexCommand) -> str:
+        """Serialize a command without context-aware newlines (for block body commands)."""
         options = _format_options(cmd.options)
         args = "".join(self._serialize_group(group) for group in cmd.args)
-        # All standalone commands (\setcounter, \addtocounter, \renewcommand) have args
         return f"\\{cmd.name}{options}{args}"
 
     def _serialize_group(self, group: LatexGroup) -> str:
