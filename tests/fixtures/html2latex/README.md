@@ -14,11 +14,11 @@ Fixtures are organized by feature area so they are easy to find and reuse.
 
 ## Conventions
 
-- Files are UTF-8, LF endings, and end with a trailing newline.
+- Files are UTF-8 with LF line endings.
 - No tabs; keep indentation minimal and readable.
 - Keep fixtures small and focused; prefer one behavior per case.
 - Names are semantic (what the case demonstrates), not numeric.
-- HTML fixtures are formatted with Prettier; error fixtures are excluded.
+- All HTML and LaTeX fixtures are formatted with Prettier (2-space indentation).
 - The Prettier config is tuned for readability (100-column width, CSS whitespace handling).
 - `.tex` fixtures should compile with Tectonic in isolation (see `CONTRIBUTING.md`).
 - All non-error fixture pairs are exercised in `tests/integration/test_fixture_corpus.py`.
@@ -42,4 +42,4 @@ Prefer clean, readable structure that reflects nesting:
 
 1. Create a new `case-name.html` file in the right feature folder.
 2. Create a matching `case-name.tex` with expected LaTeX output.
-3. Ensure both files are formatted and include a trailing newline.
+3. Run `npx prettier --write "path/to/case-name.html" "path/to/case-name.tex"` to format.
