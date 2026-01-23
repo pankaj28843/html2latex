@@ -37,6 +37,8 @@ def infer_packages(document: LatexDocumentAst) -> set[str]:
             packages.add("graphicx")
         if isinstance(node, LatexCommand) and node.name == "sout":
             packages.add("ulem")
+        if isinstance(node, LatexCommand) and node.name in {"colorbox", "textcolor"}:
+            packages.add("xcolor")
         if isinstance(node, LatexEnvironment) and node.name == "tabularx":
             packages.add("tabularx")
     return packages

@@ -554,3 +554,22 @@ def test_convert_semantic_inline_elements():
     doc = HtmlDocument(children=(HtmlElement(tag="cite", children=(HtmlText(text="citation"),)),))
     latex = convert_document(doc)
     assert latex.body[0].name == "textit"
+
+
+def test_convert_mark_tag():
+    doc = HtmlDocument(children=(HtmlElement(tag="mark", children=(HtmlText(text="highlighted"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].name == "colorbox"
+    # First arg is color (yellow)
+    assert latex.body[0].args[0].children[0].text == "yellow"
+    # Second arg is the content
+    assert latex.body[0].args[1].children[0].text == "highlighted"
+
+
+def test_convert_big_tag():
+    doc = HtmlDocument(children=(HtmlElement(tag="big", children=(HtmlText(text="large"),)),))
+    latex = convert_document(doc)
+    assert len(latex.body) == 3
+    assert latex.body[0].value == r"{\large "
+    assert latex.body[1].text == "large"
+    assert latex.body[2].value == "}"

@@ -44,8 +44,6 @@ _INLINE_COMMANDS = {
 _INLINE_PASSTHROUGH = {
     "abbr",
     "dfn",
-    "mark",  # Would need xcolor for colorbox, keep as passthrough for now
-    "small",  # Handled separately with font size command
     "span",
     "time",
 }
@@ -97,6 +95,18 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
             # Font size switch: {\small ...}
             children = _convert_nodes(node.children, list_level)
             return [LatexRaw(value=r"{\small "), *children, LatexRaw(value="}")]
+
+        if tag == "big":
+            # Font size switch: {\large ...} (deprecated HTML tag)
+            children = _convert_nodes(node.children, list_level)
+            return [LatexRaw(value=r"{\large "), *children, LatexRaw(value="}")]
+
+        if tag == "mark":
+            # Highlighted text → colorbox (requires xcolor package)
+            children = _convert_nodes(node.children, list_level)
+            group = LatexGroup(children=children)
+            color_group = LatexGroup(children=(LatexText(text="yellow"),))
+            return [LatexCommand(name="colorbox", args=(color_group, group))]
 
         if tag in _INLINE_PASSTHROUGH:
             return list(_convert_nodes(node.children, list_level))

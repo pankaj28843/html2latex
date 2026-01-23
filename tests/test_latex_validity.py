@@ -25,6 +25,8 @@ def _infer_packages_from_tex(tex: str) -> set[str]:
         packages.add("graphicx")
     if "\\sout" in tex:
         packages.add("ulem")
+    if "\\colorbox" in tex or "\\textcolor" in tex:
+        packages.add("xcolor")
     return packages
 
 
