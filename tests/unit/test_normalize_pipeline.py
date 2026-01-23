@@ -137,3 +137,22 @@ def test_normalize_trims_boundary_breaks_in_blocks():
 
 def test_trim_boundary_breaks_empty_children():
     assert _trim_boundary_breaks(()) == ()
+
+
+def test_normalize_preserves_whitespace_in_inline_context():
+    """Test that whitespace is preserved inside inline elements (parent_is_block=False)."""
+    # When normalizing children of a span (inline), whitespace between text should be kept
+    span = HtmlElement(
+        tag="span",
+        children=(
+            HtmlElement(tag="b", children=(HtmlText(text="Bold"),)),
+            HtmlText(text=" "),  # This whitespace should be preserved
+            HtmlElement(tag="i", children=(HtmlText(text="Italic"),)),
+        ),
+    )
+    paragraph = HtmlElement(tag="p", children=(span,))
+    normalized = normalize_document(HtmlDocument(children=(paragraph,)))
+    normalized_span = normalized.children[0].children[0]
+    # The whitespace between <b> and <i> should be preserved
+    assert len(normalized_span.children) == 3
+    assert normalized_span.children[1].text == " "
