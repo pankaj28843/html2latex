@@ -8,43 +8,43 @@ Thanks for helping improve HTML2LaTeX!
   - `uv sync --locked --group test --group lint`
 - Tectonic (required for LaTeX validation):
   - Install the `tectonic` CLI and ensure it is on your PATH.
-- Node.js (required for HTML and LaTeX formatting):
+- Node.js (required for formatting):
   - Node 20+ recommended.
 
 ## File formatting
 
-All HTML and LaTeX files in the project are formatted for consistency and readability.
+All HTML and LaTeX files in the project are formatted with Prettier for consistency and readability.
 
-### HTML files
+The project uses:
+- **2-space indentation** (no tabs)
+- **LF line endings**
+- `prettier-plugin-latex` for LaTeX formatting
 
-Format all HTML files with Prettier before committing:
+### Configuration
+
+The `.prettierrc.json` configures both HTML and LaTeX formatting:
+- `tabWidth: 2` - 2-space indentation
+- `useTabs: false` - spaces, not tabs
+- `plugins: ["prettier-plugin-latex"]` - enables LaTeX support
+
+### Formatting all files
+
+Install dependencies and format:
 
 ```bash
-npx --yes prettier@3.3.3 --write "**/*.html"
+npm install --no-save prettier@3.3.3 prettier-plugin-latex@2.0.1
+npx prettier --write "**/*.html" "**/*.tex"
+# Add trailing newlines to tex files (prettier doesn't add them)
+find . -name "*.tex" -not -path "./node_modules/*" -exec sh -c 'if [ -n "$(tail -c1 "$1")" ]; then echo "" >> "$1"; fi' _ {} \;
 ```
 
-To check formatting without rewriting:
+### Check formatting
 
 ```bash
-npx --yes prettier@3.3.3 --check "**/*.html"
+npx prettier --check "**/*.html" "**/*.tex"
 ```
 
 Note: Error fixtures under `tests/fixtures/html2latex/errors/` are excluded via `.prettierignore`.
-The Prettier config favors human readability (100-column width and CSS whitespace handling).
-
-### LaTeX files
-
-Format all `.tex` files with unified-latex before committing:
-
-```bash
-find . -name "*.tex" -not -path "./node_modules/*" -not -path "./.venv/*" -exec sh -c 'npx --yes @unified-latex/unified-latex-cli@1.8.3 "$1" -o "$1" --no-stdout 2>/dev/null' _ {} \;
-```
-
-unified-latex provides intelligent LaTeX formatting that:
-- Indents environments properly (itemize, enumerate, etc.)
-- Adds line breaks after section commands
-- Preserves verbatim blocks
-- Works with LaTeX fragments (no document class required)
 
 ## Fixture LaTeX validation
 
@@ -59,7 +59,8 @@ HTML2LATEX_TEX_FIXTURES=1 uv run pytest tests/test_latex_validity.py -q
 ```bash
 uv run ruff check .
 uv run ruff format --check .
-npx --yes prettier@3.3.3 --check "**/*.html"
+npm install --no-save prettier@3.3.3 prettier-plugin-latex@2.0.1
+npx prettier --check "**/*.html" "**/*.tex"
 uv run pytest --cov=html2latex --cov-report=term-missing --cov-fail-under=100
 HTML2LATEX_TEX_FIXTURES=1 uv run pytest tests/test_latex_validity.py -q
 ```

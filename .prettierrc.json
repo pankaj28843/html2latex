@@ -4,5 +4,6 @@
   "useTabs": false,
   "htmlWhitespaceSensitivity": "css",
   "bracketSameLine": true,
-  "singleAttributePerLine": false
+  "singleAttributePerLine": false,
+  "plugins": ["prettier-plugin-latex"]
 }

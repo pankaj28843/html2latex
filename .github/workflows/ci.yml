@@ -17,29 +17,11 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Prettier check (all HTML files)
-        run: npx --yes prettier@3.3.3 --check "**/*.html"
+      - name: Install prettier and plugins
+        run: npm install --no-save prettier@3.3.3 prettier-plugin-latex@2.0.1
 
-      - name: unified-latex check (all LaTeX files)
-        run: |
-          # Format all tex files and check if any changed
-          failed=0
-          for file in $(find . -name "*.tex" -not -path "./node_modules/*" -not -path "./.venv/*"); do
-            original=$(cat "$file")
-            npx --yes @unified-latex/unified-latex-cli@1.8.3 "$file" -o "$file" --no-stdout 2>/dev/null
-            formatted=$(cat "$file")
-            if [ "$original" != "$formatted" ]; then
-              echo "File needs formatting: $file"
-              # Restore original for accurate diff
-              echo "$original" > "$file"
-              failed=1
-            fi
-          done
-          if [ $failed -eq 1 ]; then
-            echo "Some LaTeX files need formatting. Run: find . -name \"*.tex\" -not -path \"./node_modules/*\" -not -path \"./.venv/*\" -exec sh -c 'npx @unified-latex/unified-latex-cli \"\$1\" -o \"\$1\" --no-stdout 2>/dev/null' _ {} \;"
-            exit 1
-          fi
-          echo "All LaTeX files are properly formatted"
+      - name: Prettier check (HTML and LaTeX files)
+        run: npx prettier --check "**/*.html" "**/*.tex" --ignore-path .prettierignore
 
   test:
     runs-on: ubuntu-latest
