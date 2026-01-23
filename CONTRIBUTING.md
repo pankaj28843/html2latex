@@ -34,8 +34,6 @@ Install dependencies and format:
 ```bash
 npm install --no-save prettier@3.3.3 prettier-plugin-latex@2.0.1
 npx prettier --write "**/*.html" "**/*.tex"
-# Add trailing newlines to tex files (prettier doesn't add them)
-find . -name "*.tex" -not -path "./node_modules/*" -exec sh -c 'if [ -n "$(tail -c1 "$1")" ]; then echo "" >> "$1"; fi' _ {} \;
 ```
 
 ### Check formatting
