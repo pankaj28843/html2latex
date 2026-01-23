@@ -13,6 +13,7 @@ from html2latex.latex import (
     LatexText,
     serialize_nodes,
 )
+from html2latex.tags import BLOCK_PASSTHROUGH, INLINE_PASSTHROUGH
 
 _HEADING_COMMANDS = {
     "h1": "section",
@@ -40,23 +41,6 @@ _INLINE_COMMANDS = {
     "samp": "texttt",  # Sample output
     "var": "textit",  # Variable
     "cite": "textit",  # Citation/title
-}
-
-_INLINE_PASSTHROUGH = {
-    "abbr",
-    "dfn",
-    "span",
-    "time",
-}
-
-_BLOCK_PASSTHROUGH = {
-    "article",
-    "aside",
-    "footer",
-    "header",
-    "main",
-    "nav",
-    "section",
 }
 
 
@@ -107,7 +91,7 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
             color_group = LatexGroup(children=(LatexText(text="yellow"),))
             return [LatexCommand(name="colorbox", args=(color_group, group))]
 
-        if tag in _INLINE_PASSTHROUGH:
+        if tag in INLINE_PASSTHROUGH:
             return list(_convert_nodes(node.children, list_level))
 
         if tag in _HEADING_COMMANDS:
@@ -256,7 +240,7 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
             children = _convert_nodes(node.children, list_level)
             return list(children)
 
-        if tag in _BLOCK_PASSTHROUGH:
+        if tag in BLOCK_PASSTHROUGH:
             children = _convert_nodes(node.children, list_level)
             return list(children)
 
