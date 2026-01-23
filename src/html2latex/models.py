@@ -21,7 +21,7 @@ class LatexDocument:
     body: str
     preamble: str = ""
     packages: tuple[str, ...] = ()
-    diagnostics: tuple["Diagnostic", ...] = ()
+    diagnostics: tuple[Diagnostic, ...] = ()
 
 
 Diagnostic = Any

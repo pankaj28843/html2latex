@@ -108,7 +108,7 @@ class IndentedSerializer:
             base = f"\\{cmd.name}{options}{args}"
         else:
             # Only add trailing space for commands without args when not followed by newline
-            if needs_newline:
+            if needs_newline:  # noqa: SIM108 - explicit is clearer with the comment
                 base = f"\\{cmd.name}{options}"
             else:
                 base = f"\\{cmd.name}{options} "

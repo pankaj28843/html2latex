@@ -15,12 +15,12 @@ class HtmlText:
 class HtmlElement:
     tag: str
     attrs: dict[str, str] = field(default_factory=dict)
-    children: tuple["HtmlNode", ...] = ()
+    children: tuple[HtmlNode, ...] = ()
 
 
 @dataclass(config=ConfigDict(frozen=True))
 class HtmlDocument:
-    children: tuple["HtmlNode", ...]
+    children: tuple[HtmlNode, ...]
     doctype: str | None = None
 
 

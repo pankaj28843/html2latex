@@ -38,7 +38,7 @@ class Converter:
         self.diagnostics = result.diagnostics
         return result
 
-    def with_options(self, **changes: object) -> "Converter":
+    def with_options(self, **changes: object) -> Converter:
         options = replace(self.options, **changes)
         return Converter(options=options)
 
