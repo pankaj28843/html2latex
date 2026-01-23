@@ -52,6 +52,7 @@ _NEWLINE_AFTER_COMMANDS = frozenset(
         "subsubsection",
         "paragraph",
         "subparagraph",
+        "par",
         "item",
         "hrule",
         "newline",

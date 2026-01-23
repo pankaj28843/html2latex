@@ -292,12 +292,14 @@
             // data.latex is the LaTeX result
             const outputEl = document.getElementById("latex-output");
 
-            // Put the LaTeX into a code block for highlight.js
-            // NOTE: Not escaping < or > can pose XSS risk if content is untrusted
-            outputEl.innerHTML = `<code class="language-latex">${data.latex}</code>`;
+            // Create code element and set textContent to preserve formatting
+            const codeBlock = document.createElement("code");
+            codeBlock.className = "language-latex";
+            codeBlock.textContent = data.latex;
+            outputEl.innerHTML = "";
+            outputEl.appendChild(codeBlock);
 
             // Highlight the new code block
-            const codeBlock = outputEl.querySelector("code.language-latex");
             hljs.highlightElement(codeBlock);
           })
           .catch((err) => {
