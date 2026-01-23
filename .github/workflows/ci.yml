@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  fixtures-format:
+  format-check:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,8 +17,8 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Prettier check (HTML fixtures)
-        run: npx --yes prettier@3.3.3 --check "tests/fixtures/html2latex/**/*.html"
+      - name: Prettier check (all HTML files)
+        run: npx --yes prettier@3.3.3 --check "**/*.html"
 
       - name: Install tex-fmt
         run: |
@@ -27,12 +27,12 @@ jobs:
           chmod +x /tmp/tex-fmt
           echo "/tmp" >> $GITHUB_PATH
 
-      - name: tex-fmt check (LaTeX fixtures)
-        run: find tests/fixtures/html2latex -name "*.tex" -exec tex-fmt --check --config tex-fmt.toml {} +
+      - name: tex-fmt check (all LaTeX files)
+        run: find . -name "*.tex" -not -path "./node_modules/*" -not -path "./.venv/*" -exec tex-fmt --check --config tex-fmt.toml {} +
 
   test:
     runs-on: ubuntu-latest
-    needs: fixtures-format
+    needs: format-check
     strategy:
       fail-fast: false
       matrix:
@@ -67,7 +67,7 @@ jobs:
 
   latex-validity:
     runs-on: ubuntu-latest
-    needs: fixtures-format
+    needs: format-check
 
     steps:
       - uses: actions/checkout@v5
@@ -92,7 +92,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    needs: fixtures-format
+    needs: format-check
 
     steps:
       - uses: actions/checkout@v5
