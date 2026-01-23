@@ -1,2 +1,36 @@
-\section{Welcome to Trix}\href{https://trix-editor.org/}{Trix} is a rich text editor for everyday writing. It's the editor that powers \href{https://basecamp.com}{Basecamp} and \href{https://hey.com}{HEY}.\par \subsection{What Makes Trix Different}Most WYSIWYG editors are wrappers around HTML's \texttt{contenteditable} and \texttt{execCommand} APIs, designed by Microsoft to support live editing of web pages in Internet Explorer 5.5.\par \begin{quote}Trix sidesteps these inconsistencies by treating contenteditable as an I/O device: when input makes its way to the editor, Trix converts that input into an editing operation on its internal document model, then re-renders that document back into the editor.\par \end{quote}\subsection{Features}\begin{itemize}\item A \textbf{document model} that handles text and attachments\item \textit{Undo and redo} that keeps your changes safe\item Native \underline{drag and drop} for images and files\end{itemize}\subsection{Code Example}\begin{verbatim}<trix-editor input="content"></trix-editor>
-<input id="content" type="hidden" name="content">\end{verbatim}\subsection{Browser Support}Trix works in all modern browsers including:\par \begin{enumerate}\item Chrome and Chromium-based browsers\item Firefox\item Safari on macOS and iOS\item Microsoft Edge\end{enumerate}For more details, see the \href{https://github.com/basecamp/trix}{GitHub repository}.\par
+\section{Welcome to Trix}
+\href{https://trix-editor.org/}{Trix} is a rich text editor for everyday writing.
+It's the editor that powers \href{https://basecamp.com}{Basecamp} and \href{https://hey.com}{HEY}.\par
+\subsection{What Makes Trix Different}
+Most WYSIWYG editors are wrappers around HTML's \texttt{contenteditable} and
+\texttt{execCommand} APIs, designed by Microsoft to support live editing of web
+pages in Internet Explorer 5.5.\par
+\begin{quote}
+	Trix sidesteps these inconsistencies by treating contenteditable as an I/O device:
+	when input makes its way to the editor, Trix converts that input into an editing
+	operation on its internal document model, then re-renders that document back
+	into the editor.\par
+\end{quote}
+\subsection{Features}
+\begin{itemize}
+	\item A \textbf{document model} that handles text and attachments
+
+	\item \textit{Undo and redo} that keeps your changes safe
+
+	\item Native \underline{drag and drop} for images and files
+\end{itemize}
+\subsection{Code Example}
+\begin{verbatim}<trix-editor input="content"></trix-editor>
+<input id="content" type="hidden" name="content">\end{verbatim}
+\subsection{Browser Support}
+Trix works in all modern browsers including:\par
+\begin{enumerate}
+	\item Chrome and Chromium-based browsers
+
+	\item Firefox
+
+	\item Safari on macOS and iOS
+
+	\item Microsoft Edge
+\end{enumerate}For more details, see the
+\href{https://github.com/basecamp/trix}{GitHub repository}.\par

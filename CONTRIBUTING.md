@@ -8,10 +8,8 @@ Thanks for helping improve HTML2LaTeX!
   - `uv sync --locked --group test --group lint`
 - Tectonic (required for LaTeX validation):
   - Install the `tectonic` CLI and ensure it is on your PATH.
-- Node.js (required for HTML formatting):
+- Node.js (required for HTML and LaTeX formatting):
   - Node 20+ recommended.
-- tex-fmt (required for LaTeX formatting):
-  - Install from [GitHub releases](https://github.com/WGUNDERWOOD/tex-fmt/releases) or via `cargo install tex-fmt`
 
 ## File formatting
 
@@ -36,19 +34,17 @@ The Prettier config favors human readability (100-column width and CSS whitespac
 
 ### LaTeX files
 
-Format all `.tex` files with tex-fmt before committing:
+Format all `.tex` files with unified-latex before committing:
 
 ```bash
-find . -name "*.tex" -not -path "./node_modules/*" -not -path "./.venv/*" -exec tex-fmt --config tex-fmt.toml {} \;
+find . -name "*.tex" -not -path "./node_modules/*" -not -path "./.venv/*" -exec sh -c 'npx --yes @unified-latex/unified-latex-cli@1.8.3 "$1" -o "$1" --no-stdout 2>/dev/null' _ {} \;
 ```
 
-To check formatting without rewriting:
-
-```bash
-find . -name "*.tex" -not -path "./node_modules/*" -not -path "./.venv/*" -exec tex-fmt --check --config tex-fmt.toml {} +
-```
-
-The `tex-fmt.toml` configuration disables line wrapping and uses 2-space indentation.
+unified-latex provides intelligent LaTeX formatting that:
+- Indents environments properly (itemize, enumerate, etc.)
+- Adds line breaks after section commands
+- Preserves verbatim blocks
+- Works with LaTeX fragments (no document class required)
 
 ## Fixture LaTeX validation
 
@@ -64,7 +60,6 @@ HTML2LATEX_TEX_FIXTURES=1 uv run pytest tests/test_latex_validity.py -q
 uv run ruff check .
 uv run ruff format --check .
 npx --yes prettier@3.3.3 --check "**/*.html"
-find . -name "*.tex" -not -path "./node_modules/*" -not -path "./.venv/*" -exec tex-fmt --check --config tex-fmt.toml {} +
 uv run pytest --cov=html2latex --cov-report=term-missing --cov-fail-under=100
 HTML2LATEX_TEX_FIXTURES=1 uv run pytest tests/test_latex_validity.py -q
 ```

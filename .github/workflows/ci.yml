@@ -20,15 +20,26 @@ jobs:
       - name: Prettier check (all HTML files)
         run: npx --yes prettier@3.3.3 --check "**/*.html"
 
-      - name: Install tex-fmt
+      - name: unified-latex check (all LaTeX files)
         run: |
-          curl -fsSL https://github.com/WGUNDERWOOD/tex-fmt/releases/download/v0.5.6/tex-fmt-x86_64-linux.tar.gz -o /tmp/tex-fmt.tar.gz
-          tar -xzf /tmp/tex-fmt.tar.gz -C /tmp
-          chmod +x /tmp/tex-fmt
-          echo "/tmp" >> $GITHUB_PATH
-
-      - name: tex-fmt check (all LaTeX files)
-        run: find . -name "*.tex" -not -path "./node_modules/*" -not -path "./.venv/*" -exec tex-fmt --check --config tex-fmt.toml {} +
+          # Format all tex files and check if any changed
+          failed=0
+          for file in $(find . -name "*.tex" -not -path "./node_modules/*" -not -path "./.venv/*"); do
+            original=$(cat "$file")
+            npx --yes @unified-latex/unified-latex-cli@1.8.3 "$file" -o "$file" --no-stdout 2>/dev/null
+            formatted=$(cat "$file")
+            if [ "$original" != "$formatted" ]; then
+              echo "File needs formatting: $file"
+              # Restore original for accurate diff
+              echo "$original" > "$file"
+              failed=1
+            fi
+          done
+          if [ $failed -eq 1 ]; then
+            echo "Some LaTeX files need formatting. Run: find . -name \"*.tex\" -not -path \"./node_modules/*\" -not -path \"./.venv/*\" -exec sh -c 'npx @unified-latex/unified-latex-cli \"\$1\" -o \"\$1\" --no-stdout 2>/dev/null' _ {} \;"
+            exit 1
+          fi
+          echo "All LaTeX files are properly formatted"
 
   test:
     runs-on: ubuntu-latest

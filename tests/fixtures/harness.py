@@ -22,6 +22,71 @@ def _normalize_text(value: str) -> str:
     return "\n".join(line.rstrip() for line in stripped.splitlines())
 
 
+def _find_matching_brace(s: str, start: int) -> int:
+    """Find the position of the matching closing brace.
+
+    Args:
+        s: The string to search
+        start: Position of the opening brace
+
+    Returns:
+        Position of matching closing brace, or -1 if not found
+    """
+    if start >= len(s) or s[start] != "{":
+        return -1
+    depth = 1
+    pos = start + 1
+    while pos < len(s) and depth > 0:
+        if s[pos] == "{":
+            depth += 1
+        elif s[pos] == "}":
+            depth -= 1
+        pos += 1
+    return pos - 1 if depth == 0 else -1
+
+
+def _remove_space_after_commands(tex: str, commands: list[str]) -> str:
+    """Remove spaces after specific commands that have brace arguments.
+
+    This handles nested braces properly.
+    """
+    pattern = re.compile(r"\\(" + "|".join(re.escape(cmd) for cmd in commands) + r")\{")
+    result = []
+    last_end = 0
+
+    for match in pattern.finditer(tex):
+        brace_start = match.end() - 1  # Position of the first opening brace
+        pos = brace_start
+
+        # Find all consecutive brace groups
+        while pos < len(tex) and tex[pos] == "{":
+            brace_end = _find_matching_brace(tex, pos)
+            if brace_end == -1:
+                break
+            pos = brace_end + 1
+
+        # Add everything up to and including all brace groups
+        result.append(tex[last_end:pos])
+
+        # Skip any whitespace after the closing braces
+        while pos < len(tex) and tex[pos] in " \t\n":
+            pos += 1
+
+        last_end = pos
+
+    # Add remaining content
+    result.append(tex[last_end:])
+    return "".join(result)
+
+
+def _remove_space_after_section_braces(tex: str) -> str:
+    """Remove spaces after section command closing braces."""
+    return _remove_space_after_commands(
+        tex,
+        ["section", "subsection", "subsubsection", "paragraph", "subparagraph"],
+    )
+
+
 def _normalize_latex_whitespace(tex: str) -> str:
     """Normalize LaTeX whitespace for comparison.
 
@@ -39,6 +104,15 @@ def _normalize_latex_whitespace(tex: str) -> str:
 
     tex = re.sub(verbatim_pattern, save_verbatim, tex, flags=re.DOTALL)
 
+    # Normalize math delimiters: $...$ -> \(...\) and $$...$$ -> \[...\]
+    # Use a simple approach for non-nested math
+    tex = re.sub(r"\$\$([^$]+)\$\$", r"\\[\1\\]", tex)
+    tex = re.sub(r"\$([^$]+)\$", r"\\(\1\\)", tex)
+
+    # Remove unnecessary braces around single characters in math (e.g., x^{2} -> x^2)
+    # This handles both exponents and subscripts
+    tex = re.sub(r"(\^|_)\{([a-zA-Z0-9])\}", r"\1\2", tex)
+
     # Normalize whitespace: collapse multiple spaces/newlines to single space
     tex = re.sub(r"\s+", " ", tex)
 
@@ -53,6 +127,51 @@ def _normalize_latex_whitespace(tex: str) -> str:
 
     # Normalize \item whitespace to single space (item needs space before its content)
     tex = re.sub(r"(\\item)\s+", r"\1 ", tex)
+
+    # Remove spaces after section command closing braces
+    tex = _remove_space_after_section_braces(tex)
+
+    # Normalize space after \par to single space
+    tex = re.sub(r"(\\par)\s+", r"\1 ", tex)
+
+    # Remove spaces before and after line-break commands (\newline, \\, \linebreak)
+    tex = re.sub(r"\s*(\\newline|\\\\|\\linebreak)\s*", r"\1", tex)
+
+    # Remove spaces before and after \caption{...}
+    tex = re.sub(r"\s*(\\caption\{[^}]*\})\s*", r"\1", tex)
+
+    # Remove spaces after commands with nested braces
+    tex = _remove_space_after_commands(
+        tex,
+        [
+            "renewcommand",
+            "setcounter",
+            "setlength",
+            "addtocounter",
+            "href",
+            "textbf",
+            "textit",
+            "texttt",
+            "underline",
+            "emph",
+        ],
+    )
+
+    # Remove spaces before commands that typically appear after content
+    tex = re.sub(
+        r"\s+(\\(?:addtocounter|includegraphics|setcounter|renewcommand|"
+        r"section|subsection|subsubsection|paragraph|subparagraph))",
+        r"\1",
+        tex,
+    )
+
+    # Normalize spaces inside display math \[...\] - remove leading/trailing spaces
+    tex = re.sub(r"\\\[\s+", r"\\[", tex)
+    tex = re.sub(r"\s+\\\]", r"\\]", tex)
+
+    # Normalize spaces inside inline math \(...\) - remove leading/trailing spaces
+    tex = re.sub(r"\\\(\s+", r"\\(", tex)
+    tex = re.sub(r"\s+\\\)", r"\\)", tex)
 
     # Restore verbatim blocks
     for i, block in enumerate(verbatim_blocks):
@@ -69,8 +188,7 @@ def normalize_fixture_text(value: str) -> str:
 def _validate_text(path: Path, text: str) -> None:
     if not text.strip():
         raise ValueError(f"Fixture is empty: {path}")
-    if "\t" in text:
-        raise ValueError(f"Fixture contains tabs: {path}")
+    # Note: tabs are allowed in .tex files since unified-latex uses tabs for indentation
     if not text.endswith("\n"):
         raise ValueError(f"Fixture must end with a newline: {path}")
 

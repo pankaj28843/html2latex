@@ -1,1 +1,34 @@
-\section{Draft.js by Facebook}\href{https://draftjs.org/}{Draft.js} is a framework for building rich text editors in React, powered by an immutable model and abstracting over cross-browser differences.\par \subsection{Core Concepts}Draft.js provides a set of core building blocks:\par \begin{itemize}\item \textbf{EditorState} - An immutable record representing the entire state of the editor\item \textit{ContentState} - The contents of the editor\item \texttt{SelectionState} - The current selection or cursor position\end{itemize}\subsection{Text Styling}Draft.js supports inline styles like \textbf{bold}, \textit{italic}, \underline{underline}, and \texttt{code}. You can also create custom inline styles for your application.\par \subsubsection{Block Types}Several block types are supported out of the box:\par \begin{enumerate}\item Headers (h1 through h6)\item Blockquotes\item Code blocks\item Unordered and ordered lists\end{enumerate}\begin{quote}Draft.js is used in production by Facebook for comments, notes, and messenger.\par \end{quote}\subsection{Installation}\begin{verbatim}npm install draft-js react react-dom\end{verbatim}Check out the \href{https://draftjs.org/docs/getting-started}{docs} to get started.\par \par
+\section{Draft.js by Facebook}
+\href{https://draftjs.org/}{Draft.js} is a framework for building rich text
+editors in React, powered by an immutable model and abstracting over cross-browser
+differences.\par
+\subsection{Core Concepts}
+Draft.js provides a set of core building blocks:\par
+\begin{itemize}
+	\item \textbf{EditorState} - An immutable record representing the entire state
+		of the editor
+
+	\item \textit{ContentState} - The contents of the editor
+
+	\item \texttt{SelectionState} - The current selection or cursor position
+\end{itemize}
+\subsection{Text Styling}
+Draft.js supports inline styles like \textbf{bold}, \textit{italic}, \underline{underline},
+and \texttt{code}. You can also create custom inline styles for your application.\par
+\subsubsection{Block Types}
+Several block types are supported out of the box:\par
+\begin{enumerate}
+	\item Headers (h1 through h6)
+
+	\item Blockquotes
+
+	\item Code blocks
+
+	\item Unordered and ordered lists
+\end{enumerate}
+\begin{quote}
+	Draft.js is used in production by Facebook for comments, notes, and messenger.\par
+\end{quote}
+\subsection{Installation}
+\begin{verbatim}npm install draft-js react react-dom\end{verbatim}Check out the
+\href{https://draftjs.org/docs/getting-started}{docs} to get started.\par \par

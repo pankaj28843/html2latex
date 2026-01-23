@@ -7,7 +7,7 @@ import pytest
 
 from html2latex.api import convert
 from html2latex.jinja import render_document
-from tests.fixtures.harness import load_fixture_cases, normalize_fixture_text
+from tests.fixtures.harness import load_fixture_cases
 
 TECTONIC_BIN = shutil.which("tectonic")
 RUN_TEX_FIXTURES = os.getenv("HTML2LATEX_TEX_FIXTURES") == "1"
@@ -56,12 +56,13 @@ def test_latex_fixtures_compile(tmp_path: Path) -> None:
     packages: set[str] = set()
     for case in cases:
         doc = convert(case.html)
-        normalized = normalize_fixture_text(case.tex)
-        if "\\includegraphics" in normalized or "\\write18" in normalized:
+        # Use raw tex content (not normalized) for compilation
+        tex_content = case.tex.strip()
+        if "\\includegraphics" in tex_content or "\\write18" in tex_content:
             continue
-        fragments.append(normalized)
+        fragments.append(tex_content)
         packages.update(doc.packages)
-        packages.update(_infer_packages_from_tex(normalized))
+        packages.update(_infer_packages_from_tex(tex_content))
 
     body = "\n\n".join(fragments)
     preamble = _build_preamble(packages)
@@ -79,13 +80,14 @@ def test_fixture_tex_files_compile(tmp_path: Path, case) -> None:
         pytest.fail("Tectonic is required for LaTeX validity checks; install `tectonic`.")
     if not RUN_TEX_FIXTURES:
         pytest.skip("Set HTML2LATEX_TEX_FIXTURES=1 to validate each fixture individually.")
-    normalized = normalize_fixture_text(case.tex)
-    if "\\includegraphics" in normalized or "\\write18" in normalized:
+    # Use raw tex content (not normalized) for compilation
+    tex_content = case.tex.strip()
+    if "\\includegraphics" in tex_content or "\\write18" in tex_content:
         pytest.skip("Fixture uses external assets or write18.")
     doc = convert(case.html)
     packages = set(doc.packages)
-    packages.update(_infer_packages_from_tex(normalized))
+    packages.update(_infer_packages_from_tex(tex_content))
     preamble = _build_preamble(packages)
-    tex_source = render_document(_ensure_nonempty_body(normalized), preamble=preamble)
+    tex_source = render_document(_ensure_nonempty_body(tex_content), preamble=preamble)
     safe_id = case.case_id.replace("/", "_")
     _run_tectonic(tex_source, tmp_path, safe_id)
