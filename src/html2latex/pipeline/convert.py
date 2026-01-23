@@ -13,7 +13,6 @@ from html2latex.latex import (
     LatexText,
     serialize_nodes,
 )
-from html2latex.styles import StyleConfig
 
 _HEADING_COMMANDS = {
     "h1": "section",
@@ -63,8 +62,6 @@ _BLOCK_PASSTHROUGH = {
 
 def convert_document(
     document: HtmlDocument,
-    *,
-    style: StyleConfig | None = None,
 ) -> LatexDocumentAst:
     body = _convert_nodes(document.children)
     return LatexDocumentAst(body=body)
