@@ -1,0 +1,13 @@
+[project]
+name = "html2latex-demo"
+version = "0.0.1"
+description = "Demo web app for html2latex"
+requires-python = ">=3.10"
+dependencies = [
+  "html2latex",
+  "Flask>=3.1.2",
+  "redis>=7.1.0",
+]
+
+[tool.uv.sources]
+html2latex = { workspace = true }

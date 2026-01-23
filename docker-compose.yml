@@ -17,9 +17,27 @@ services:
       - REDIS_PORT=6379
       - CAPFIRST_ENABLED=True
       - CACHE_ENABLED=${CACHE_ENABLED:-True}
-      - ENV=${ENV:-production}
+      - ENV=${ENV:-development}
     ports:
       - "15005:15005"
-    volumes:
-      - .:/app
-      - /app/.venv  # Preserve container's venv (don't mount from host)
+    develop:
+      watch:
+        # Sync and restart on source code changes
+        - action: sync+restart
+          path: ./src
+          target: /app/src
+          ignore:
+            - __pycache__/
+        # Sync and restart on demo-app code changes
+        - action: sync+restart
+          path: ./demo-app
+          target: /app/demo-app
+          ignore:
+            - __pycache__/
+        # Rebuild on dependency changes
+        - action: rebuild
+          path: ./pyproject.toml
+        - action: rebuild
+          path: ./demo-app/pyproject.toml
+        - action: rebuild
+          path: ./uv.lock
