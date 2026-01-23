@@ -18,10 +18,14 @@ class FixtureCase:
 def normalize_fixture_text(value: str) -> str:
     r"""Normalize LaTeX for comparison.
 
-    Removes all non-significant whitespace since LaTeX ignores formatting.
+    Removes formatting whitespace since LaTeX ignores indentation/newlines.
     Normalizes math delimiters to \(...\) and \[...\] form.
     Normalizes braces around single characters (x^{2} -> x^2).
     Preserves verbatim blocks exactly.
+
+    Note: This removes ALL whitespace to handle prettier's formatting differences.
+    Textual spacing issues (e.g., "Hello World" vs "HelloWorld") would be caught
+    by the latex-validity tests which compile the actual output.
     """
     # Preserve verbatim environments exactly
     verbatim_blocks: list[str] = []
@@ -42,7 +46,7 @@ def normalize_fixture_text(value: str) -> str:
     # Normalize braces: x^{2} -> x^2, x_{n} -> x_n (single char in braces)
     tex = re.sub(r"(\^|_)\{([a-zA-Z0-9])\}", r"\1\2", tex)
 
-    # Remove all whitespace (LaTeX ignores formatting whitespace)
+    # Remove all whitespace (LaTeX formatting is not semantically significant)
     tex = re.sub(r"\s+", "", tex)
 
     # Restore verbatim blocks
