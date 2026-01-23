@@ -310,7 +310,6 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-demo = []
 dev = [
     { name = "ipdb", specifier = ">=0.13.13" },
     { name = "ipython", specifier = ">=8.0" },

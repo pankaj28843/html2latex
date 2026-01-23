@@ -54,10 +54,6 @@ lint = [
   "ruff>=0.14.11",
 ]
 
-demo = [
-  # Demo app deps now in demo-app/pyproject.toml (workspace member)
-]
-
 e2e = [
   "playwright>=1.51.0",
 ]
