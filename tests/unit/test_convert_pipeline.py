@@ -390,6 +390,30 @@ def test_convert_table_with_invalid_colspan_defaults_to_one():
     assert env.children[0].value == "A & B \\\\"
 
 
+def test_convert_table_caption_skips_non_element_children():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="table",
+                children=(
+                    HtmlText(text="note"),
+                    HtmlElement(tag="caption", children=(HtmlText(text="Title"),)),
+                    HtmlElement(
+                        tag="tr",
+                        children=(HtmlElement(tag="td", children=(HtmlText(text="Cell"),)),),
+                    ),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    assert isinstance(env, LatexEnvironment)
+    assert env.name == "table"
+    assert isinstance(env.children[0], LatexCommand)
+    assert env.children[0].name == "caption"
+
+
 def test_convert_table_without_rows_returns_empty():
     doc = HtmlDocument(children=(HtmlElement(tag="table", children=()),))
     latex = convert_document(doc)
@@ -398,3 +422,156 @@ def test_convert_table_without_rows_returns_empty():
 
 def test_convert_node_ignores_unknown_type():
     assert _convert_node(object()) == []
+
+
+def test_convert_empty_figure():
+    doc = HtmlDocument(children=(HtmlElement(tag="figure", children=()),))
+    latex = convert_document(doc)
+    assert latex.body == ()
+
+
+def test_convert_figure_text_only():
+    doc = HtmlDocument(children=(HtmlElement(tag="figure", children=(HtmlText(text="text"),)),))
+    latex = convert_document(doc)
+    assert latex.body == ()
+
+
+def test_convert_orphan_figcaption():
+    doc = HtmlDocument(
+        children=(HtmlElement(tag="figcaption", children=(HtmlText(text="Caption"),)),)
+    )
+    latex = convert_document(doc)
+    assert latex.body[0].text == "Caption"
+
+
+def test_convert_figure_caption_multi_para():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="figure",
+                children=(
+                    HtmlElement(
+                        tag="figcaption",
+                        children=(
+                            HtmlElement(tag="p", children=(HtmlText(text="Para 1"),)),
+                            HtmlElement(tag="p", children=(HtmlText(text="Para 2"),)),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    # Should produce figure environment with caption, and \par replaced by space
+    assert isinstance(latex.body[0], LatexEnvironment)
+    assert latex.body[0].name == "figure"
+
+
+def test_convert_small_tag():
+    doc = HtmlDocument(children=(HtmlElement(tag="small", children=(HtmlText(text="small"),)),))
+    latex = convert_document(doc)
+    assert len(latex.body) == 3
+    assert latex.body[0].value == r"{\small "
+    assert latex.body[1].text == "small"
+    assert latex.body[2].value == "}"
+
+
+def test_convert_center_tag():
+    doc = HtmlDocument(children=(HtmlElement(tag="center", children=(HtmlText(text="centered"),)),))
+    latex = convert_document(doc)
+    assert isinstance(latex.body[0], LatexEnvironment)
+    assert latex.body[0].name == "center"
+    assert latex.body[0].children[0].text == "centered"
+
+
+def test_convert_p_text_align_center():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="p",
+                attrs={"style": "text-align: center"},
+                children=(HtmlText(text="centered"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    assert isinstance(latex.body[0], LatexEnvironment)
+    assert latex.body[0].name == "center"
+
+
+def test_convert_p_text_align_right():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="p",
+                attrs={"style": "text-align: right"},
+                children=(HtmlText(text="right"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    assert isinstance(latex.body[0], LatexEnvironment)
+    assert latex.body[0].name == "flushright"
+
+
+def test_convert_p_text_align_left():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="p",
+                attrs={"style": "text-align:left"},
+                children=(HtmlText(text="left"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    assert isinstance(latex.body[0], LatexEnvironment)
+    assert latex.body[0].name == "flushleft"
+
+
+def test_convert_semantic_inline_elements():
+    # ins -> underline
+    doc = HtmlDocument(children=(HtmlElement(tag="ins", children=(HtmlText(text="inserted"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].name == "underline"
+
+    # kbd -> texttt
+    doc = HtmlDocument(children=(HtmlElement(tag="kbd", children=(HtmlText(text="key"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].name == "texttt"
+
+    # samp -> texttt
+    doc = HtmlDocument(children=(HtmlElement(tag="samp", children=(HtmlText(text="sample"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].name == "texttt"
+
+    # var -> textit
+    doc = HtmlDocument(children=(HtmlElement(tag="var", children=(HtmlText(text="variable"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].name == "textit"
+
+    # cite -> textit
+    doc = HtmlDocument(children=(HtmlElement(tag="cite", children=(HtmlText(text="citation"),)),))
+    latex = convert_document(doc)
+    assert latex.body[0].name == "textit"
+
+
+def test_convert_mark_tag():
+    doc = HtmlDocument(
+        children=(HtmlElement(tag="mark", children=(HtmlText(text="highlighted"),)),)
+    )
+    latex = convert_document(doc)
+    assert latex.body[0].name == "colorbox"
+    # First arg is color (yellow)
+    assert latex.body[0].args[0].children[0].text == "yellow"
+    # Second arg is the content
+    assert latex.body[0].args[1].children[0].text == "highlighted"
+
+
+def test_convert_big_tag():
+    doc = HtmlDocument(children=(HtmlElement(tag="big", children=(HtmlText(text="large"),)),))
+    latex = convert_document(doc)
+    assert len(latex.body) == 3
+    assert latex.body[0].value == r"{\large "
+    assert latex.body[1].text == "large"
+    assert latex.body[2].value == "}"

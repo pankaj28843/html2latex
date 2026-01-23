@@ -1,0 +1,64 @@
+# Contributing
+
+Thanks for helping improve HTML2LaTeX!
+
+## Setup
+
+- Python dependencies:
+  - `uv sync --locked --group test --group lint`
+- Tectonic (required for LaTeX validation):
+  - Install the `tectonic` CLI and ensure it is on your PATH.
+- Node.js (required for formatting):
+  - Node 20+ recommended.
+
+## File formatting
+
+All HTML and LaTeX files in the project are formatted with Prettier for consistency and readability.
+
+The project uses:
+- **2-space indentation** (no tabs)
+- **LF line endings**
+- `prettier-plugin-latex` for LaTeX formatting
+
+### Configuration
+
+The `.prettierrc.json` configures both HTML and LaTeX formatting:
+- `tabWidth: 2` - 2-space indentation
+- `useTabs: false` - spaces, not tabs
+- `plugins: ["prettier-plugin-latex"]` - enables LaTeX support
+
+### Formatting all files
+
+Install dependencies and format:
+
+```bash
+npm install --no-save prettier@3.3.3 prettier-plugin-latex@2.0.1
+npx prettier --write "**/*.html" "**/*.tex"
+```
+
+### Check formatting
+
+```bash
+npx prettier --check "**/*.html" "**/*.tex"
+```
+
+Note: Error fixtures under `tests/fixtures/html2latex/errors/` are excluded via `.prettierignore`.
+
+## Fixture LaTeX validation
+
+All fixture `.tex` outputs should compile cleanly. Run the per-fixture check with:
+
+```bash
+HTML2LATEX_TEX_FIXTURES=1 uv run pytest tests/test_latex_validity.py -q
+```
+
+## Standard validation loop
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+npm install --no-save prettier@3.3.3 prettier-plugin-latex@2.0.1
+npx prettier --check "**/*.html" "**/*.tex"
+uv run pytest --cov=html2latex --cov-report=term-missing --cov-fail-under=100
+HTML2LATEX_TEX_FIXTURES=1 uv run pytest tests/test_latex_validity.py -q
+```

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlNode, HtmlText
 from html2latex.latex import (
     LatexCommand,
@@ -17,6 +19,8 @@ _HEADING_COMMANDS = {
     "h1": "section",
     "h2": "subsection",
     "h3": "subsubsection",
+    "h4": "paragraph",
+    "h5": "subparagraph",
 }
 
 _INLINE_COMMANDS = {
@@ -28,6 +32,32 @@ _INLINE_COMMANDS = {
     "code": "texttt",
     "sup": "textsuperscript",
     "sub": "textsubscript",
+    "del": "sout",
+    "s": "sout",
+    "strike": "sout",
+    # Semantic elements with LaTeX equivalents
+    "ins": "underline",  # Inserted text
+    "kbd": "texttt",  # Keyboard input
+    "samp": "texttt",  # Sample output
+    "var": "textit",  # Variable
+    "cite": "textit",  # Citation/title
+}
+
+_INLINE_PASSTHROUGH = {
+    "abbr",
+    "dfn",
+    "span",
+    "time",
+}
+
+_BLOCK_PASSTHROUGH = {
+    "article",
+    "aside",
+    "footer",
+    "header",
+    "main",
+    "nav",
+    "section",
 }
 
 
@@ -40,14 +70,17 @@ def convert_document(
     return LatexDocumentAst(body=body)
 
 
-def _convert_nodes(nodes: tuple[HtmlNode, ...]) -> tuple[LatexNode, ...]:
+def _convert_nodes(
+    nodes: tuple[HtmlNode, ...],
+    list_level: int = 0,
+) -> tuple[LatexNode, ...]:
     output: list[LatexNode] = []
     for node in nodes:
-        output.extend(_convert_node(node))
+        output.extend(_convert_node(node, list_level))
     return tuple(output)
 
 
-def _convert_node(node: HtmlNode) -> list[LatexNode]:
+def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
     if isinstance(node, HtmlText):
         return [LatexText(text=node.text)]
 
@@ -56,20 +89,54 @@ def _convert_node(node: HtmlNode) -> list[LatexNode]:
         if _is_math_container(node):
             return _convert_math(node)
         if tag in _INLINE_COMMANDS:
-            children = _convert_nodes(node.children)
+            children = _convert_nodes(node.children, list_level)
             group = LatexGroup(children=children)
             return [LatexCommand(name=_INLINE_COMMANDS[tag], args=(group,))]
 
+        if tag == "small":
+            # Font size switch: {\small ...}
+            children = _convert_nodes(node.children, list_level)
+            return [LatexRaw(value=r"{\small "), *children, LatexRaw(value="}")]
+
+        if tag == "big":
+            # Font size switch: {\large ...} (deprecated HTML tag)
+            children = _convert_nodes(node.children, list_level)
+            return [LatexRaw(value=r"{\large "), *children, LatexRaw(value="}")]
+
+        if tag == "mark":
+            # Highlighted text → colorbox (requires xcolor package)
+            children = _convert_nodes(node.children, list_level)
+            group = LatexGroup(children=children)
+            color_group = LatexGroup(children=(LatexText(text="yellow"),))
+            return [LatexCommand(name="colorbox", args=(color_group, group))]
+
+        if tag in _INLINE_PASSTHROUGH:
+            return list(_convert_nodes(node.children, list_level))
+
         if tag in _HEADING_COMMANDS:
-            children = _convert_nodes(node.children)
+            children = _convert_nodes(node.children, list_level)
             group = LatexGroup(children=children)
             return [LatexCommand(name=_HEADING_COMMANDS[tag], args=(group,))]
 
         if tag == "br":
             return [LatexCommand(name="newline")]
 
+        if tag == "center":
+            # Deprecated <center> tag → center environment
+            children = _convert_nodes(node.children, list_level)
+            return [LatexEnvironment(name="center", children=tuple(children))]
+
         if tag in {"p", "div"}:
-            children = _convert_nodes(node.children)
+            # Check for text-align style
+            style = node.attrs.get("style", "")
+            align = _parse_text_align(style)
+            children = _convert_nodes(node.children, list_level)
+            if align == "center":
+                return [LatexEnvironment(name="center", children=tuple(children))]
+            if align == "left":
+                return [LatexEnvironment(name="flushleft", children=tuple(children))]
+            if align == "right":
+                return [LatexEnvironment(name="flushright", children=tuple(children))]
             return [*children, LatexCommand(name="par")]
 
         if tag == "hr":
@@ -77,7 +144,7 @@ def _convert_node(node: HtmlNode) -> list[LatexNode]:
 
         if tag == "a":
             href = node.attrs.get("href")
-            children = _convert_nodes(node.children)
+            children = _convert_nodes(node.children, list_level)
             if not href:
                 return list(children)
             href_group = LatexGroup(children=(LatexText(text=href),))
@@ -104,7 +171,7 @@ def _convert_node(node: HtmlNode) -> list[LatexNode]:
             ]
 
         if tag == "blockquote":
-            children = _convert_nodes(node.children)
+            children = _convert_nodes(node.children, list_level)
             return [LatexEnvironment(name="quote", children=tuple(children))]
 
         if tag == "pre":
@@ -117,32 +184,130 @@ def _convert_node(node: HtmlNode) -> list[LatexNode]:
             ]
 
         if tag == "table":
-            return _convert_table(node)
+            return _convert_table(node, list_level)
 
         if tag in {"ul", "ol"}:
+            ordered = tag == "ol"
+            reversed_list = False
             env = "itemize" if tag == "ul" else "enumerate"
+            current_level = list_level + 1
             items: list[LatexNode] = []
+            if ordered:
+                reversed_list = "reversed" in node.attrs
+                list_type = _parse_list_type(node.attrs.get("type"))
+                if list_type is not None:
+                    label_name = _list_label_name(current_level)
+                    counter_name = _list_counter_name(current_level)
+                    label_spec = LatexCommand(
+                        name=list_type,
+                        args=(LatexGroup(children=(LatexText(text=counter_name),)),),
+                    )
+                    items.append(
+                        LatexCommand(
+                            name="renewcommand",
+                            args=(
+                                LatexGroup(
+                                    children=(LatexRaw(value=f"\\{label_name}"),),
+                                ),
+                                LatexGroup(
+                                    children=(label_spec, LatexText(text=".")),
+                                ),
+                            ),
+                        )
+                    )
+                raw_start = node.attrs.get("start")
+                start = _parse_list_start(raw_start) if raw_start is not None else 1
+                if reversed_list:
+                    if raw_start is None:
+                        start = _count_list_items(node)
+                    if start >= 1:
+                        counter_name = _list_counter_name(current_level)
+                        items.append(
+                            LatexCommand(
+                                name="setcounter",
+                                args=(
+                                    LatexGroup(children=(LatexText(text=counter_name),)),
+                                    LatexGroup(children=(LatexText(text=str(start + 1)),)),
+                                ),
+                            )
+                        )
+                elif start > 1:
+                    counter_name = _list_counter_name(current_level)
+                    items.append(
+                        LatexCommand(
+                            name="setcounter",
+                            args=(
+                                LatexGroup(children=(LatexText(text=counter_name),)),
+                                LatexGroup(children=(LatexText(text=str(start - 1)),)),
+                            ),
+                        )
+                    )
             for child in node.children:
                 if isinstance(child, HtmlElement) and child.tag.lower() == "li":
-                    items.extend(_convert_list_item(child))
+                    items.extend(_convert_list_item(child, current_level, ordered, reversed_list))
             return [LatexEnvironment(name=env, children=tuple(items))]
 
         if tag == "dl":
-            items = _convert_description_list(node.children)
+            items = _convert_description_list(node.children, list_level)
             return [LatexEnvironment(name="description", children=tuple(items))]
 
-        children = _convert_nodes(node.children)
+        if tag == "figure":
+            return _convert_figure(node, list_level)
+
+        if tag == "figcaption":
+            # figcaption outside figure - just render content
+            children = _convert_nodes(node.children, list_level)
+            return list(children)
+
+        if tag in _BLOCK_PASSTHROUGH:
+            children = _convert_nodes(node.children, list_level)
+            return list(children)
+
+        children = _convert_nodes(node.children, list_level)
         return list(children)
 
     return []
 
 
-def _convert_list_item(node: HtmlElement) -> list[LatexNode]:
-    children = _convert_nodes(node.children)
-    return [LatexCommand(name="item"), *children]
+def _convert_list_item(
+    node: HtmlElement,
+    list_level: int,
+    ordered: bool,
+    reversed_list: bool,
+) -> list[LatexNode]:
+    prefix: list[LatexNode] = []
+    if ordered and reversed_list:
+        counter_name = _list_counter_name(list_level)
+        prefix.append(
+            LatexCommand(
+                name="addtocounter",
+                args=(
+                    LatexGroup(children=(LatexText(text=counter_name),)),
+                    LatexGroup(children=(LatexText(text="-2"),)),
+                ),
+            )
+        )
+    if ordered and not reversed_list:
+        value = _parse_list_value(node.attrs.get("value"))
+        if value is not None and value != 1:
+            counter_name = _list_counter_name(list_level)
+            prefix.append(
+                LatexCommand(
+                    name="setcounter",
+                    args=(
+                        LatexGroup(children=(LatexText(text=counter_name),)),
+                        LatexGroup(children=(LatexText(text=str(value - 1)),)),
+                    ),
+                )
+            )
+    children = _convert_nodes(node.children, list_level)
+    return [*prefix, LatexCommand(name="item"), *children]
 
 
-def _convert_description_list(children: tuple[HtmlNode, ...]) -> list[LatexNode]:
+def _convert_description_list(
+    children: tuple[HtmlNode, ...],
+    list_level: int,
+) -> list[LatexNode]:
     items: list[LatexNode] = []
     pending_label: str | None = None
 
@@ -156,12 +321,70 @@ def _convert_description_list(children: tuple[HtmlNode, ...]) -> list[LatexNode]
         if tag == "dd":
             options = (pending_label,) if pending_label else ()
             items.append(LatexCommand(name="item", options=options))
-            items.extend(_convert_nodes(child.children))
+            items.extend(_convert_nodes(child.children, list_level))
             pending_label = None
 
     if pending_label:
         items.append(LatexCommand(name="item", options=(pending_label,)))
     return items
+
+
+def _parse_list_start(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError:
+        return 1
+    return parsed if parsed > 1 else 1
+
+
+def _parse_list_value(value: str | None) -> int | None:
+    if value is None:
+        return None
+    try:
+        parsed = int(value)
+    except ValueError:
+        return None
+    return parsed if parsed >= 1 else None
+
+
+def _parse_list_type(value: str | None) -> str | None:
+    if value is None:
+        return None
+    mapping = {
+        "1": "arabic",
+        "a": "alph",
+        "A": "Alph",
+        "i": "roman",
+        "I": "Roman",
+    }
+    return mapping.get(value)
+
+
+_TEXT_ALIGN_RE = re.compile(r"text-align\s*:\s*(left|center|right)", re.IGNORECASE)
+
+
+def _parse_text_align(style: str) -> str | None:
+    """Extract text-align value from CSS style string."""
+    match = _TEXT_ALIGN_RE.search(style)
+    if match:
+        return match.group(1).lower()
+    return None
+
+
+def _count_list_items(node: HtmlElement) -> int:
+    return sum(
+        1 for child in node.children if isinstance(child, HtmlElement) and child.tag.lower() == "li"
+    )
+
+
+def _list_counter_name(level: int) -> str:
+    counters = ("enumi", "enumii", "enumiii", "enumiv")
+    index = min(max(level, 1), len(counters)) - 1
+    return counters[index]
+
+
+def _list_label_name(level: int) -> str:
+    return f"label{_list_counter_name(level)}"
 
 
 def _extract_text(node: HtmlElement) -> str:
@@ -229,7 +452,45 @@ def _class_set(value: str | None) -> set[str]:
     return {part for part in value.split() if part}
 
 
-def _convert_table(table: HtmlElement) -> list[LatexNode]:
+def _convert_figure(figure: HtmlElement, list_level: int) -> list[LatexNode]:
+    """Convert HTML <figure> to LaTeX figure environment."""
+    content: list[LatexNode] = []
+    caption: LatexCommand | None = None
+
+    for child in figure.children:
+        if not isinstance(child, HtmlElement):
+            continue
+        tag = child.tag.lower()
+        if tag == "figcaption":
+            nodes = _convert_nodes(child.children, list_level)
+            # Remove \par from caption content
+            filtered: list[LatexNode] = []
+            for node in nodes:
+                if isinstance(node, LatexCommand) and node.name == "par":
+                    if filtered:
+                        filtered.append(LatexText(text=" "))
+                else:
+                    filtered.append(node)
+            while filtered and isinstance(filtered[-1], LatexText) and filtered[-1].text == " ":
+                filtered.pop()
+            if filtered:
+                caption = LatexCommand(name="caption", args=(LatexGroup(children=tuple(filtered)),))
+        else:
+            content.extend(_convert_node(child, list_level))
+
+    if not content and caption is None:
+        return []
+
+    # Add centering and caption to figure environment
+    figure_content: list[LatexNode] = [LatexCommand(name="centering")]
+    figure_content.extend(content)
+    if caption:
+        figure_content.append(caption)
+
+    return [LatexEnvironment(name="figure", children=tuple(figure_content))]
+
+
+def _convert_table(table: HtmlElement, list_level: int) -> list[LatexNode]:
     rows = _collect_table_rows(table)
     if not rows:
         return []
@@ -240,12 +501,22 @@ def _convert_table(table: HtmlElement) -> list[LatexNode]:
         return []
 
     column_spec = LatexGroup(children=(LatexText(text="l" * max_columns),))
-    rendered_rows = [LatexRaw(value=_render_row(cells, max_columns)) for cells in row_cells]
+    rendered_rows = [
+        LatexRaw(value=_render_row(cells, max_columns, list_level)) for cells in row_cells
+    ]
+    tabular = LatexEnvironment(
+        name="tabular",
+        args=(column_spec,),
+        children=tuple(rendered_rows),
+    )
+
+    caption = _extract_table_caption(table, list_level)
+    if caption is None:
+        return [tabular]
     return [
         LatexEnvironment(
-            name="tabular",
-            args=(column_spec,),
-            children=tuple(rendered_rows),
+            name="table",
+            children=(caption, tabular),
         )
     ]
 
@@ -263,6 +534,36 @@ def _collect_table_rows(table: HtmlElement) -> list[HtmlElement]:
         elif tag == "tr":
             rows.append(child)
     return rows
+
+
+def _extract_table_caption(
+    table: HtmlElement,
+    list_level: int,
+) -> LatexCommand | None:
+    for child in table.children:
+        if not isinstance(child, HtmlElement):
+            continue
+        if child.tag.lower() != "caption":
+            continue
+        nodes = _convert_nodes(child.children, list_level)
+        # Replace \par with separating space to avoid word concatenation when
+        # caption contains multiple block children (e.g., multiple <p> tags)
+        new_nodes: list[LatexNode] = []
+        for node in nodes:
+            if isinstance(node, LatexCommand) and node.name == "par":
+                if new_nodes:
+                    new_nodes.append(LatexText(text=" "))
+            else:
+                new_nodes.append(node)
+        # Strip any trailing space added from final \par
+        while new_nodes and isinstance(new_nodes[-1], LatexText) and new_nodes[-1].text == " ":
+            new_nodes.pop()
+        nodes = tuple(new_nodes)
+        if not nodes:
+            return None
+        group = LatexGroup(children=nodes)
+        return LatexCommand(name="caption", args=(group,))
+    return None
 
 
 def _extract_row_cells(row: HtmlElement) -> list[HtmlElement]:
@@ -287,12 +588,12 @@ def _parse_span(value: str | None) -> int:
     return parsed if parsed > 0 else 1
 
 
-def _render_row(cells: list[HtmlElement], max_columns: int) -> str:
+def _render_row(cells: list[HtmlElement], max_columns: int, list_level: int) -> str:
     rendered: list[str] = []
     used_columns = 0
     for cell in cells:
         span = _parse_span(cell.attrs.get("colspan"))
-        rendered.append(_render_cell(cell, span))
+        rendered.append(_render_cell(cell, span, list_level))
         used_columns += span
 
     while used_columns < max_columns:
@@ -303,8 +604,8 @@ def _render_row(cells: list[HtmlElement], max_columns: int) -> str:
     return f"{row} \\\\"
 
 
-def _render_cell(cell: HtmlElement, span: int) -> str:
-    children = _convert_nodes(cell.children)
+def _render_cell(cell: HtmlElement, span: int, list_level: int) -> str:
+    children = _convert_nodes(cell.children, list_level)
     tag = cell.tag.lower()
     if tag == "th":
         group = LatexGroup(children=tuple(children))

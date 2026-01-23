@@ -1,4 +1,5 @@
 import html2latex
+from tests.fixtures.harness import get_fixture_case, normalize_fixture_text
 
 
 def test_public_api_exports():
@@ -12,4 +13,6 @@ def test_public_api_exports():
 
 
 def test_public_api_helpers_work():
-    assert html2latex.html2latex("<p>Hi</p>").strip() == "Hi\\par"
+    fixture = get_fixture_case("blocks/paragraph/basic")
+    result = html2latex.html2latex(fixture.html)
+    assert normalize_fixture_text(result) == normalize_fixture_text(fixture.tex)

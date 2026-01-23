@@ -1,0 +1,3 @@
+tests/fixtures/html2latex/errors/
+.venv/
+node_modules/

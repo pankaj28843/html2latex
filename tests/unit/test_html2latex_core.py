@@ -1,4 +1,5 @@
 from html2latex.html2latex import html2latex
+from tests.fixtures.harness import get_fixture_case, normalize_fixture_text
 
 
 def test_html2latex_empty_fragment_returns_empty():
@@ -6,42 +7,41 @@ def test_html2latex_empty_fragment_returns_empty():
 
 
 def test_html2latex_math_tex_span():
-    output = html2latex("<span class='math-tex'>\\(x+1\\)</span>")
-    assert "\\(x+1\\)" in output
+    fixture = get_fixture_case("inline/math/span-tex")
+    output = html2latex(fixture.html)
+    assert normalize_fixture_text(output) == normalize_fixture_text(fixture.tex)
 
 
 def test_html2latex_anchor_without_href():
-    output = html2latex("<a>Link</a>")
-    assert output.strip() == "Link"
+    fixture = get_fixture_case("inline/link/no-href")
+    output = html2latex(fixture.html)
+    assert normalize_fixture_text(output) == normalize_fixture_text(fixture.tex)
 
 
 def test_html2latex_anchor_with_href():
-    output = html2latex("<a href='https://example.com'>Example</a>")
-    assert "\\href{https://example.com}{Example}" in output
+    fixture = get_fixture_case("inline/link/basic")
+    output = html2latex(fixture.html)
+    assert normalize_fixture_text(output) == normalize_fixture_text(fixture.tex)
 
 
 def test_html2latex_comment_skipped():
-    html = "<p>Hi</p><!-- note --><p>Bye</p>"
-    output = html2latex(html)
+    fixture = get_fixture_case("blocks/paragraph/comment-between")
+    output = html2latex(fixture.html)
     assert "note" not in output
     assert "Hi" in output
     assert "Bye" in output
 
 
 def test_html2latex_list_items_have_spacing():
-    output = html2latex("<ul><li>One</li><li>Two</li></ul>")
+    fixture = get_fixture_case("lists/unordered/basic")
+    output = html2latex(fixture.html)
     assert "\\item One" in output
     assert "\\item Two" in output
 
 
 def test_html2latex_table_headers_and_colspan():
-    html = (
-        "<table>"
-        "<thead><tr><th>H1</th><th>H2</th></tr></thead>"
-        "<tbody><tr><td colspan='2'>Body</td></tr></tbody>"
-        "</table>"
-    )
-    output = html2latex(html)
+    fixture = get_fixture_case("blocks/table/headers-colspan")
+    output = html2latex(fixture.html)
     assert "\\textbf{H1}" in output
     assert "\\textbf{H2}" in output
     assert "\\multicolumn{2}{l}{Body}" in output

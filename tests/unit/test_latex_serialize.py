@@ -70,3 +70,15 @@ def test_infer_packages_from_ast():
     table = LatexEnvironment(name="tabularx")
     doc = LatexDocumentAst(body=(href, img, table))
     assert infer_packages(doc) == {"hyperref", "graphicx", "tabularx"}
+
+
+def test_infer_packages_xcolor_from_colorbox():
+    colorbox = LatexCommand(
+        name="colorbox",
+        args=(
+            LatexGroup(children=(LatexText(text="yellow"),)),
+            LatexGroup(children=(LatexText(text="text"),)),
+        ),
+    )
+    doc = LatexDocumentAst(body=(colorbox,))
+    assert infer_packages(doc) == {"xcolor"}
