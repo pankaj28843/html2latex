@@ -68,6 +68,12 @@ exclude = ["html2latex.tests*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "unit: Fast, isolated unit tests",
+    "integration: Tests that integrate multiple components",
+    "e2e: End-to-end tests requiring external services (browser, LaTeX)",
+    "slow: Tests that take significant time to run",
+]
 
 [tool.ruff]
 target-version = "py310"
