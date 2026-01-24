@@ -10,6 +10,11 @@ from pydantic.dataclasses import dataclass
 
 from html2latex.diagnostics import DiagnosticEvent  # noqa: TC001 - needed at runtime
 
+__all__ = [
+    "ConvertOptions",
+    "LatexDocument",
+]
+
 
 @dataclass(config=ConfigDict(frozen=True))
 class ConvertOptions:

@@ -30,6 +30,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # =============================================================================
 FROM python:3.14-slim-bookworm AS runtime
 
+# OCI Image Format Specification labels
+# https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.title="html2latex-demo" \
+      org.opencontainers.image.description="Demo Flask app for html2latex - Convert HTML to LaTeX" \
+      org.opencontainers.image.source="https://github.com/pankaj28843/html2latex" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="Pankaj Kumar Singh"
+
 # Install security updates
 RUN apt-get update && apt-get upgrade -y && \
     rm -rf /var/lib/apt/lists/*

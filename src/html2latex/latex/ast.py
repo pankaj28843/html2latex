@@ -7,6 +7,16 @@ from dataclasses import field
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
+__all__ = [
+    "LatexCommand",
+    "LatexDocumentAst",
+    "LatexEnvironment",
+    "LatexGroup",
+    "LatexNode",
+    "LatexRaw",
+    "LatexText",
+]
+
 
 @dataclass(config=ConfigDict(frozen=True))
 class LatexText:

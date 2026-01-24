@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 
     from html2latex.ast import HtmlDocument
 
+__all__ = ["stream_convert"]
+
 
 def stream_convert(document: HtmlDocument) -> Iterable[str]:
     """Stream-convert an HTML document to LaTeX strings.

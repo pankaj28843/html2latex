@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-  { name = "Pankaj Singh", email = "pankaj28843@gmail.com" }
+  { name = "Pankaj Kumar Singh", email = "pankaj28843@gmail.com" }
 ]
 keywords = ["html", "latex", "converter"]
 classifiers = [
@@ -23,6 +23,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Topic :: Utilities",
+  "Typing :: Typed",
 ]
 
 dependencies = [
@@ -78,6 +79,7 @@ markers = [
 # Strict mode settings
 filterwarnings = ["error"]
 xfail_strict = true
+strict_markers = true
 
 [tool.ruff]
 target-version = "py310"

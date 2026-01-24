@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from jinja2 import Environment
 
+__all__ = [
+    "build_environment",
+    "render_document",
+]
+
 _DEFAULT_TEMPLATE = """\\documentclass{article}
 {{ preamble }}
 \\begin{document}

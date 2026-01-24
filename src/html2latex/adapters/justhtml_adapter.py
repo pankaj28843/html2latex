@@ -13,6 +13,8 @@ from html2latex.diagnostics import DiagnosticEvent, enforce_strict, from_parse_e
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+__all__ = ["parse_html"]
+
 
 def parse_html(
     html: str | bytes,

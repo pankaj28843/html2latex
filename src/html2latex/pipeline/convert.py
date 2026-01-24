@@ -17,6 +17,8 @@ from html2latex.latex import (
 )
 from html2latex.tags import BLOCK_PASSTHROUGH, INLINE_PASSTHROUGH
 
+__all__ = ["convert_document"]
+
 _HEADING_COMMANDS = {
     "h1": "section",
     "h2": "subsection",

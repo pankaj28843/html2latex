@@ -12,6 +12,18 @@ if TYPE_CHECKING:
 
     from justhtml.tokens import ParseError
 
+__all__ = [
+    "DiagnosticEvent",
+    "DiagnosticLocation",
+    "DiagnosticsError",
+    "collect_errors",
+    "diagnostic_context",
+    "emit_diagnostic",
+    "enforce_strict",
+    "extend_diagnostics",
+    "from_parse_error",
+]
+
 
 @dataclass(frozen=True, slots=True)
 class DiagnosticLocation:
