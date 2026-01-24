@@ -1,7 +1,8 @@
+"""LaTeX AST serialization to string output."""
+
 from __future__ import annotations
 
-from collections.abc import Iterable
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from .ast import (
     LatexCommand,
@@ -13,13 +14,28 @@ from .ast import (
     LatexText,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 
 class LatexSerializer(Protocol):
+    """Protocol for LaTeX document serializers."""
+
     def serialize(self, document: LatexDocumentAst) -> str:  # pragma: no cover - interface only
+        """Serialize a LaTeX document AST to string."""
         ...
 
 
 def serialize_document(document: LatexDocumentAst, *, formatted: bool = False) -> str:
+    """Serialize a LaTeX document AST to string.
+
+    Args:
+        document: The LaTeX document AST to serialize.
+        formatted: If True, produce human-readable output with indentation.
+
+    Returns:
+        The serialized LaTeX string.
+    """
     if formatted:
         serializer = IndentedSerializer()
         return serializer.serialize(document)
@@ -71,6 +87,7 @@ class IndentedSerializer:
         self._indent_str = "  "  # 2 spaces
 
     def serialize(self, document: LatexDocumentAst) -> str:
+        """Serialize document to formatted LaTeX string."""
         return self._serialize_nodes(document.body).rstrip()
 
     def _indent(self) -> str:
@@ -187,7 +204,7 @@ class IndentedSerializer:
     def _serialize_item(
         self, item: LatexCommand, siblings: list[LatexNode], index: int
     ) -> tuple[list[str], set[int]]:
-        """Serialize an \\item command with its content. Returns (lines, consumed_indices)."""
+        r"""Serialize an \item command with its content. Returns (lines, consumed_indices)."""
         lines: list[str] = []
         consumed: set[int] = set()
         options = _format_options(item.options)
@@ -252,11 +269,27 @@ class IndentedSerializer:
 
 
 def serialize_nodes(nodes: Iterable[LatexNode]) -> Iterable[str]:
+    """Serialize a sequence of LaTeX nodes to strings.
+
+    Args:
+        nodes: The LaTeX nodes to serialize.
+
+    Yields:
+        Serialized string for each node.
+    """
     for node in nodes:
         yield _serialize_node(node)
 
 
 def infer_packages(document: LatexDocumentAst) -> set[str]:
+    """Infer required LaTeX packages from document content.
+
+    Args:
+        document: The LaTeX document AST to analyze.
+
+    Returns:
+        Set of package names required by the document.
+    """
     packages: set[str] = set()
     for node in _walk_nodes(document.body):
         if isinstance(node, LatexCommand) and node.name in {"href", "url"}:

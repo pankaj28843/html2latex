@@ -1,16 +1,22 @@
+"""Diagnostic event handling for HTML parsing and conversion errors."""
+
 from __future__ import annotations
 
-from collections.abc import Iterable
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from justhtml.tokens import ParseError
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from justhtml.tokens import ParseError
 
 
 @dataclass(frozen=True, slots=True)
 class DiagnosticLocation:
+    """Source location information for a diagnostic event."""
+
     line: int | None = None
     column: int | None = None
     end_column: int | None = None
@@ -19,6 +25,8 @@ class DiagnosticLocation:
 
 @dataclass(frozen=True, slots=True)
 class DiagnosticEvent:
+    """A diagnostic event representing an error, warning, or info message."""
+
     code: str
     category: str
     severity: str
@@ -29,13 +37,16 @@ class DiagnosticEvent:
 
 
 class DiagnosticsError(RuntimeError):
-    def __init__(self, events: list[DiagnosticEvent]):
+    """Exception raised when strict mode encounters diagnostic errors."""
+
+    def __init__(self, events: list[DiagnosticEvent]) -> None:
         message = events[0].message if events else "Diagnostics error"
         super().__init__(message)
         self.events = events
 
     @property
     def first_error(self) -> DiagnosticEvent | None:
+        """Return the first error event, or None if no events."""
         return self.events[0] if self.events else None
 
 
@@ -46,6 +57,14 @@ _DIAGNOSTIC_SINK: ContextVar[list[DiagnosticEvent] | None] = ContextVar(
 
 @contextmanager
 def diagnostic_context(enabled: bool):
+    """Context manager for collecting diagnostic events.
+
+    Args:
+        enabled: If True, collect diagnostics. If False, yield empty list.
+
+    Yields:
+        A list that will be populated with DiagnosticEvent objects.
+    """
     events: list[DiagnosticEvent] = []
     if not enabled:
         yield events
@@ -58,6 +77,7 @@ def diagnostic_context(enabled: bool):
 
 
 def emit_diagnostic(event: DiagnosticEvent) -> None:
+    """Emit a diagnostic event to the current context sink."""
     sink = _DIAGNOSTIC_SINK.get()
     if sink is None:
         return
@@ -65,6 +85,7 @@ def emit_diagnostic(event: DiagnosticEvent) -> None:
 
 
 def extend_diagnostics(events: Iterable[DiagnosticEvent]) -> None:
+    """Extend the current context sink with multiple diagnostic events."""
     sink = _DIAGNOSTIC_SINK.get()
     if sink is None:
         return
@@ -72,6 +93,7 @@ def extend_diagnostics(events: Iterable[DiagnosticEvent]) -> None:
 
 
 def from_parse_error(error: ParseError) -> DiagnosticEvent:
+    """Convert a justhtml ParseError to a DiagnosticEvent."""
     location = DiagnosticLocation(
         line=error.line,
         column=error.column,
@@ -87,10 +109,12 @@ def from_parse_error(error: ParseError) -> DiagnosticEvent:
 
 
 def collect_errors(events: Iterable[DiagnosticEvent]) -> list[DiagnosticEvent]:
+    """Filter diagnostic events to only include errors."""
     return [event for event in events if event.severity == "error"]
 
 
 def enforce_strict(events: Iterable[DiagnosticEvent]) -> None:
+    """Raise DiagnosticsError if any error events are present."""
     errors = collect_errors(events)
     if errors:
         raise DiagnosticsError(errors)

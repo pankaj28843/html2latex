@@ -1,12 +1,17 @@
+"""HTML parsing adapter using justhtml library."""
+
 from __future__ import annotations
 
-from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from justhtml import JustHTML, ParseError
 from justhtml.node import Comment, Element, Text
 
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlNode, HtmlText
 from html2latex.diagnostics import DiagnosticEvent, enforce_strict, from_parse_error
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def parse_html(
@@ -15,6 +20,19 @@ def parse_html(
     fragment: bool = True,
     strict: bool = False,
 ) -> tuple[HtmlDocument, list[DiagnosticEvent]]:
+    """Parse HTML into an HtmlDocument AST.
+
+    Args:
+        html: The HTML content to parse.
+        fragment: If True, parse as HTML fragment (no doctype). Defaults to True.
+        strict: If True, raise on parse errors. Defaults to False.
+
+    Returns:
+        A tuple of (HtmlDocument, list of DiagnosticEvents).
+
+    Raises:
+        DiagnosticsError: If strict=True and parse errors occurred.
+    """
     document = JustHTML(
         html,
         fragment=fragment,
