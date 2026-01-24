@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-  { name = "Pankaj Singh", email = "pankaj28843@gmail.com" }
+  { name = "Pankaj Kumar Singh", email = "pankaj28843@gmail.com" }
 ]
 keywords = ["html", "latex", "converter"]
 classifiers = [

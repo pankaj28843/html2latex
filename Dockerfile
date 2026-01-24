@@ -36,7 +36,7 @@ LABEL org.opencontainers.image.title="html2latex-demo" \
       org.opencontainers.image.description="Demo Flask app for html2latex - Convert HTML to LaTeX" \
       org.opencontainers.image.source="https://github.com/pankaj28843/html2latex" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.vendor="Pankaj Singh"
+      org.opencontainers.image.vendor="Pankaj Kumar Singh"
 
 # Install security updates
 RUN apt-get update && apt-get upgrade -y && \
