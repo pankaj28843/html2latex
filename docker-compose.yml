@@ -1,16 +1,25 @@
 services:
   redis:
-    image: "redis:5.0-alpine"
+    image: "redis:7-alpine"
     container_name: "redis_cache"
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
 
   demo-app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: "demo_app"
-    restart: always
+    restart: unless-stopped
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
       - REDIS_HOST=redis
@@ -20,6 +29,12 @@ services:
       - ENV=${ENV:-development}
     ports:
       - "15005:15005"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:15005/')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 5s
+      retries: 3
     develop:
       watch:
         # Sync and restart on source code changes

@@ -9,8 +9,8 @@ from .jinja import render_document
 from .models import ConvertOptions, LatexDocument
 
 __all__ = [
-    "Converter",
     "ConvertOptions",
+    "Converter",
     "LatexDocument",
     "convert",
     "html2latex",

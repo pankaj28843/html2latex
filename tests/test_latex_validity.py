@@ -34,7 +34,7 @@ def _run_tectonic(tex_source: str, tmp_path: Path, name: str) -> None:
     tex_path = tmp_path / f"{name}.tex"
     tex_path.write_text(tex_source)
     command = [TECTONIC_BIN, "--keep-logs", "--outdir", str(tmp_path), str(tex_path)]
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
     assert result.returncode == 0, (
         f"Tectonic compilation failed.\nstdout:\n{result.stdout}\n\nstderr:\n{result.stderr}\n"
     )

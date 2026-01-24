@@ -68,12 +68,16 @@ exclude = ["html2latex.tests*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = ["--import-mode=importlib"]
 markers = [
     "unit: Fast, isolated unit tests",
     "integration: Tests that integrate multiple components",
     "e2e: End-to-end tests requiring external services (browser, LaTeX)",
     "slow: Tests that take significant time to run",
 ]
+# Strict mode settings
+filterwarnings = ["error"]
+xfail_strict = true
 
 [tool.ruff]
 target-version = "py310"
@@ -87,11 +91,52 @@ select = [
     "UP",              # pyupgrade
     "B",               # flake8-bugbear
     "SIM",             # flake8-simplify
+    "C90",             # mccabe complexity
+    "A",               # flake8-builtins
+    "COM",             # flake8-commas
+    "PTH",             # flake8-use-pathlib
+    "RUF",             # ruff-specific rules
+    "PL",              # pylint subset
+    "TRY",             # tryceratops - exception handling
+    "PERF",            # perflint - performance
+    "FURB",            # refurb - modernization
 ]
-ignore = ["E501"]
+ignore = [
+    "E501",            # line too long (handled by formatter)
+    "COM812",          # trailing comma (conflicts with formatter)
+    "PLR0913",         # too many arguments (sometimes necessary)
+    "PLR2004",         # magic value comparison (too noisy)
+    "TRY003",          # long exception messages (acceptable)
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.ruff.lint.pylint]
+max-args = 8
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "PLR2004",  # magic values in tests are fine
+    "S101",     # assert in tests is expected
+    "PLR0915",  # too many statements in tests is acceptable
+    "PLC0415",  # imports not at top of file (for pytest.importorskip patterns)
+    "PERF203",  # try-except in loops for waiting
+]
+# The conversion pipeline is inherently complex due to HTML tag handling
+"src/html2latex/pipeline/convert.py" = [
+    "C901",     # complexity - refactoring would fragment the logic
+    "PLR0911",  # many returns - needed for tag dispatch
+    "PLR0912",  # many branches - needed for tag dispatch
+    "PLR0915",  # many statements - needed for complete conversion
+]
+"src/html2latex/pipeline/normalize.py" = [
+    "C901",     # complexity - whitespace normalization is inherently complex
+]
 
 [tool.ruff.format]
 quote-style = "double"
+docstring-code-format = true
 
 [tool.uv.workspace]
 members = ["demo-app"]

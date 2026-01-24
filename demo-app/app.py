@@ -1,67 +1,124 @@
+"""HTML2LaTeX Demo App - Flask application with Redis caching."""
+
+from __future__ import annotations
+
 import hashlib
 import hmac
+import logging
 import os
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import redis
-from flask import Flask, jsonify, render_template, request
+from flask import Blueprint, Flask, current_app, jsonify, render_template, request
 
 from html2latex.html2latex import html2latex
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
+if TYPE_CHECKING:
+    from flask import Response
+    from werkzeug.exceptions import HTTPException
 
-redis_host = os.environ.get("REDIS_HOST", "localhost")
-redis_port = int(os.environ.get("REDIS_PORT", 6379))
-redis_db = int(os.environ.get("REDIS_DB", 0))
-
-cache = redis.Redis(
-    host=redis_host,
-    port=redis_port,
-    db=redis_db,
-    decode_responses=True,
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+logger = logging.getLogger(__name__)
 
-cache_enabled = os.environ.get("CACHE_ENABLED", "False").lower().strip() == "true"
-
-ENV = os.environ.get("ENV", "production").lower().strip()
-DEBUG = ENV != "production"
-
-CACHE_KEY_SECRET = os.environ.get("CACHE_KEY_SECRET", "html2latex-demo")
+# Blueprint for API routes
+api = Blueprint("api", __name__)
 
 
-def cache_key_for_html(html_string):
+def create_app(config: dict | None = None) -> Flask:
+    """Create and configure the Flask application.
+
+    Args:
+        config: Optional configuration dictionary to override defaults.
+
+    Returns:
+        Configured Flask application instance.
+    """
+    base_dir = Path(__file__).resolve().parent
+    app = Flask(__name__, template_folder=str(base_dir / "templates"))
+
+    # Load configuration
+    app.config.update(
+        ENV=os.environ.get("ENV", "production").lower().strip(),
+        REDIS_HOST=os.environ.get("REDIS_HOST", "localhost"),
+        REDIS_PORT=int(os.environ.get("REDIS_PORT", "6379")),
+        REDIS_DB=int(os.environ.get("REDIS_DB", "0")),
+        CACHE_ENABLED=os.environ.get("CACHE_ENABLED", "False").lower().strip() == "true",
+        CACHE_KEY_SECRET=os.environ.get("CACHE_KEY_SECRET", "html2latex-demo"),
+    )
+    app.config["DEBUG"] = app.config["ENV"] != "production"
+
+    # Apply custom configuration
+    if config:
+        app.config.update(config)
+
+    # Initialize Redis
+    app.redis = redis.Redis(
+        host=app.config["REDIS_HOST"],
+        port=app.config["REDIS_PORT"],
+        db=app.config["REDIS_DB"],
+        decode_responses=True,
+    )
+
+    # Register blueprints
+    app.register_blueprint(api)
+
+    # Register error handlers
+    _register_error_handlers(app)
+
+    return app
+
+
+def _register_error_handlers(app: Flask) -> None:
+    """Register error handlers for the application."""
+
+    @app.errorhandler(400)
+    def bad_request(error: HTTPException) -> tuple[Response, int]:
+        return jsonify({"error": "Bad request", "message": str(error.description)}), 400
+
+    @app.errorhandler(404)
+    def not_found(error: HTTPException) -> tuple[Response, int]:
+        return jsonify({"error": "Not found", "message": str(error.description)}), 404
+
+    @app.errorhandler(500)
+    def internal_error(error: HTTPException) -> tuple[Response, int]:
+        logger.exception("Internal server error")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+def _cache_key_for_html(html_string: str, secret: str) -> str:
     """Generate a cache key for the given HTML string."""
-    key_source = html_string
     digest = hmac.new(
-        CACHE_KEY_SECRET.encode("utf-8"),
-        key_source.encode("utf-8"),
+        secret.encode("utf-8"),
+        html_string.encode("utf-8"),
         hashlib.sha256,
     ).hexdigest()
     return f"demo_app:{digest}"
 
 
-@app.route("/", methods=["GET"])
-def index():
-    """
-    Serve a simple HTML page with a basic "rich" text area,
-    math input, and a place to display the returned LaTeX
-    using syntax highlighting.
-    """
+@api.route("/", methods=["GET"])
+def index() -> str:
+    """Serve the main HTML page with the rich text editor.
 
+    Returns:
+        Rendered index.html template.
+    """
     return render_template("index.html")
 
 
-@app.route("/convert", methods=["POST"])
-def convert_html():
-    """
-    POST endpoint that takes JSON:
-      {
-        "html_string": "<p>some HTML</p>..."
-      }
-    Returns a JSON response:
-      {
-        "latex": "converted latex string"
-      }
+@api.route("/convert", methods=["POST"])
+def convert_html() -> tuple[Response, int] | Response:
+    """Convert HTML to LaTeX.
+
+    Request body:
+        {"html_string": "<p>some HTML</p>..."}
+
+    Returns:
+        JSON response with converted LaTeX or error message.
     """
     data = request.get_json(silent=True)
     if not data or "html_string" not in data:
@@ -69,31 +126,41 @@ def convert_html():
 
     html_string = data["html_string"]
 
-    if not cache_enabled:
+    if not current_app.config["CACHE_ENABLED"]:
         try:
             latex_result = html2latex(html_string)
         except Exception:
+            logger.exception("Error converting HTML to LaTeX")
             return jsonify({"error": "Error converting HTML to LaTeX"}), 500
         return jsonify({"latex": latex_result})
 
-    # First, check the cache
-    key = cache_key_for_html(html_string)
-    cached_data = cache.get(key)
-    if cached_data:
-        return jsonify({"latex": cached_data})
+    # Check cache first
+    key = _cache_key_for_html(html_string, current_app.config["CACHE_KEY_SECRET"])
+    try:
+        cached_data = current_app.redis.get(key)
+        if cached_data:
+            return jsonify({"latex": cached_data})
+    except redis.RedisError:
+        logger.warning("Redis cache read failed, proceeding without cache")
 
-    # If not in cache, call the library (which no longer does its own caching)
-    # Pass any env-based config (e.g. CAPFIRST_ENABLED) if relevant
+    # Convert HTML to LaTeX
     try:
         latex_result = html2latex(html_string)
     except Exception:
+        logger.exception("Error converting HTML to LaTeX")
         return jsonify({"error": "Error converting HTML to LaTeX"}), 500
 
-    # Store in cache
-    cache.set(key, latex_result)
+    # Store in cache (best effort)
+    try:
+        current_app.redis.set(key, latex_result)
+    except redis.RedisError:
+        logger.warning("Redis cache write failed")
 
     return jsonify({"latex": latex_result})
 
 
+# Create the application instance for direct execution
+app = create_app()
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=15005, debug=DEBUG)
+    app.run(host="0.0.0.0", port=15005, debug=app.config["DEBUG"])

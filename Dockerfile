@@ -1,4 +1,7 @@
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+# =============================================================================
+# Stage 1: Builder
+# =============================================================================
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
 ENV PYTHONUNBUFFERED=1
 ENV UV_COMPILE_BYTECODE=1
@@ -6,7 +9,7 @@ ENV UV_LINK_MODE=copy
 
 WORKDIR /app
 
-# Copy project files for dependency installation
+# Copy dependency files first for better layer caching
 COPY pyproject.toml uv.lock README.md /app/
 COPY src /app/src
 COPY demo-app/pyproject.toml /app/demo-app/
@@ -22,6 +25,35 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --package html2latex-demo
 
+# =============================================================================
+# Stage 2: Runtime
+# =============================================================================
+FROM python:3.12-slim-bookworm AS runtime
+
+# Install security updates
+RUN apt-get update && apt-get upgrade -y && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create non-root user for security
+RUN groupadd --gid 1000 appgroup && \
+    useradd --uid 1000 --gid appgroup --shell /bin/bash --create-home appuser
+
+WORKDIR /app
+
+# Copy the virtual environment and application from builder
+COPY --from=builder --chown=appuser:appgroup /app /app
+
+# Switch to non-root user
+USER appuser
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/app/.venv/bin:$PATH"
+
 EXPOSE 15005
 
-CMD ["uv", "run", "--package", "html2latex-demo", "python", "demo-app/app.py"]
+# Health check for container orchestration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:15005/')" || exit 1
+
+CMD ["python", "demo-app/app.py"]

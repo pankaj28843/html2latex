@@ -1,0 +1,40 @@
+name: Setup Tectonic
+description: Install and cache Tectonic LaTeX engine
+
+inputs:
+  version:
+    description: Tectonic version to install (currently uses latest from drop-sh)
+    required: false
+    default: "latest"
+
+outputs:
+  cache-hit:
+    description: Whether the cache was hit
+    value: ${{ steps.cache-tectonic.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: Cache tectonic binary
+      id: cache-tectonic
+      uses: actions/cache@v4
+      with:
+        path: |
+          ./tectonic
+          ~/.cache/Tectonic
+        key: tectonic-${{ runner.os }}-${{ inputs.version }}
+
+    - name: Install tectonic
+      if: steps.cache-tectonic.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh
+        chmod +x tectonic
+
+    - name: Add tectonic to PATH
+      shell: bash
+      run: echo "$PWD" >> $GITHUB_PATH
+
+    - name: Verify tectonic installation
+      shell: bash
+      run: ./tectonic --version
