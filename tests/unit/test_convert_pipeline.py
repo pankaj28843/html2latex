@@ -255,6 +255,34 @@ def test_convert_image_uses_style_dimensions():
     assert image.options == ("width=72.27pt", "height=2cm")
 
 
+def test_convert_image_uses_attribute_units():
+    doc = HtmlDocument(
+        children=(HtmlElement(tag="img", attrs={"src": "photo.png", "width": "2cm"}),)
+    )
+    latex = convert_document(doc)
+    image = latex.body[0]
+    assert image.name == "includegraphics"
+    assert image.options == ("width=2cm",)
+
+
+def test_convert_image_ignores_empty_attribute():
+    doc = HtmlDocument(children=(HtmlElement(tag="img", attrs={"src": "photo.png", "width": " "}),))
+    latex = convert_document(doc)
+    image = latex.body[0]
+    assert image.name == "includegraphics"
+    assert image.options == ()
+
+
+def test_convert_image_ignores_invalid_attribute():
+    doc = HtmlDocument(
+        children=(HtmlElement(tag="img", attrs={"src": "photo.png", "width": "bogus"}),)
+    )
+    latex = convert_document(doc)
+    image = latex.body[0]
+    assert image.name == "includegraphics"
+    assert image.options == ()
+
+
 def test_convert_unknown_tag_flattens_children():
     doc = HtmlDocument(children=(HtmlElement(tag="custom", children=(HtmlText(text="Inside"),)),))
     latex = convert_document(doc)
