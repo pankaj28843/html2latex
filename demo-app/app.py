@@ -138,7 +138,7 @@ def convert_html() -> tuple[Response, int] | Response:
     key = _cache_key_for_html(html_string, current_app.config["CACHE_KEY_SECRET"])
     try:
         cached_data = current_app.redis.get(key)
-        if cached_data:
+        if cached_data is not None:
             return jsonify({"latex": cached_data})
     except redis.RedisError:
         logger.warning("Redis cache read failed, proceeding without cache")
