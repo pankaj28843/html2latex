@@ -473,9 +473,7 @@ def _inline_style_commands(style: str) -> tuple[str, ...]:
     parsed = _parse_style_map(style)
     commands: list[str] = []
     weight = parsed.get("font-weight")
-    if weight in {"bold", "bolder"}:
-        commands.append("textbf")
-    elif weight and weight.isdigit() and int(weight) >= 600:
+    if weight in {"bold", "bolder"} or (weight and weight.isdigit() and int(weight) >= 600):
         commands.append("textbf")
     font_style = parsed.get("font-style")
     if font_style in {"italic", "oblique"}:
