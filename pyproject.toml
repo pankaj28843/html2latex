@@ -104,6 +104,19 @@ select = [
     "PT",              # flake8-pytest-style
     "D",               # pydocstyle - docstring enforcement
     "TCH",             # flake8-type-checking - optimize imports
+    # v5: Additional code quality rules
+    "C4",              # flake8-comprehensions - efficient comprehensions
+    "T10",             # flake8-debugger - no debugger statements
+    "T20",             # flake8-print - no print statements
+    "RET",             # flake8-return - return statement consistency
+    "PIE",             # flake8-pie - misc lints
+    "RSE",             # flake8-raise - raise statement best practices
+    "EM",              # flake8-errmsg - exception message best practices
+    "FLY",             # flynt - use f-strings
+    "LOG",             # flake8-logging - logging best practices
+    "G",               # flake8-logging-format - logging format strings
+    "BLE",             # flake8-blind-except - no blind except
+    "N",               # pep8-naming - naming conventions
 ]
 ignore = [
     "E501",            # line too long (handled by formatter)
@@ -140,6 +153,10 @@ convention = "google"
     "S311",     # random in tests is fine (not crypto)
     "S603",     # subprocess with controlled input in tests
     "S607",     # partial executable path in tests
+    # v5: Additional ignores for test patterns
+    "EM",       # exception message formatting less critical in tests
+    "BLE001",   # blind except acceptable in test utilities (e.g., waiting for server)
+    "RET504",   # unnecessary assignment before return - clarity over brevity in tests
 ]
 "benchmarks/**/*.py" = [
     "D",        # no docstrings required in benchmarks
