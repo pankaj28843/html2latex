@@ -2,9 +2,11 @@ from html2latex.ast import HtmlDocument, HtmlElement, HtmlText
 from html2latex.latex import LatexCommand, LatexEnvironment, LatexRaw, LatexText
 from html2latex.pipeline import convert_document
 from html2latex.pipeline.convert import (
+    _apply_inline_styles,
     _column_spec_for,
     _convert_node,
     _extract_column_hints,
+    _inline_style_commands,
     _parse_css_length,
 )
 
@@ -321,6 +323,21 @@ def test_convert_span_style_multiple_decorations():
     assert isinstance(italic, LatexCommand)
     assert italic.name == "textit"
     assert italic.args[0].children[0].text == "Decor"
+
+
+def test_inline_style_commands_ignores_empty_entries():
+    assert _inline_style_commands("font-weight:; : bold;") == ()
+
+
+def test_apply_inline_styles_ignores_empty_nodes():
+    node = HtmlElement(tag="span", attrs={"style": "font-style: italic"})
+    assert _apply_inline_styles(node, []) == []
+
+
+def test_apply_inline_styles_skips_block_tags():
+    node = HtmlElement(tag="p", attrs={"style": "font-style: italic"})
+    result = _apply_inline_styles(node, [LatexText(text="Block")])
+    assert result[0].text == "Block"
 
 
 def test_convert_unknown_tag_flattens_children():
