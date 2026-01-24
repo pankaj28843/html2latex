@@ -420,6 +420,120 @@ def test_convert_table_without_rows_returns_empty():
     assert latex.body == ()
 
 
+def test_convert_table_cell_alignment():
+    """Test that table cell alignment attributes are correctly detected."""
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="table",
+                children=(
+                    HtmlElement(
+                        tag="tr",
+                        children=(
+                            HtmlElement(
+                                tag="td",
+                                attrs={"align": "center"},
+                                children=(HtmlText(text="A"),),
+                            ),
+                            HtmlElement(
+                                tag="td",
+                                attrs={"align": "right"},
+                                children=(HtmlText(text="B"),),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    # Column spec should be 'cr' (center, right)
+    assert env.args[0].children[0].text == "cr"
+
+
+def test_convert_table_cell_alignment_via_style():
+    """Test that CSS style text-align is correctly detected."""
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="table",
+                children=(
+                    HtmlElement(
+                        tag="tr",
+                        children=(
+                            HtmlElement(
+                                tag="td",
+                                attrs={"style": "text-align: right"},
+                                children=(HtmlText(text="A"),),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    # Column spec should be 'r' (right)
+    assert env.args[0].children[0].text == "r"
+
+
+def test_convert_table_colspan_uses_cell_alignment():
+    """Test that colspan cells use their own alignment in multicolumn."""
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="table",
+                children=(
+                    HtmlElement(
+                        tag="tr",
+                        children=(
+                            HtmlElement(
+                                tag="td",
+                                attrs={"colspan": "2", "align": "center"},
+                                children=(HtmlText(text="Wide"),),
+                            ),
+                        ),
+                    ),
+                    HtmlElement(
+                        tag="tr",
+                        children=(
+                            HtmlElement(tag="td", children=(HtmlText(text="A"),)),
+                            HtmlElement(tag="td", children=(HtmlText(text="B"),)),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    env = latex.body[0]
+    # First row should have centered multicolumn
+    assert "\\multicolumn{2}{c}{Wide}" in env.children[0].value
+
+
+def test_convert_table_alignment_detection_handles_extra_cells():
+    """Test that alignment detection handles rows with extra cells gracefully.
+
+    This tests the edge case where a row has more cells than max_columns.
+    """
+    from html2latex.pipeline.convert import _detect_column_alignments
+
+    # Create a list of cells where the last row has more cells than expected
+    row1 = [HtmlElement(tag="td", attrs={"align": "center"}, children=())]
+    row2 = [
+        HtmlElement(tag="td", attrs={"align": "right"}, children=()),
+        HtmlElement(tag="td", attrs={"align": "left"}, children=()),  # Extra cell
+    ]
+    # max_columns = 1, but row2 has 2 cells - this triggers the break
+    alignments = _detect_column_alignments([row1, row2], 1)
+    # Should detect only the first column (center + right = center wins? or right?)
+    # Actually center and right both have 1 count, so 'l' wins (default on ties)
+    # Wait - counts are l:0, c:1, r:1. max is 1. l==0 != 1, c==1 == max -> 'c'
+    assert alignments == ["c"]
+
+
 def test_convert_node_ignores_unknown_type():
     assert _convert_node(object()) == []
 
