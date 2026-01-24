@@ -100,6 +100,8 @@ select = [
     "TRY",             # tryceratops - exception handling
     "PERF",            # perflint - performance
     "FURB",            # refurb - modernization
+    "S",               # flake8-bandit - security
+    "PT",              # flake8-pytest-style
 ]
 ignore = [
     "E501",            # line too long (handled by formatter)
@@ -122,6 +124,15 @@ max-args = 8
     "PLR0915",  # too many statements in tests is acceptable
     "PLC0415",  # imports not at top of file (for pytest.importorskip patterns)
     "PERF203",  # try-except in loops for waiting
+    "S105",     # false positive on variable named "token"
+    "S106",     # false positive on variable named "password" in test data
+    "S108",     # /tmp usage in tests is fine
+    "S311",     # random in tests is fine (not crypto)
+    "S603",     # subprocess with controlled input in tests
+    "S607",     # partial executable path in tests
+]
+"tests/e2e/**/*.py" = [
+    "S310",     # URL open in e2e tests uses localhost URLs
 ]
 # The conversion pipeline is inherently complex due to HTML tag handling
 "src/html2latex/pipeline/convert.py" = [
@@ -137,6 +148,10 @@ max-args = 8
 [tool.ruff.format]
 quote-style = "double"
 docstring-code-format = true
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]
+skips = ["B101"]  # assert is fine in non-test code for invariant checks
 
 [tool.uv.workspace]
 members = ["demo-app"]
