@@ -4,6 +4,20 @@ from html2latex.pipeline import convert_document
 from html2latex.pipeline.convert import _convert_node
 
 
+def _column_spec(env: LatexEnvironment) -> str:
+    if not env.args:
+        return ""
+    group = env.args[0]
+    if not group.children:
+        return ""
+    child = group.children[0]
+    if isinstance(child, LatexRaw):
+        return child.value
+    if isinstance(child, LatexText):
+        return child.text
+    return ""
+
+
 def test_convert_paragraph_and_inline():
     doc = HtmlDocument(
         children=(
@@ -309,7 +323,7 @@ def test_convert_table_basic():
     env = latex.body[0]
     assert isinstance(env, LatexEnvironment)
     assert env.name == "tabular"
-    assert env.args[0].children[0].text == "ll"
+    assert _column_spec(env) == "ll"
     assert isinstance(env.children[0], LatexRaw)
     assert env.children[0].value == "A & B \\\\"
     assert env.children[1].value == "C & D \\\\"
@@ -345,7 +359,7 @@ def test_convert_table_with_colspan_and_headers():
     )
     latex = convert_document(doc)
     env = latex.body[0]
-    assert env.args[0].children[0].text == "lll"
+    assert _column_spec(env) == "lll"
     assert env.children[0].value == "\\textbf{Head} & \\textbf{Right} & \\\\"
     assert env.children[1].value == "\\multicolumn{2}{l}{Wide} & Tail \\\\"
 
@@ -386,7 +400,7 @@ def test_convert_table_with_invalid_colspan_defaults_to_one():
     )
     latex = convert_document(doc)
     env = latex.body[0]
-    assert env.args[0].children[0].text == "ll"
+    assert _column_spec(env) == "ll"
     assert env.children[0].value == "A & B \\\\"
 
 
@@ -449,7 +463,7 @@ def test_convert_table_cell_alignment():
     latex = convert_document(doc)
     env = latex.body[0]
     # Column spec should be 'cr' (center, right)
-    assert env.args[0].children[0].text == "cr"
+    assert _column_spec(env) == "cr"
 
 
 def test_convert_table_cell_alignment_via_style():
@@ -476,7 +490,7 @@ def test_convert_table_cell_alignment_via_style():
     latex = convert_document(doc)
     env = latex.body[0]
     # Column spec should be 'r' (right)
-    assert env.args[0].children[0].text == "r"
+    assert _column_spec(env) == "r"
 
 
 def test_convert_table_colspan_uses_cell_alignment():

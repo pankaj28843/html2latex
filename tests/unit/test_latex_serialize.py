@@ -82,3 +82,12 @@ def test_infer_packages_xcolor_from_colorbox():
     )
     doc = LatexDocumentAst(body=(colorbox,))
     assert infer_packages(doc) == {"xcolor"}
+
+
+def test_infer_packages_array_from_tabular_spec():
+    spec = LatexGroup(
+        children=(LatexRaw(value=r">{\centering\arraybackslash}p{0.5\textwidth}"),)
+    )
+    table = LatexEnvironment(name="tabular", args=(spec,))
+    doc = LatexDocumentAst(body=(table,))
+    assert "array" in infer_packages(doc)

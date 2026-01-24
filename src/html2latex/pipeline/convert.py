@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlNode, HtmlText
 from html2latex.latex import (
@@ -46,6 +47,12 @@ _INLINE_COMMANDS = {
     "var": "textit",  # Variable
     "cite": "textit",  # Citation/title
 }
+
+
+@dataclass(frozen=True)
+class _ColumnHint:
+    align: str | None = None
+    width: str | None = None
 
 
 def convert_document(
@@ -374,6 +381,8 @@ def _parse_list_type(value: str | None) -> str | None:
 
 
 _TEXT_ALIGN_RE = re.compile(r"text-align\s*:\s*(left|center|right)", re.IGNORECASE)
+_STYLE_WIDTH_RE = re.compile(r"width\s*:\s*([^;]+)", re.IGNORECASE)
+_CSS_LENGTH_RE = re.compile(r"^\s*([0-9]+(?:\.[0-9]+)?)\s*([a-z%]*)\s*$", re.IGNORECASE)
 
 
 def _parse_text_align(style: str) -> str | None:
@@ -382,6 +391,125 @@ def _parse_text_align(style: str) -> str | None:
     if match:
         return match.group(1).lower()
     return None
+
+
+def _parse_style_width(style: str) -> str | None:
+    match = _STYLE_WIDTH_RE.search(style)
+    if not match:
+        return None
+    return match.group(1).strip()
+
+
+def _format_float(value: float) -> str:
+    if value.is_integer():
+        return str(int(value))
+    return f"{value:.4f}".rstrip("0").rstrip(".")
+
+
+def _parse_css_length(value: str | None) -> str | None:
+    if not value:
+        return None
+    raw = value.strip().lower()
+    if not raw:
+        return None
+    match = _CSS_LENGTH_RE.match(raw)
+    if not match:
+        return None
+    number = float(match.group(1))
+    unit = match.group(2) or "px"
+    if number <= 0:
+        return None
+    if unit == "%":
+        fraction = number / 100.0
+        return f"{_format_float(fraction)}\\textwidth"
+    if unit == "px":
+        pt = number * 72.27 / 96.0
+        return f"{_format_float(pt)}pt"
+    if unit == "rem":
+        unit = "em"
+    allowed_units = {"pt", "pc", "in", "cm", "mm", "em", "ex", "bp", "dd", "cc", "sp"}
+    if unit in allowed_units:
+        return f"{_format_float(number)}{unit}"
+    return None
+
+
+def _parse_col_align(node: HtmlElement) -> str | None:
+    align_attr = node.attrs.get("align", "").lower()
+    if align_attr in ("left", "center", "right"):
+        return {"left": "l", "center": "c", "right": "r"}[align_attr]
+    style = node.attrs.get("style", "")
+    text_align = _parse_text_align(style)
+    if text_align in ("left", "center", "right"):
+        return {"left": "l", "center": "c", "right": "r"}[text_align]
+    return None
+
+
+def _parse_col_width(node: HtmlElement) -> str | None:
+    style_width = _parse_style_width(node.attrs.get("style", ""))
+    raw_width = style_width or node.attrs.get("width")
+    return _parse_css_length(raw_width)
+
+
+def _expand_colgroup(colgroup: HtmlElement) -> list[_ColumnHint]:
+    group_align = _parse_col_align(colgroup)
+    group_width = _parse_col_width(colgroup)
+    cols = [
+        child
+        for child in colgroup.children
+        if isinstance(child, HtmlElement) and child.tag.lower() == "col"
+    ]
+    if cols:
+        hints: list[_ColumnHint] = []
+        for col in cols:
+            hints.extend(_expand_col(col, group_align, group_width))
+        return hints
+    span = _parse_span(colgroup.attrs.get("span"))
+    return [_ColumnHint(align=group_align, width=group_width) for _ in range(span)]
+
+
+def _expand_col(col: HtmlElement, group_align: str | None, group_width: str | None) -> list[_ColumnHint]:
+    align = _parse_col_align(col) or group_align
+    width = _parse_col_width(col) or group_width
+    span = _parse_span(col.attrs.get("span"))
+    return [_ColumnHint(align=align, width=width) for _ in range(span)]
+
+
+def _extract_column_hints(table: HtmlElement) -> list[_ColumnHint]:
+    hints: list[_ColumnHint] = []
+    for child in table.children:
+        if not isinstance(child, HtmlElement):
+            continue
+        tag = child.tag.lower()
+        if tag == "colgroup":
+            hints.extend(_expand_colgroup(child))
+        elif tag == "col":
+            hints.extend(_expand_col(child, None, None))
+    return hints
+
+
+def _column_spec_for(align: str, width: str | None) -> str:
+    if not width:
+        return align
+    if align == "c":
+        return f">{{\\centering\\arraybackslash}}p{{{width}}}"
+    if align == "r":
+        return f">{{\\raggedleft\\arraybackslash}}p{{{width}}}"
+    return f"p{{{width}}}"
+
+
+def _build_column_specs(
+    all_row_cells: list[list[HtmlElement]],
+    max_columns: int,
+    column_hints: list[_ColumnHint],
+) -> list[str]:
+    detected = _detect_column_alignments(all_row_cells, max_columns)
+    specs: list[str] = []
+    for index in range(max_columns):
+        hint = column_hints[index] if index < len(column_hints) else None
+        align = hint.align if hint and hint.align else detected[index]
+        width = hint.width if hint and hint.width else None
+        specs.append(_column_spec_for(align, width))
+    return specs
 
 
 def _parse_cell_align(node: HtmlElement) -> str:
@@ -575,13 +703,14 @@ def _convert_table(table: HtmlElement, list_level: int) -> list[LatexNode]:
     if max_columns <= 0:
         return []
 
-    # Detect column alignments from cell attributes
-    column_alignments = _detect_column_alignments(row_cells, max_columns)
+    # Detect column alignments from cell attributes and apply colgroup/col hints
+    column_hints = _extract_column_hints(table)
+    column_specs = _build_column_specs(row_cells, max_columns, column_hints)
 
     # Render rows with rowspan tracking and alignment
     rendered_rows = _render_table_rows(row_cells, max_columns, list_level)
 
-    column_spec = LatexGroup(children=(LatexText(text="".join(column_alignments)),))
+    column_spec = LatexGroup(children=(LatexRaw(value="".join(column_specs)),))
     tabular = LatexEnvironment(
         name="tabular",
         args=(column_spec,),

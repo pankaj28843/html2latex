@@ -309,6 +309,11 @@ def infer_packages(document: LatexDocumentAst) -> set[str]:
             packages.add("xcolor")
         if isinstance(node, LatexEnvironment) and node.name == "tabularx":
             packages.add("tabularx")
+        if isinstance(node, LatexEnvironment) and node.name in {"tabular", "tabularx"}:
+            for group in node.args:
+                spec = _group_text(group)
+                if "\\arraybackslash" in spec or ">{\\" in spec:
+                    packages.add("array")
         # Detect \multirow in raw LaTeX content (used in table cells)
         if isinstance(node, LatexRaw) and "\\multirow" in node.value:
             packages.add("multirow")
@@ -341,6 +346,16 @@ def _serialize_node(node: LatexNode) -> str:
     if isinstance(node, LatexGroup):
         return _serialize_group(node)
     return ""
+
+
+def _group_text(group: LatexGroup) -> str:
+    parts: list[str] = []
+    for child in group.children:
+        if isinstance(child, LatexText):
+            parts.append(child.text)
+        elif isinstance(child, LatexRaw):
+            parts.append(child.value)
+    return "".join(parts)
 
 
 def _serialize_command(command: LatexCommand) -> str:
