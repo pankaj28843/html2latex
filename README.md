@@ -8,12 +8,19 @@ output suitable for PDFs and reports.
 
 ## Highlights
 
-- WYSIWYG tag coverage: headings (`h1`-`h3`), paragraphs/divs, lists (`ul/ol/dl`),
-  tables (`thead/tbody/tfoot`, `th/td`, `colspan`), blockquotes, and `pre` blocks.
-- Inline styles: bold/italic/underline/code/sup/sub.
-- Links + images with package inference (`hyperref`, `graphicx`).
-- Math passthrough via `<span class="math-tex">` or `data-latex` attributes.
-- Thread-safe, immutable options with diagnostics when parsing is invalid.
+- **Block elements**: headings (`h1`-`h5`), paragraphs, divs, lists (`ul`/`ol`/`dl`),
+  blockquotes, `pre` blocks, `hr`, `figure`/`figcaption`, and semantic containers.
+- **Tables**: Full support including `thead`/`tbody`/`tfoot`, `th`/`td`, `colspan`,
+  `rowspan` (via `\multirow`), cell alignment (via `align` attribute or CSS `text-align`),
+  and `caption`.
+- **Inline formatting**: bold, italic, underline, code, superscript, subscript,
+  strikethrough (`del`/`s`/`strike`), highlighted text (`mark`), font sizes (`small`/`big`),
+  inline quotes (`q` with proper nesting), and semantic tags (`kbd`, `samp`, `var`, `cite`, `ins`).
+- **Links and images**: `\href`/`\url` for links, `\includegraphics` for images with
+  `width`/`height` attribute support.
+- **Math passthrough**: via `<span class="math-tex">`, `data-latex`, or `data-math` attributes.
+- **Text alignment**: `text-align` CSS on `p`/`div` maps to `center`/`flushleft`/`flushright`.
+- **Thread-safe**: Immutable options with diagnostics for invalid input.
 
 ## Requirements
 
@@ -99,6 +106,9 @@ Common packages:
 
 - `hyperref` (links)
 - `graphicx` (images)
+- `xcolor` (highlighted text via `mark`)
+- `ulem` (strikethrough via `del`/`s`/`strike`)
+- `multirow` (table cells spanning multiple rows)
 
 ## Demo App
 
@@ -113,14 +123,14 @@ Visit <http://127.0.0.1:15005/>.
 
 ## History
 
-The original implementation (2014-2016) powered the
-[ClassKlap](https://www.classklap.com) publishing workflow. The library targets
-Python 3 and general-purpose use; the Xamcheck brand has been retired.
+The original implementation (2014-2016) powered the ClassKlap publishing
+workflow. This version targets Python 3.10+ and general-purpose use.
 
 ## CI
 
-CI runs `ruff` (lint + format) and `pytest` across the supported Python matrix,
-plus LaTeX validity checks (Tectonic) and Playwright E2E smoke tests.
+CI runs `ruff` (lint + format) and `pytest` (465 tests, 100% coverage) across
+Python 3.10-3.14, plus LaTeX validity checks (Tectonic) and Playwright E2E
+smoke tests.
 
 ## License
 

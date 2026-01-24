@@ -5,12 +5,14 @@ Fixtures are organized by feature area so they are easy to find and reuse.
 
 ## Layout
 
-- `blocks/` — block-level constructs (paragraphs, headings, blockquote, pre, hr, tables)
-- `inline/` — inline formatting and spans
-- `lists/` — list structures
+- `blocks/` — block-level constructs (paragraphs, headings, blockquote, pre, hr, tables, figures)
+- `inline/` — inline formatting, spans, and quotes
+- `lists/` — list structures (ul, ol, dl with various attributes)
 - `errors/` — invalid inputs used for diagnostics tests (not part of strict golden runs)
 - `inline/semantic/` — inline semantic tags that preserve content
+- `inline/quote/` — inline quote element with nesting support
 - `blocks/semantic/` — block containers that preserve child content
+- `e2e-wysiwyg/` — end-to-end WYSIWYG editor output samples
 
 ## Conventions
 
