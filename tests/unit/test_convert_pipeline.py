@@ -2,9 +2,11 @@ from html2latex.ast import HtmlDocument, HtmlElement, HtmlText
 from html2latex.latex import LatexCommand, LatexEnvironment, LatexRaw, LatexText
 from html2latex.pipeline import convert_document
 from html2latex.pipeline.convert import (
+    _apply_inline_styles,
     _column_spec_for,
     _convert_node,
     _extract_column_hints,
+    _inline_style_commands,
     _parse_css_length,
 )
 
@@ -281,6 +283,61 @@ def test_convert_image_ignores_invalid_attribute():
     image = latex.body[0]
     assert image.name == "includegraphics"
     assert image.options == ()
+
+
+def test_convert_span_style_numeric_bold():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="span",
+                attrs={"style": "font-weight: 700;"},
+                children=(HtmlText(text="Weight"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    node = latex.body[0]
+    assert isinstance(node, LatexCommand)
+    assert node.name == "textbf"
+    assert node.args[0].children[0].text == "Weight"
+
+
+def test_convert_span_style_multiple_decorations():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="span",
+                attrs={"style": "font-style: italic; text-decoration: underline line-through;"},
+                children=(HtmlText(text="Decor"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    node = latex.body[0]
+    assert isinstance(node, LatexCommand)
+    assert node.name == "sout"
+    underline = node.args[0].children[0]
+    assert isinstance(underline, LatexCommand)
+    assert underline.name == "underline"
+    italic = underline.args[0].children[0]
+    assert isinstance(italic, LatexCommand)
+    assert italic.name == "textit"
+    assert italic.args[0].children[0].text == "Decor"
+
+
+def test_inline_style_commands_ignores_empty_entries():
+    assert _inline_style_commands("font-weight:; : bold;") == ()
+
+
+def test_apply_inline_styles_ignores_empty_nodes():
+    node = HtmlElement(tag="span", attrs={"style": "font-style: italic"})
+    assert _apply_inline_styles(node, []) == []
+
+
+def test_apply_inline_styles_skips_block_tags():
+    node = HtmlElement(tag="p", attrs={"style": "font-style: italic"})
+    result = _apply_inline_styles(node, [LatexText(text="Block")])
+    assert result[0].text == "Block"
 
 
 def test_convert_unknown_tag_flattens_children():
