@@ -21,6 +21,11 @@ from .latex import infer_packages, serialize_document
 from .models import ConvertOptions, LatexDocument
 from .pipeline import convert_document, normalize_document
 
+__all__ = [
+    "Converter",
+    "convert",
+]
+
 
 class Converter:
     """Stateful HTML to LaTeX converter with configurable options.

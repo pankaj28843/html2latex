@@ -17,6 +17,13 @@ from .ast import (
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+__all__ = [
+    "LatexSerializer",
+    "infer_packages",
+    "serialize_document",
+    "serialize_nodes",
+]
+
 
 class LatexSerializer(Protocol):
     """Protocol for LaTeX document serializers."""

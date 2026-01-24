@@ -7,6 +7,8 @@ import re
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlNode, HtmlText
 from html2latex.tags import BLOCK_TAGS
 
+__all__ = ["normalize_document"]
+
 _WHITESPACE_RE = re.compile(r"\s+")
 
 

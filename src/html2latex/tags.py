@@ -9,6 +9,12 @@ and tests to maintain consistency.
 
 from __future__ import annotations
 
+__all__ = [
+    "BLOCK_PASSTHROUGH",
+    "BLOCK_TAGS",
+    "INLINE_PASSTHROUGH",
+]
+
 # Block-level elements that affect whitespace normalization and LaTeX structure.
 # These tags are treated as block containers in the normalization pipeline.
 BLOCK_TAGS: frozenset[str] = frozenset(

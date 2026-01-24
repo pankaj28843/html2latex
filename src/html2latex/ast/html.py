@@ -7,6 +7,13 @@ from dataclasses import field
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
+__all__ = [
+    "HtmlDocument",
+    "HtmlElement",
+    "HtmlNode",
+    "HtmlText",
+]
+
 
 @dataclass(config=ConfigDict(frozen=True))
 class HtmlText:
