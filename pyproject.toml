@@ -124,6 +124,7 @@ select = [
     "SLF",             # flake8-self - no private member access from outside
     "ARG",             # flake8-unused-arguments - catch unused parameters
     "ERA",             # eradicate - find commented-out code
+    "DTZ",             # flake8-datetimez - enforce timezone-aware datetime
 ]
 ignore = [
     "E501",            # line too long (handled by formatter)
