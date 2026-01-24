@@ -1,6 +1,4 @@
-"""
-HTML → LaTeX conversion entry points.
-"""
+"""HTML to LaTeX conversion entry points."""
 
 from __future__ import annotations
 

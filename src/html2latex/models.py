@@ -8,7 +8,7 @@ from typing import Any
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-from html2latex.diagnostics import DiagnosticEvent
+from html2latex.diagnostics import DiagnosticEvent  # noqa: TC001 - needed at runtime
 
 
 @dataclass(config=ConfigDict(frozen=True))

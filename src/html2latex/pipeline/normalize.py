@@ -1,3 +1,5 @@
+"""HTML whitespace normalization pipeline."""
+
 from __future__ import annotations
 
 import re
@@ -13,6 +15,18 @@ def normalize_document(
     *,
     preserve_whitespace_tags: set[str] | None = None,
 ) -> HtmlDocument:
+    """Normalize whitespace in an HTML document.
+
+    Collapses consecutive whitespace, trims whitespace around block elements,
+    and preserves significant whitespace between inline elements.
+
+    Args:
+        document: The HTML document to normalize.
+        preserve_whitespace_tags: Set of tag names whose whitespace should be preserved.
+
+    Returns:
+        A new HtmlDocument with normalized whitespace.
+    """
     preserve = {tag.lower() for tag in preserve_whitespace_tags or set()}
     children = _normalize_children(document.children, preserve, parent_is_block=True)
     return HtmlDocument(children=children, doctype=document.doctype)

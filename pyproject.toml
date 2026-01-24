@@ -102,6 +102,8 @@ select = [
     "FURB",            # refurb - modernization
     "S",               # flake8-bandit - security
     "PT",              # flake8-pytest-style
+    "D",               # pydocstyle - docstring enforcement
+    "TCH",             # flake8-type-checking - optimize imports
 ]
 ignore = [
     "E501",            # line too long (handled by formatter)
@@ -109,6 +111,10 @@ ignore = [
     "PLR0913",         # too many arguments (sometimes necessary)
     "PLR2004",         # magic value comparison (too noisy)
     "TRY003",          # long exception messages (acceptable)
+    "D100",            # module docstrings (too verbose for internal modules)
+    "D104",            # package docstrings (too verbose)
+    "D105",            # magic method docstrings (self-documenting)
+    "D107",            # __init__ docstrings (class docstring is sufficient)
 ]
 
 [tool.ruff.lint.mccabe]
@@ -117,8 +123,12 @@ max-complexity = 12
 [tool.ruff.lint.pylint]
 max-args = 8
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
+    "D",        # no docstrings required in tests
     "PLR2004",  # magic values in tests are fine
     "S101",     # assert in tests is expected
     "PLR0915",  # too many statements in tests is acceptable
@@ -130,6 +140,10 @@ max-args = 8
     "S311",     # random in tests is fine (not crypto)
     "S603",     # subprocess with controlled input in tests
     "S607",     # partial executable path in tests
+]
+"benchmarks/**/*.py" = [
+    "D",        # no docstrings required in benchmarks
+    "T201",     # print is fine in benchmarks
 ]
 "tests/e2e/**/*.py" = [
     "S310",     # URL open in e2e tests uses localhost URLs

@@ -1,3 +1,5 @@
+"""HTML to LaTeX AST conversion pipeline."""
+
 from __future__ import annotations
 
 import re
@@ -47,6 +49,14 @@ _INLINE_COMMANDS = {
 def convert_document(
     document: HtmlDocument,
 ) -> LatexDocumentAst:
+    """Convert an HTML document AST to a LaTeX document AST.
+
+    Args:
+        document: The HTML document to convert.
+
+    Returns:
+        A LatexDocumentAst containing the converted content.
+    """
     body = _convert_nodes(document.children)
     return LatexDocumentAst(body=body)
 

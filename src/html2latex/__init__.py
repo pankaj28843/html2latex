@@ -1,4 +1,4 @@
-"""html2latex: Convert HTML to LaTeX.
+r"""html2latex: Convert HTML to LaTeX.
 
 This package provides tools for converting HTML content to LaTeX format,
 supporting both simple conversions and full document rendering with templates.
