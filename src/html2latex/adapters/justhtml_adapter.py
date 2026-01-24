@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from justhtml import JustHTML, ParseError
 from justhtml.node import Comment, Element, Text
@@ -55,14 +55,14 @@ def _parse_diagnostics(errors: list[ParseError] | None) -> list[DiagnosticEvent]
     return [from_parse_error(error) for error in errors]
 
 
-def _iter_children(node) -> Iterable:
+def _iter_children(node: Any) -> Iterable[Any]:
     children = getattr(node, "children", None)
     if not children:
         return []
     return [child for child in children if not isinstance(child, Comment)]
 
 
-def _convert_node(node) -> HtmlNode:
+def _convert_node(node: Any) -> HtmlNode:
     if isinstance(node, Text):
         return HtmlText(text=node.data or "")
     if isinstance(node, Element):
