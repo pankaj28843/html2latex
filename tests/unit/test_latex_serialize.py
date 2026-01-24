@@ -8,7 +8,7 @@ from html2latex.latex import (
     infer_packages,
     serialize_document,
 )
-from html2latex.latex.serialize import _serialize_node
+from html2latex.latex.serialize import _group_text, _serialize_node
 
 
 def test_serialize_text_escapes_special_chars():
@@ -85,9 +85,12 @@ def test_infer_packages_xcolor_from_colorbox():
 
 
 def test_infer_packages_array_from_tabular_spec():
-    spec = LatexGroup(
-        children=(LatexRaw(value=r">{\centering\arraybackslash}p{0.5\textwidth}"),)
-    )
+    spec = LatexGroup(children=(LatexRaw(value=r">{\centering\arraybackslash}p{0.5\textwidth}"),))
     table = LatexEnvironment(name="tabular", args=(spec,))
     doc = LatexDocumentAst(body=(table,))
     assert "array" in infer_packages(doc)
+
+
+def test_group_text_supports_latextext():
+    group = LatexGroup(children=(LatexText(text=r">{\centering\arraybackslash}p{1cm}"),))
+    assert _group_text(group) == r">{\centering\arraybackslash}p{1cm}"

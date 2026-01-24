@@ -467,7 +467,9 @@ def _expand_colgroup(colgroup: HtmlElement) -> list[_ColumnHint]:
     return [_ColumnHint(align=group_align, width=group_width) for _ in range(span)]
 
 
-def _expand_col(col: HtmlElement, group_align: str | None, group_width: str | None) -> list[_ColumnHint]:
+def _expand_col(
+    col: HtmlElement, group_align: str | None, group_width: str | None
+) -> list[_ColumnHint]:
     align = _parse_col_align(col) or group_align
     width = _parse_col_width(col) or group_width
     span = _parse_span(col.attrs.get("span"))
