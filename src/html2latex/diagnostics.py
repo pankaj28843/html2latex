@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Generator, Iterable
 
     from justhtml.tokens import ParseError
 
@@ -68,7 +68,7 @@ _DIAGNOSTIC_SINK: ContextVar[list[DiagnosticEvent] | None] = ContextVar(
 
 
 @contextmanager
-def diagnostic_context(enabled: bool):
+def diagnostic_context(enabled: bool) -> Generator[list[DiagnosticEvent], None, None]:
     """Context manager for collecting diagnostic events.
 
     Args:

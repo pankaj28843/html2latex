@@ -119,6 +119,12 @@ select = [
     "G",               # flake8-logging-format - logging format strings
     "BLE",             # flake8-blind-except - no blind except
     "N",               # pep8-naming - naming conventions
+    # v7: Additional safety rules
+    "ISC",             # flake8-implicit-str-concat - catch accidental string concat
+    "SLF",             # flake8-self - no private member access from outside
+    "ARG",             # flake8-unused-arguments - catch unused parameters
+    "ERA",             # eradicate - find commented-out code
+    "DTZ",             # flake8-datetimez - enforce timezone-aware datetime
 ]
 ignore = [
     "E501",            # line too long (handled by formatter)
@@ -159,6 +165,8 @@ convention = "google"
     "EM",       # exception message formatting less critical in tests
     "BLE001",   # blind except acceptable in test utilities (e.g., waiting for server)
     "RET504",   # unnecessary assignment before return - clarity over brevity in tests
+    # v7: pytest hooks must match expected signature
+    "ARG001",   # pytest hooks have fixed signatures (e.g., config param)
 ]
 "benchmarks/**/*.py" = [
     "D",        # no docstrings required in benchmarks
@@ -176,6 +184,14 @@ convention = "google"
 ]
 "src/html2latex/pipeline/normalize.py" = [
     "C901",     # complexity - whitespace normalization is inherently complex
+]
+# Serializer methods accept siblings/index for context - extensibility pattern
+"src/html2latex/latex/serialize.py" = [
+    "ARG002",   # siblings/index passed for context (subclass may use)
+]
+# Flask error handlers must accept error parameter (framework callback)
+"demo-app/app.py" = [
+    "ARG001",   # Flask error handlers require error param even if unused
 ]
 
 [tool.ruff.format]
