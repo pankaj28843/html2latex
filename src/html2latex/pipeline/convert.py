@@ -16,7 +16,7 @@ from html2latex.latex import (
     LatexText,
     serialize_nodes,
 )
-from html2latex.tags import BLOCK_PASSTHROUGH, INLINE_PASSTHROUGH
+from html2latex.tags import BLOCK_PASSTHROUGH, BLOCK_TAGS, INLINE_PASSTHROUGH
 
 __all__ = ["convert_document"]
 
@@ -92,27 +92,39 @@ def _convert_node(node: HtmlNode, list_level: int = 0, quote_level: int = 0) -> 
         if tag in _INLINE_COMMANDS:
             children = _convert_nodes(node.children, list_level, quote_level)
             group = LatexGroup(children=children)
-            return [LatexCommand(name=_INLINE_COMMANDS[tag], args=(group,))]
+            return _apply_inline_styles(
+                node, [LatexCommand(name=_INLINE_COMMANDS[tag], args=(group,))]
+            )
 
         if tag == "small":
             # Font size switch: {\small ...}
             children = _convert_nodes(node.children, list_level, quote_level)
-            return [LatexRaw(value=r"{\small "), *children, LatexRaw(value="}")]
+            return _apply_inline_styles(
+                node,
+                [LatexRaw(value=r"{\small "), *children, LatexRaw(value="}")],
+            )
 
         if tag == "big":
             # Font size switch: {\large ...} (deprecated HTML tag)
             children = _convert_nodes(node.children, list_level, quote_level)
-            return [LatexRaw(value=r"{\large "), *children, LatexRaw(value="}")]
+            return _apply_inline_styles(
+                node,
+                [LatexRaw(value=r"{\large "), *children, LatexRaw(value="}")],
+            )
 
         if tag == "mark":
             # Highlighted text → colorbox (requires xcolor package)
             children = _convert_nodes(node.children, list_level, quote_level)
             group = LatexGroup(children=children)
             color_group = LatexGroup(children=(LatexText(text="yellow"),))
-            return [LatexCommand(name="colorbox", args=(color_group, group))]
+            return _apply_inline_styles(
+                node,
+                [LatexCommand(name="colorbox", args=(color_group, group))],
+            )
 
         if tag in INLINE_PASSTHROUGH:
-            return list(_convert_nodes(node.children, list_level, quote_level))
+            children = _convert_nodes(node.children, list_level, quote_level)
+            return _apply_inline_styles(node, list(children))
 
         if tag in _HEADING_COMMANDS:
             children = _convert_nodes(node.children, list_level, quote_level)
@@ -157,17 +169,15 @@ def _convert_node(node: HtmlNode, list_level: int = 0, quote_level: int = 0) -> 
             href = node.attrs.get("href")
             children = _convert_nodes(node.children, list_level, quote_level)
             if not href:
-                return list(children)
+                return _apply_inline_styles(node, list(children))
             href_group = LatexGroup(children=(LatexText(text=href),))
             if children:
                 label_group = LatexGroup(children=tuple(children))
-                return [
-                    LatexCommand(
-                        name="href",
-                        args=(href_group, label_group),
-                    )
-                ]
-            return [LatexCommand(name="url", args=(href_group,))]
+                return _apply_inline_styles(
+                    node,
+                    [LatexCommand(name="href", args=(href_group, label_group))],
+                )
+            return _apply_inline_styles(node, [LatexCommand(name="url", args=(href_group,))])
 
         if tag == "img":
             src = node.attrs.get("src")
@@ -285,7 +295,7 @@ def _convert_node(node: HtmlNode, list_level: int = 0, quote_level: int = 0) -> 
             return list(children)
 
         children = _convert_nodes(node.children, list_level, quote_level)
-        return list(children)
+        return _apply_inline_styles(node, list(children))
 
     return []
 
@@ -410,6 +420,20 @@ def _parse_style_height(style: str) -> str | None:
     return match.group(1).strip()
 
 
+def _parse_style_map(style: str) -> dict[str, str]:
+    parsed: dict[str, str] = {}
+    for chunk in style.split(";"):
+        if ":" not in chunk:
+            continue
+        key, value = chunk.split(":", 1)
+        key = key.strip().lower()
+        value = value.strip().lower()
+        if not key or not value:
+            continue
+        parsed[key] = value
+    return parsed
+
+
 def _format_float(value: float) -> str:
     if value.is_integer():
         return str(int(value))
@@ -441,6 +465,46 @@ def _parse_css_length(value: str | None) -> str | None:
     if unit in allowed_units:
         return f"{_format_float(number)}{unit}"
     return None
+
+
+def _inline_style_commands(style: str) -> tuple[str, ...]:
+    if not style:
+        return ()
+    parsed = _parse_style_map(style)
+    commands: list[str] = []
+    weight = parsed.get("font-weight")
+    if weight in {"bold", "bolder"}:
+        commands.append("textbf")
+    elif weight and weight.isdigit():
+        if int(weight) >= 600:
+            commands.append("textbf")
+    font_style = parsed.get("font-style")
+    if font_style in {"italic", "oblique"}:
+        commands.append("textit")
+    text_decoration = parsed.get("text-decoration")
+    if text_decoration:
+        tokens = {part for part in text_decoration.replace(",", " ").split() if part}
+        if "underline" in tokens:
+            commands.append("underline")
+        if "line-through" in tokens:
+            commands.append("sout")
+    return tuple(commands)
+
+
+def _apply_inline_styles(node: HtmlElement, nodes: list[LatexNode]) -> list[LatexNode]:
+    if not nodes:
+        return nodes
+    tag = node.tag.lower()
+    if tag in BLOCK_TAGS or tag in {"br", "img"}:
+        return nodes
+    commands = _inline_style_commands(node.attrs.get("style", ""))
+    if not commands:
+        return nodes
+    wrapped: list[LatexNode] = nodes
+    for command in commands:
+        group = LatexGroup(children=tuple(wrapped))
+        wrapped = [LatexCommand(name=command, args=(group,))]
+    return wrapped
 
 
 def _parse_image_dimension(style_value: str | None, attr_value: str | None) -> str | None:
