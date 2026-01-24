@@ -11,8 +11,10 @@ _DEFAULT_TEMPLATE = """\\documentclass{article}
 
 
 def build_environment() -> Environment:
+    # NOTE: autoescape=False is intentional - we're generating LaTeX, not HTML.
+    # LaTeX special characters are escaped during conversion, not by Jinja2.
     return Environment(
-        autoescape=False,
+        autoescape=False,  # noqa: S701
         trim_blocks=True,
         lstrip_blocks=True,
         keep_trailing_newline=True,

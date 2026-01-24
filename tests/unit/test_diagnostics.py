@@ -55,7 +55,8 @@ def test_diagnostic_context_disabled_collects_no_events():
 def test_emit_diagnostic_appends_with_sink():
     with diagnostic_context(enabled=True) as events:
         emit_diagnostic(DiagnosticEvent(code="w1", category="x", severity="warn", message="msg"))
-    assert events and events[0].code == "w1"
+    assert len(events) == 1
+    assert events[0].code == "w1"
 
 
 def test_emit_and_extend_without_sink_noop():
