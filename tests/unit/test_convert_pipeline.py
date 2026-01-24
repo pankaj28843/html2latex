@@ -1,7 +1,26 @@
 from html2latex.ast import HtmlDocument, HtmlElement, HtmlText
 from html2latex.latex import LatexCommand, LatexEnvironment, LatexRaw, LatexText
 from html2latex.pipeline import convert_document
-from html2latex.pipeline.convert import _convert_node
+from html2latex.pipeline.convert import (
+    _column_spec_for,
+    _convert_node,
+    _extract_column_hints,
+    _parse_css_length,
+)
+
+
+def _column_spec(env: LatexEnvironment) -> str:
+    if not env.args:
+        return ""
+    group = env.args[0]
+    if not group.children:
+        return ""
+    child = group.children[0]
+    if isinstance(child, LatexRaw):
+        return child.value
+    if isinstance(child, LatexText):
+        return child.text
+    return ""
 
 
 def test_convert_paragraph_and_inline():
@@ -23,6 +42,46 @@ def test_convert_paragraph_and_inline():
     assert latex.body[1].name == "textbf"
     assert isinstance(latex.body[2], LatexCommand)
     assert latex.body[2].name == "par"
+
+
+def test_parse_css_length_variants():
+    assert _parse_css_length(None) is None
+    assert _parse_css_length("") is None
+    assert _parse_css_length("   ") is None
+    assert _parse_css_length("bogus") is None
+    assert _parse_css_length("0") is None
+    assert _parse_css_length("50%") == "0.5\\textwidth"
+    assert _parse_css_length("96px") == "72.27pt"
+    assert _parse_css_length("2rem") == "2em"
+    assert _parse_css_length("3cm") == "3cm"
+    assert _parse_css_length("5vw") is None
+
+
+def test_extract_column_hints_from_colgroup_span():
+    table = HtmlElement(
+        tag="table",
+        children=(
+            HtmlElement(tag="colgroup", attrs={"span": "2", "align": "center", "width": "10px"}),
+        ),
+    )
+    hints = _extract_column_hints(table)
+    assert len(hints) == 2
+    assert hints[0].align == "c"
+    assert hints[0].width == _parse_css_length("10px")
+
+
+def test_extract_column_hints_from_col():
+    table = HtmlElement(
+        tag="table",
+        children=(HtmlElement(tag="col", attrs={"align": "right", "span": "2"}),),
+    )
+    hints = _extract_column_hints(table)
+    assert len(hints) == 2
+    assert hints[0].align == "r"
+
+
+def test_column_spec_for_right_alignment():
+    assert _column_spec_for("r", "1cm") == r">{\raggedleft\arraybackslash}p{1cm}"
 
 
 def test_convert_heading():
@@ -309,7 +368,7 @@ def test_convert_table_basic():
     env = latex.body[0]
     assert isinstance(env, LatexEnvironment)
     assert env.name == "tabular"
-    assert env.args[0].children[0].text == "ll"
+    assert _column_spec(env) == "ll"
     assert isinstance(env.children[0], LatexRaw)
     assert env.children[0].value == "A & B \\\\"
     assert env.children[1].value == "C & D \\\\"
@@ -345,7 +404,7 @@ def test_convert_table_with_colspan_and_headers():
     )
     latex = convert_document(doc)
     env = latex.body[0]
-    assert env.args[0].children[0].text == "lll"
+    assert _column_spec(env) == "lll"
     assert env.children[0].value == "\\textbf{Head} & \\textbf{Right} & \\\\"
     assert env.children[1].value == "\\multicolumn{2}{l}{Wide} & Tail \\\\"
 
@@ -386,7 +445,7 @@ def test_convert_table_with_invalid_colspan_defaults_to_one():
     )
     latex = convert_document(doc)
     env = latex.body[0]
-    assert env.args[0].children[0].text == "ll"
+    assert _column_spec(env) == "ll"
     assert env.children[0].value == "A & B \\\\"
 
 
@@ -449,7 +508,7 @@ def test_convert_table_cell_alignment():
     latex = convert_document(doc)
     env = latex.body[0]
     # Column spec should be 'cr' (center, right)
-    assert env.args[0].children[0].text == "cr"
+    assert _column_spec(env) == "cr"
 
 
 def test_convert_table_cell_alignment_via_style():
@@ -476,7 +535,7 @@ def test_convert_table_cell_alignment_via_style():
     latex = convert_document(doc)
     env = latex.body[0]
     # Column spec should be 'r' (right)
-    assert env.args[0].children[0].text == "r"
+    assert _column_spec(env) == "r"
 
 
 def test_convert_table_colspan_uses_cell_alignment():

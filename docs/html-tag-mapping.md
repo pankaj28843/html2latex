@@ -12,6 +12,7 @@ HTML2LaTeX.
 - `xcolor` for highlighted text (`\colorbox`).
 - `ulem` (with normalem option) for strikethrough (`\sout`).
 - `multirow` for table cells spanning multiple rows (`\multirow`).
+- `array` for fixed-width columns when `colgroup`/`col` width and alignment decorators are used.
 
 ## Block-level tags
 
@@ -50,6 +51,8 @@ HTML2LaTeX.
 | Row span | `rowspan="N"` | `\multirow{N}{*}{...}` | Requires `multirow` package. |
 | Cell alignment | `align="left\|center\|right"` | Column spec `l`/`c`/`r` | Detected per-column from dominant alignment. |
 | Cell alignment (CSS) | `style="text-align: ..."` | Column spec `l`/`c`/`r` | Same as `align` attribute. |
+| Column alignment (colgroup/col) | `colgroup`/`col` `align` or `style` | Column spec `l`/`c`/`r` | Overrides detected alignment for those columns. |
+| Column width (colgroup/col) | `colgroup`/`col` `width` or `style="width: ..."` | `p{width}` or `>{...}p{width}` | `px` converted to `pt`; `%` becomes fraction of `\textwidth`; centered/right widths use `array` decorators. |
 | Combined colspan+alignment | `colspan` + `align` | `\multicolumn{N}{c}{...}` | Uses cell's alignment in multicolumn. |
 | Combined rowspan+colspan | Both attributes | Nested `\multicolumn` and `\multirow` | |
 
