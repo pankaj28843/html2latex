@@ -66,14 +66,15 @@ def convert_document(
 def _convert_nodes(
     nodes: tuple[HtmlNode, ...],
     list_level: int = 0,
+    quote_level: int = 0,
 ) -> tuple[LatexNode, ...]:
     output: list[LatexNode] = []
     for node in nodes:
-        output.extend(_convert_node(node, list_level))
+        output.extend(_convert_node(node, list_level, quote_level))
     return tuple(output)
 
 
-def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
+def _convert_node(node: HtmlNode, list_level: int = 0, quote_level: int = 0) -> list[LatexNode]:
     if isinstance(node, HtmlText):
         return [LatexText(text=node.text)]
 
@@ -82,32 +83,32 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
         if _is_math_container(node):
             return _convert_math(node)
         if tag in _INLINE_COMMANDS:
-            children = _convert_nodes(node.children, list_level)
+            children = _convert_nodes(node.children, list_level, quote_level)
             group = LatexGroup(children=children)
             return [LatexCommand(name=_INLINE_COMMANDS[tag], args=(group,))]
 
         if tag == "small":
             # Font size switch: {\small ...}
-            children = _convert_nodes(node.children, list_level)
+            children = _convert_nodes(node.children, list_level, quote_level)
             return [LatexRaw(value=r"{\small "), *children, LatexRaw(value="}")]
 
         if tag == "big":
             # Font size switch: {\large ...} (deprecated HTML tag)
-            children = _convert_nodes(node.children, list_level)
+            children = _convert_nodes(node.children, list_level, quote_level)
             return [LatexRaw(value=r"{\large "), *children, LatexRaw(value="}")]
 
         if tag == "mark":
             # Highlighted text → colorbox (requires xcolor package)
-            children = _convert_nodes(node.children, list_level)
+            children = _convert_nodes(node.children, list_level, quote_level)
             group = LatexGroup(children=children)
             color_group = LatexGroup(children=(LatexText(text="yellow"),))
             return [LatexCommand(name="colorbox", args=(color_group, group))]
 
         if tag in INLINE_PASSTHROUGH:
-            return list(_convert_nodes(node.children, list_level))
+            return list(_convert_nodes(node.children, list_level, quote_level))
 
         if tag in _HEADING_COMMANDS:
-            children = _convert_nodes(node.children, list_level)
+            children = _convert_nodes(node.children, list_level, quote_level)
             group = LatexGroup(children=children)
             return [LatexCommand(name=_HEADING_COMMANDS[tag], args=(group,))]
 
@@ -116,14 +117,24 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
 
         if tag == "center":
             # Deprecated <center> tag → center environment
-            children = _convert_nodes(node.children, list_level)
+            children = _convert_nodes(node.children, list_level, quote_level)
             return [LatexEnvironment(name="center", children=tuple(children))]
+
+        if tag == "q":
+            # Inline quote element - use LaTeX backtick/apostrophe quotes
+            # Outer quotes: ``...''  Nested quotes: `...'
+            children = _convert_nodes(node.children, list_level, quote_level + 1)
+            if quote_level == 0:
+                # Outer quote: double backticks and double apostrophes
+                return [LatexRaw(value="``"), *children, LatexRaw(value="''")]
+            # Nested quote: single backtick and single apostrophe
+            return [LatexRaw(value="`"), *children, LatexRaw(value="'")]
 
         if tag in {"p", "div"}:
             # Check for text-align style
             style = node.attrs.get("style", "")
             align = _parse_text_align(style)
-            children = _convert_nodes(node.children, list_level)
+            children = _convert_nodes(node.children, list_level, quote_level)
             if align == "center":
                 return [LatexEnvironment(name="center", children=tuple(children))]
             if align == "left":
@@ -137,7 +148,7 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
 
         if tag == "a":
             href = node.attrs.get("href")
-            children = _convert_nodes(node.children, list_level)
+            children = _convert_nodes(node.children, list_level, quote_level)
             if not href:
                 return list(children)
             href_group = LatexGroup(children=(LatexText(text=href),))
@@ -173,7 +184,7 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
             ]
 
         if tag == "blockquote":
-            children = _convert_nodes(node.children, list_level)
+            children = _convert_nodes(node.children, list_level, quote_level)
             return [LatexEnvironment(name="quote", children=tuple(children))]
 
         if tag == "pre":
@@ -258,14 +269,14 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
 
         if tag == "figcaption":
             # figcaption outside figure - just render content
-            children = _convert_nodes(node.children, list_level)
+            children = _convert_nodes(node.children, list_level, quote_level)
             return list(children)
 
         if tag in BLOCK_PASSTHROUGH:
-            children = _convert_nodes(node.children, list_level)
+            children = _convert_nodes(node.children, list_level, quote_level)
             return list(children)
 
-        children = _convert_nodes(node.children, list_level)
+        children = _convert_nodes(node.children, list_level, quote_level)
         return list(children)
 
     return []
@@ -371,6 +382,66 @@ def _parse_text_align(style: str) -> str | None:
     if match:
         return match.group(1).lower()
     return None
+
+
+def _parse_cell_align(node: HtmlElement) -> str:
+    """Extract alignment for a table cell (td/th).
+
+    Checks both the legacy 'align' attribute and CSS 'style' attribute.
+    Returns LaTeX column spec character: 'l', 'c', or 'r'.
+    Defaults to 'l' (left) if no alignment specified.
+    """
+    # Check legacy align attribute first
+    align_attr = node.attrs.get("align", "").lower()
+    if align_attr in ("left", "center", "right"):
+        return {"left": "l", "center": "c", "right": "r"}[align_attr]
+
+    # Check CSS style attribute
+    style = node.attrs.get("style", "")
+    text_align = _parse_text_align(style)
+    if text_align in ("left", "center", "right"):
+        return {"left": "l", "center": "c", "right": "r"}[text_align]
+
+    return "l"  # Default to left
+
+
+def _detect_column_alignments(
+    all_row_cells: list[list[HtmlElement]],
+    max_columns: int,
+) -> list[str]:
+    """Detect dominant alignment for each column.
+
+    Analyzes all cells in each column and returns the most common alignment.
+    Cells with colspan > 1 are excluded from the count since they use multicolumn.
+    """
+    # Count alignments per column
+    column_counts: list[dict[str, int]] = [{"l": 0, "c": 0, "r": 0} for _ in range(max_columns)]
+
+    for row_cells in all_row_cells:
+        col = 0
+        for cell in row_cells:
+            if col >= max_columns:
+                break
+            colspan = _parse_span(cell.attrs.get("colspan"))
+            # Only count single-cell alignments (colspan cells use multicolumn)
+            if colspan == 1:
+                align = _parse_cell_align(cell)
+                column_counts[col][align] += 1
+            col += colspan
+
+    # Determine dominant alignment for each column
+    alignments: list[str] = []
+    for counts in column_counts:
+        # Find the most common alignment (prefer 'l' on ties)
+        max_count = max(counts.values())
+        if counts["l"] == max_count:
+            alignments.append("l")
+        elif counts["c"] == max_count:
+            alignments.append("c")
+        else:
+            alignments.append("r")
+
+    return alignments
 
 
 def _count_list_items(node: HtmlElement) -> int:
@@ -504,10 +575,13 @@ def _convert_table(table: HtmlElement, list_level: int) -> list[LatexNode]:
     if max_columns <= 0:
         return []
 
-    # Render rows with rowspan tracking
+    # Detect column alignments from cell attributes
+    column_alignments = _detect_column_alignments(row_cells, max_columns)
+
+    # Render rows with rowspan tracking and alignment
     rendered_rows = _render_table_rows(row_cells, max_columns, list_level)
 
-    column_spec = LatexGroup(children=(LatexText(text="l" * max_columns),))
+    column_spec = LatexGroup(children=(LatexText(text="".join(column_alignments)),))
     tabular = LatexEnvironment(
         name="tabular",
         args=(column_spec,),
@@ -564,6 +638,9 @@ def _render_table_rows(
 
                 content = _render_cell_content(cell, list_level)
 
+                # Get the cell's alignment
+                cell_align = _parse_cell_align(cell)
+
                 # Handle rowspan with multirow
                 if rowspan > 1:
                     # Mark columns as occupied for subsequent rows
@@ -571,12 +648,13 @@ def _render_table_rows(
                         occupied[c] = rowspan - 1
                     # Wrap content in multirow
                     if colspan > 1:
-                        # multirow inside multicolumn
-                        content = f"\\multicolumn{{{colspan}}}{{l}}{{\\multirow{{{rowspan}}}{{*}}{{{content}}}}}"
+                        # multirow inside multicolumn - use cell's alignment
+                        content = f"\\multicolumn{{{colspan}}}{{{cell_align}}}{{\\multirow{{{rowspan}}}{{*}}{{{content}}}}}"
                     else:
                         content = f"\\multirow{{{rowspan}}}{{*}}{{{content}}}"
                 elif colspan > 1:
-                    content = f"\\multicolumn{{{colspan}}}{{l}}{{{content}}}"
+                    # Use cell's alignment for multicolumn
+                    content = f"\\multicolumn{{{colspan}}}{{{cell_align}}}{{{content}}}"
 
                 rendered_cells.append(content)
                 col += colspan
