@@ -315,7 +315,7 @@ def _parse_list_start(value: str) -> int:
         parsed = int(value)
     except ValueError:
         return 1
-    return parsed if parsed > 1 else 1
+    return max(1, parsed)
 
 
 def _parse_list_value(value: str | None) -> int | None:
@@ -509,9 +509,11 @@ def _collect_table_rows(table: HtmlElement) -> list[HtmlElement]:
             continue
         tag = child.tag.lower()
         if tag in {"thead", "tbody", "tfoot"}:
-            for grandchild in child.children:
-                if isinstance(grandchild, HtmlElement) and grandchild.tag.lower() == "tr":
-                    rows.append(grandchild)
+            rows.extend(
+                grandchild
+                for grandchild in child.children
+                if isinstance(grandchild, HtmlElement) and grandchild.tag.lower() == "tr"
+            )
         elif tag == "tr":
             rows.append(child)
     return rows
@@ -548,11 +550,11 @@ def _extract_table_caption(
 
 
 def _extract_row_cells(row: HtmlElement) -> list[HtmlElement]:
-    cells: list[HtmlElement] = []
-    for child in row.children:
-        if isinstance(child, HtmlElement) and child.tag.lower() in {"td", "th"}:
-            cells.append(child)
-    return cells
+    return [
+        child
+        for child in row.children
+        if isinstance(child, HtmlElement) and child.tag.lower() in {"td", "th"}
+    ]
 
 
 def _row_colspan(cells: list[HtmlElement]) -> int:

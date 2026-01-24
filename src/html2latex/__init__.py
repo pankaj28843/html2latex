@@ -23,8 +23,8 @@ from .html2latex import html2latex, render
 from .models import ConvertOptions, LatexDocument
 
 __all__ = [
-    "Converter",
     "ConvertOptions",
+    "Converter",
     "LatexDocument",
     "convert",
     "html2latex",
