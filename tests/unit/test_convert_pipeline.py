@@ -528,9 +528,8 @@ def test_convert_table_alignment_detection_handles_extra_cells():
     ]
     # max_columns = 1, but row2 has 2 cells - this triggers the break
     alignments = _detect_column_alignments([row1, row2], 1)
-    # Should detect only the first column (center + right = center wins? or right?)
-    # Actually center and right both have 1 count, so 'l' wins (default on ties)
-    # Wait - counts are l:0, c:1, r:1. max is 1. l==0 != 1, c==1 == max -> 'c'
+    # Only the first column is considered here; with counts l:0, c:1, r:1 the
+    # implementation correctly selects 'c' for this column.
     assert alignments == ["c"]
 
 
