@@ -283,6 +283,46 @@ def test_convert_image_ignores_invalid_attribute():
     assert image.options == ()
 
 
+def test_convert_span_style_numeric_bold():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="span",
+                attrs={"style": "font-weight: 700;"},
+                children=(HtmlText(text="Weight"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    node = latex.body[0]
+    assert isinstance(node, LatexCommand)
+    assert node.name == "textbf"
+    assert node.args[0].children[0].text == "Weight"
+
+
+def test_convert_span_style_multiple_decorations():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="span",
+                attrs={"style": "font-style: italic; text-decoration: underline line-through;"},
+                children=(HtmlText(text="Decor"),),
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    node = latex.body[0]
+    assert isinstance(node, LatexCommand)
+    assert node.name == "sout"
+    underline = node.args[0].children[0]
+    assert isinstance(underline, LatexCommand)
+    assert underline.name == "underline"
+    italic = underline.args[0].children[0]
+    assert isinstance(italic, LatexCommand)
+    assert italic.name == "textit"
+    assert italic.args[0].children[0].text == "Decor"
+
+
 def test_convert_unknown_tag_flattens_children():
     doc = HtmlDocument(children=(HtmlElement(tag="custom", children=(HtmlText(text="Inside"),)),))
     latex = convert_document(doc)
