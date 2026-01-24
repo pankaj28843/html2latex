@@ -240,6 +240,21 @@ def test_convert_image_without_src_uses_alt_text():
     assert latex.body[0].text == "Alt text"
 
 
+def test_convert_image_uses_style_dimensions():
+    doc = HtmlDocument(
+        children=(
+            HtmlElement(
+                tag="img",
+                attrs={"src": "photo.png", "style": "width: 96px; height: 2cm;"},
+            ),
+        )
+    )
+    latex = convert_document(doc)
+    image = latex.body[0]
+    assert image.name == "includegraphics"
+    assert image.options == ("width=72.27pt", "height=2cm")
+
+
 def test_convert_unknown_tag_flattens_children():
     doc = HtmlDocument(children=(HtmlElement(tag="custom", children=(HtmlText(text="Inside"),)),))
     latex = convert_document(doc)
