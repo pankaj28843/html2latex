@@ -174,14 +174,15 @@ def _convert_node(node: HtmlNode, list_level: int = 0, quote_level: int = 0) -> 
             alt = node.attrs.get("alt")
             if not src:
                 return [LatexText(text=alt)] if alt else []
-            # Build options for width/height attributes
+            # Build options for width/height attributes or style overrides
             options: list[str] = []
-            width = node.attrs.get("width")
-            height = node.attrs.get("height")
+            style = node.attrs.get("style", "")
+            width = _parse_image_dimension(_parse_style_width(style), node.attrs.get("width"))
+            height = _parse_image_dimension(_parse_style_height(style), node.attrs.get("height"))
             if width:
-                options.append(f"width={width}px")
+                options.append(f"width={width}")
             if height:
-                options.append(f"height={height}px")
+                options.append(f"height={height}")
             return [
                 LatexCommand(
                     name="includegraphics",
@@ -382,7 +383,9 @@ def _parse_list_type(value: str | None) -> str | None:
 
 _TEXT_ALIGN_RE = re.compile(r"text-align\s*:\s*(left|center|right)", re.IGNORECASE)
 _STYLE_WIDTH_RE = re.compile(r"width\s*:\s*([^;]+)", re.IGNORECASE)
+_STYLE_HEIGHT_RE = re.compile(r"height\s*:\s*([^;]+)", re.IGNORECASE)
 _CSS_LENGTH_RE = re.compile(r"^\s*([0-9]+(?:\.[0-9]+)?)\s*([a-z%]*)\s*$", re.IGNORECASE)
+_NUMERIC_RE = re.compile(r"^\s*[0-9]+(?:\.[0-9]+)?\s*$")
 
 
 def _parse_text_align(style: str) -> str | None:
@@ -395,6 +398,13 @@ def _parse_text_align(style: str) -> str | None:
 
 def _parse_style_width(style: str) -> str | None:
     match = _STYLE_WIDTH_RE.search(style)
+    if not match:
+        return None
+    return match.group(1).strip()
+
+
+def _parse_style_height(style: str) -> str | None:
+    match = _STYLE_HEIGHT_RE.search(style)
     if not match:
         return None
     return match.group(1).strip()
@@ -430,6 +440,24 @@ def _parse_css_length(value: str | None) -> str | None:
     allowed_units = {"pt", "pc", "in", "cm", "mm", "em", "ex", "bp", "dd", "cc", "sp"}
     if unit in allowed_units:
         return f"{_format_float(number)}{unit}"
+    return None
+
+
+def _parse_image_dimension(style_value: str | None, attr_value: str | None) -> str | None:
+    if style_value:
+        parsed = _parse_css_length(style_value)
+        if parsed:
+            return parsed
+    if not attr_value:
+        return None
+    raw = attr_value.strip()
+    if not raw:
+        return None
+    if _NUMERIC_RE.match(raw):
+        return f"{raw}px"
+    parsed = _parse_css_length(raw)
+    if parsed:
+        return parsed
     return None
 
 
