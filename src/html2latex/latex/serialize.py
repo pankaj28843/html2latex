@@ -309,6 +309,9 @@ def infer_packages(document: LatexDocumentAst) -> set[str]:
             packages.add("xcolor")
         if isinstance(node, LatexEnvironment) and node.name == "tabularx":
             packages.add("tabularx")
+        # Detect \multirow in raw LaTeX content (used in table cells)
+        if isinstance(node, LatexRaw) and "\\multirow" in node.value:
+            packages.add("multirow")
     return packages
 
 

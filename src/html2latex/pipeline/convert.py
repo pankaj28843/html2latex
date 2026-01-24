@@ -156,9 +156,18 @@ def _convert_node(node: HtmlNode, list_level: int = 0) -> list[LatexNode]:
             alt = node.attrs.get("alt")
             if not src:
                 return [LatexText(text=alt)] if alt else []
+            # Build options for width/height attributes
+            options: list[str] = []
+            width = node.attrs.get("width")
+            height = node.attrs.get("height")
+            if width:
+                options.append(f"width={width}px")
+            if height:
+                options.append(f"height={height}px")
             return [
                 LatexCommand(
                     name="includegraphics",
+                    options=tuple(options),
                     args=(LatexGroup(children=(LatexText(text=src),)),),
                 )
             ]
@@ -489,18 +498,20 @@ def _convert_table(table: HtmlElement, list_level: int) -> list[LatexNode]:
         return []
 
     row_cells = [_extract_row_cells(row) for row in rows]
+
+    # Calculate max columns accounting for colspan
     max_columns = max((_row_colspan(cells) for cells in row_cells), default=0)
     if max_columns <= 0:
         return []
 
+    # Render rows with rowspan tracking
+    rendered_rows = _render_table_rows(row_cells, max_columns, list_level)
+
     column_spec = LatexGroup(children=(LatexText(text="l" * max_columns),))
-    rendered_rows = [
-        LatexRaw(value=_render_row(cells, max_columns, list_level)) for cells in row_cells
-    ]
     tabular = LatexEnvironment(
         name="tabular",
         args=(column_spec,),
-        children=tuple(rendered_rows),
+        children=tuple(LatexRaw(value=row) for row in rendered_rows),
     )
 
     caption = _extract_table_caption(table, list_level)
@@ -512,6 +523,82 @@ def _convert_table(table: HtmlElement, list_level: int) -> list[LatexNode]:
             children=(caption, tabular),
         )
     ]
+
+
+def _render_table_rows(
+    all_row_cells: list[list[HtmlElement]],
+    max_columns: int,
+    list_level: int,
+) -> list[str]:
+    """Render table rows with rowspan support using multirow.
+
+    Tracks which columns are "occupied" by cells spanning multiple rows
+    and inserts empty placeholders in subsequent rows.
+    """
+    # occupied[col] = number of rows remaining that this column is occupied
+    occupied: dict[int, int] = {}
+    rendered_rows: list[str] = []
+
+    for row_cells in all_row_cells:
+        rendered_cells: list[str] = []
+        col = 0
+        cell_idx = 0
+
+        while col < max_columns:
+            # Check if this column is occupied by a rowspan from a previous row
+            if col in occupied and occupied[col] > 0:
+                rendered_cells.append("")  # Empty placeholder for multirow
+                occupied[col] -= 1
+                if occupied[col] == 0:
+                    del occupied[col]
+                col += 1
+                continue
+
+            # Get the next cell from this row
+            if cell_idx < len(row_cells):
+                cell = row_cells[cell_idx]
+                cell_idx += 1
+
+                colspan = _parse_span(cell.attrs.get("colspan"))
+                rowspan = _parse_span(cell.attrs.get("rowspan"))
+
+                content = _render_cell_content(cell, list_level)
+
+                # Handle rowspan with multirow
+                if rowspan > 1:
+                    # Mark columns as occupied for subsequent rows
+                    for c in range(col, col + colspan):
+                        occupied[c] = rowspan - 1
+                    # Wrap content in multirow
+                    if colspan > 1:
+                        # multirow inside multicolumn
+                        content = f"\\multicolumn{{{colspan}}}{{l}}{{\\multirow{{{rowspan}}}{{*}}{{{content}}}}}"
+                    else:
+                        content = f"\\multirow{{{rowspan}}}{{*}}{{{content}}}"
+                elif colspan > 1:
+                    content = f"\\multicolumn{{{colspan}}}{{l}}{{{content}}}"
+
+                rendered_cells.append(content)
+                col += colspan
+            else:
+                # No more cells in this row - fill with empty
+                rendered_cells.append("")
+                col += 1
+
+        row = " & ".join(rendered_cells).rstrip()
+        rendered_rows.append(f"{row} \\\\")
+
+    return rendered_rows
+
+
+def _render_cell_content(cell: HtmlElement, list_level: int) -> str:
+    """Render cell content, applying bold for th elements."""
+    children = _convert_nodes(cell.children, list_level)
+    tag = cell.tag.lower()
+    if tag == "th":
+        group = LatexGroup(children=tuple(children))
+        children = [LatexCommand(name="textbf", args=(group,))]
+    return "".join(serialize_nodes(children))
 
 
 def _collect_table_rows(table: HtmlElement) -> list[HtmlElement]:
@@ -581,31 +668,3 @@ def _parse_span(value: str | None) -> int:
     except ValueError:
         return 1
     return parsed if parsed > 0 else 1
-
-
-def _render_row(cells: list[HtmlElement], max_columns: int, list_level: int) -> str:
-    rendered: list[str] = []
-    used_columns = 0
-    for cell in cells:
-        span = _parse_span(cell.attrs.get("colspan"))
-        rendered.append(_render_cell(cell, span, list_level))
-        used_columns += span
-
-    while used_columns < max_columns:
-        rendered.append("")
-        used_columns += 1
-
-    row = " & ".join(rendered).rstrip()
-    return f"{row} \\\\"
-
-
-def _render_cell(cell: HtmlElement, span: int, list_level: int) -> str:
-    children = _convert_nodes(cell.children, list_level)
-    tag = cell.tag.lower()
-    if tag == "th":
-        group = LatexGroup(children=tuple(children))
-        children = [LatexCommand(name="textbf", args=(group,))]
-    content = "".join(serialize_nodes(children))
-    if span > 1:
-        return f"\\multicolumn{{{span}}}{{l}}{{{content}}}"
-    return content
