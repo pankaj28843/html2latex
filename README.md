@@ -35,7 +35,7 @@ uv sync
 
 ```bash
 uv run python - <<'PY'
-from html2latex.html2latex import html2latex
+from html2latex import html2latex
 
 print(html2latex("<p>Hello World</p>"))
 PY
@@ -52,7 +52,7 @@ Hello World\par
 ### Convert HTML to a LaTeX fragment
 
 ```python
-from html2latex.html2latex import html2latex
+from html2latex import html2latex
 
 html = """
 <p>Hello <strong>World</strong></p>
@@ -66,11 +66,10 @@ print(fragment)
 ### Convert HTML and inspect packages/diagnostics
 
 ```python
-from html2latex.api import convert
-from html2latex.models import ConvertOptions
+from html2latex import Converter, ConvertOptions
 
-options = ConvertOptions(strict=False)
-result = convert("<a href='https://example.com'>Link</a>", options=options)
+converter = Converter(ConvertOptions(strict=False))
+result = converter.convert("<a href='https://example.com'>Link</a>")
 
 print(result.body)       # LaTeX fragment
 print(result.packages)   # e.g., ("hyperref",)
@@ -80,7 +79,7 @@ print(result.diagnostics)
 ### Render a full LaTeX document
 
 ```python
-from html2latex.html2latex import render
+from html2latex import render
 
 print(render("<p>Full document</p>"))
 ```
@@ -88,13 +87,10 @@ print(render("<p>Full document</p>"))
 To add preamble content:
 
 ```python
-from html2latex.api import convert
-from html2latex.models import ConvertOptions
-from html2latex.jinja import render_document
+from html2latex import render, ConvertOptions
 
 options = ConvertOptions(metadata={"preamble": "\\usepackage{amsmath}"})
-result = convert("<p>Math</p>", options=options)
-print(render_document(result.body, preamble=result.preamble))
+print(render("<p>Math</p>", options=options))
 ```
 
 ## LaTeX Packages
