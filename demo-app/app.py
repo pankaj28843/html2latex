@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 import redis
 from flask import Blueprint, Flask, current_app, jsonify, render_template, request
 
-from html2latex.html2latex import html2latex
+from html2latex import html2latex
 
 if TYPE_CHECKING:
     from flask import Response
