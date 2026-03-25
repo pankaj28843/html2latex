@@ -5,8 +5,8 @@ description = "Demo web app for html2latex"
 requires-python = ">=3.10"
 dependencies = [
   "html2latex",
-  "Flask>=3.1.2",
-  "redis>=7.1.0",
+  "Flask>=3.1.3",
+  "redis>=7.4.0",
 ]
 
 [tool.uv.sources]
