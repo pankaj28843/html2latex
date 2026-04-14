@@ -40,7 +40,7 @@ Issues = "https://github.com/pankaj28843/html2latex/issues"
 # NOTE: versions will be pinned via uv.lock
 
 test = [
-  "pytest>=9.0.2",
+  "pytest>=9.0.3",
   "pytest-cov>=7.1.0",
 ]
 
