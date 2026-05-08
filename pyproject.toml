@@ -28,7 +28,7 @@ classifiers = [
 
 dependencies = [
   "Jinja2>=3.1.6",
-  "justhtml>=1.13.0",
+  "justhtml>=1.18.0",
   "pydantic>=2.12.5",
 ]
 
