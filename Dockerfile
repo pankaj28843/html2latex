@@ -28,7 +28,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # =============================================================================
 # Stage 2: Runtime
 # =============================================================================
-FROM python:3.14-slim-bookworm AS runtime
+FROM python:3.15-slim-bookworm AS runtime
 
 # OCI Image Format Specification labels
 # https://github.com/opencontainers/image-spec/blob/main/annotations.md
